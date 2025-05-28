@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contra SDK v2.0 - Webflow Example</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .expert-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .expert-card {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+        
+        .expert-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .expert-info h3 {
+            margin: 12px 0 8px 0;
+            color: #1a1a1a;
+        }
+        
+        .expert-info p {
+            color: #666;
+            margin: 0 0 12px 0;
+        }
+        
+        .rate {
+            font-weight: 600;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+        
+        .rating {
+            margin-bottom: 16px;
+        }
+        
+        .star {
+            color: #fbbf24;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+        
+        .cta-button:hover {
+            background: #1d4ed8;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .projects {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+        }
+        
+        .project-card img {
+            width: 100%;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        
+        .project-card h5 {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .header h1 {
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .status {
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Configuration -->
+    <script id="contra-config" type="application/json">
+    {
+        "apiKey": "demo-api-key",
+        "debug": true
+    }
+    </script>
+
+    <div class="header">
+        <h1>🚀 Contra SDK v2.0 Demo</h1>
+        <p>Professional Webflow Integration</p>
+    </div>
+
+    <div class="container">
+        <div class="status">
+            ✅ Professional SDK v2.0 loaded from CDN: <code>runtime.min.js</code> (14KB)
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filters">
+            <div class="filter-group">
+                <label>Location</label>
+                <select data-contra-filter="location">
+                    <option value="">All Locations</option>
+                    <option value="United States">United States</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Remote">Remote</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Availability</label>
+                <label>
+                    <input type="checkbox" data-contra-filter="available" value="true"> Available Now
+                </label>
+            </div>
+            
+            <div class="filter-group">
+                <label>Min Rate: $<span id="rate-display">0</span>/hr</label>
+                <input type="range" data-contra-filter="minRate" min="0" max="200" step="10" 
+                       oninput="document.getElementById('rate-display').textContent = this.value">
+            </div>
+            
+            <div class="filter-group">
+                <label>Sort By</label>
+                <select data-contra-filter="sortBy">
+                    <option value="relevance">Most Relevant</option>
+                    <option value="newest">Newest</option>
+                    <option value="rate_desc">Highest Rate</option>
+                    <option value="rating_desc">Highest Rating</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Expert Directory -->
+        <div data-contra-program="design-experts" data-contra-limit="12">
+            <!-- Expert Card Template (hidden by default) -->
+            <div data-contra-template class="expert-card" style="display: none;">
+                <div class="expert-info">
+                    <img data-contra-field="avatarUrl" class="avatar" alt="Expert Avatar">
+                    <h3 data-contra-field="name"></h3>
+                    <p data-contra-field="oneLiner"></p>
+                    <div data-contra-field="hourlyRateUSD" data-contra-format="rate" class="rate"></div>
+                    <div data-contra-stars class="rating"></div>
+                    
+                    <!-- Recent Projects -->
+                    <div class="projects" data-contra-repeat="projects" data-contra-max="3">
+                        <div class="project-card">
+                            <img data-contra-field="coverUrl" alt="Project">
+                            <h5 data-contra-field="title"></h5>
+                        </div>
+                    </div>
+                    
+                    <a data-contra-field="inquiryUrl" class="cta-button">Contact Expert</a>
+                </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div data-contra-loading class="loading" style="display: none;">
+                🔄 Loading amazing experts...
+            </div>
+            
+            <!-- Error State -->
+            <div data-contra-error class="error-message" style="display: none;"></div>
+            
+            <!-- Empty State -->
+            <div data-contra-empty class="empty-state" style="display: none;">
+                No experts match your criteria. Try adjusting your filters.
+            </div>
+        </div>
+    </div>
+
+    <!-- SDK Script from CDN -->
+    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@main/packages/contra-webflow/dist/runtime.min.js"></script>
+    
+    <script>
+        // Demo: Show runtime status
+        window.addEventListener('load', () => {
+            console.log('🚀 Contra SDK v2.0 Demo Page Loaded');
+            console.log('💡 Check the console for debug logs when debug: true');
+            console.log('📊 Global runtime available:', window.contraRuntime);
+        });
+        
+        // Listen for SDK events
+        document.addEventListener('contra:expertsLoaded', (e) => {
+            console.log('✅ Experts loaded:', e.detail);
+        });
+        
+        document.addEventListener('contra:expertsError', (e) => {
+            console.log('❌ Error loading experts:', e.detail);
+        });
+        
+        document.addEventListener('contra:filterChange', (e) => {
+            console.log('🔄 Filters changed:', e.detail);
+        });
+    </script>
+</body>
+</html> 
