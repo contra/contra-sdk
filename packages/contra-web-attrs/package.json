@@ -3,24 +3,40 @@
   "version": "0.2.0",
   "description": "Finsweet-style attribute runtime for Webflow and any HTML platform",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.module.js",
+  "browser": "./dist/index.min.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.module.js",
+      "require": "./dist/index.js",
+      "browser": "./dist/index.min.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
     "test": "echo \"No tests yet\"",
     "lint": "echo \"No linting configured yet\""
+  },
+  "keywords": ["contra", "webflow", "attributes", "finsweet", "runtime", "no-code"],
+  "author": "Contra",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/contra-sdk.git",
+    "directory": "packages/contra-web-attrs"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/contra-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/contra-sdk/issues"
   },
   "dependencies": {
     "@contra/contra-core": "^0.2.0"
