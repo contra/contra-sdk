@@ -29,12 +29,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/contra-sdk.git",
+    "url": "https://github.com/javron/contra-sdk.git",
     "directory": "packages/contra-react-framer"
   },
-  "homepage": "https://github.com/YOUR_USERNAME/contra-sdk#readme",
+  "homepage": "https://github.com/javron/contra-sdk#readme",
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/contra-sdk/issues"
+    "url": "https://github.com/javron/contra-sdk/issues"
   },
   "dependencies": {
     "@contra/contra-core": "^0.2.0"
