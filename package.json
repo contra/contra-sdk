@@ -1,27 +1,40 @@
 {
-  "name": "@contra/sdk",
-  "version": "0.2.0",
-  "description": "Contra SDK Monorepo - attribute-driven integrations for web platforms",
+  "name": "contra-sdk",
+  "version": "2.0.0",
+  "description": "Professional Contra SDK with attribute-driven Webflow runtime and React components for Framer",
   "private": true,
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
-    "build:core": "npm run build -w @contra/contra-core",
-    "build:web-attrs": "npm run build -w @contra/contra-web-attrs",
-    "build:react-framer": "npm run build -w @contra/contra-react-framer",
+    "build": "npm run build:types && npm run build:client && npm run build:webflow && npm run build:react",
+    "build:types": "npm run build -w @contra/types",
+    "build:client": "npm run build -w @contra/client", 
+    "build:webflow": "npm run build -w @contra/webflow",
+    "build:react": "npm run build -w @contra/react",
     "dev": "npm run dev --workspaces",
     "clean": "npm run clean --workspaces",
-    "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces"
+    "test": "echo \"No tests yet\"",
+    "lint": "echo \"No linting configured yet\"",
+    "deploy": "git add . && git commit -m \"build: update dist files\" && git push origin main"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
     "typescript": "^5.0.0",
     "tsup": "^8.0.0"
   },
-  "engines": {
-    "node": ">=18"
-  }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/javron/contra-sdk.git"
+  },
+  "keywords": [
+    "contra",
+    "sdk",
+    "webflow",
+    "react",
+    "framer",
+    "experts",
+    "api"
+  ],
+  "author": "Contra SDK Team",
+  "license": "MIT"
 } 

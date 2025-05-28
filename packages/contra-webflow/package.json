@@ -1,0 +1,41 @@
+{
+  "name": "@contra/webflow",
+  "version": "1.0.0",
+  "description": "Professional attribute-driven Webflow runtime for Contra experts with advanced filtering, performance optimizations, and robust error handling",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@contra/types": "*",
+    "@contra/client": "*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "webflow",
+    "contra",
+    "experts",
+    "attributes",
+    "runtime"
+  ]
+} 
