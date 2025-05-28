@@ -1,0 +1,27 @@
+{
+  "name": "@contra/sdk",
+  "version": "0.2.0",
+  "description": "Contra SDK Monorepo - attribute-driven integrations for web platforms",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:core": "npm run build -w @contra/contra-core",
+    "build:web-attrs": "npm run build -w @contra/contra-web-attrs",
+    "build:react-framer": "npm run build -w @contra/contra-react-framer",
+    "dev": "npm run dev --workspaces",
+    "clean": "npm run clean --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "tsup": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+} 

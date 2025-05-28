@@ -1,0 +1,35 @@
+{
+  "name": "@contra/contra-web-attrs",
+  "version": "0.2.0",
+  "description": "Finsweet-style attribute runtime for Webflow and any HTML platform",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "test": "echo \"No tests yet\"",
+    "lint": "echo \"No linting configured yet\""
+  },
+  "dependencies": {
+    "@contra/contra-core": "^0.2.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+} 
