@@ -1,4 +1,4 @@
-import { ClientConfig, ProgramSummary, ExpertFilters, ListResponse, ExpertProfile } from '@contra/types';
+import { ClientConfig, ProgramSummary, ExpertFilters, ListResponse, ExpertProfile, FilterListResponse } from '@contra/types';
 export * from '@contra/types';
 
 /**
@@ -26,31 +26,19 @@ declare class ContraClient {
     /**
      * Get program information
      */
-    getProgram(programId: string): Promise<ProgramSummary>;
+    getProgram(programNid: string): Promise<ProgramSummary>;
     /**
      * List experts with advanced filtering and caching
      */
-    listExperts(programId: string, filters?: ExpertFilters): Promise<ListResponse<ExpertProfile>>;
+    listExperts(programNid: string, filters?: ExpertFilters): Promise<ListResponse<ExpertProfile>>;
     /**
-     * Get individual expert details
+     * Search experts (using the main experts endpoint with filters)
      */
-    getExpert(expertId: string): Promise<ExpertProfile>;
-    /**
-     * Search experts (with client-side fallback if API doesn't support it)
-     */
-    searchExperts(programId: string, query: string, filters?: ExpertFilters): Promise<ListResponse<ExpertProfile>>;
+    searchExperts(programNid: string, query: string, filters?: ExpertFilters): Promise<ListResponse<ExpertProfile>>;
     /**
      * Get available filter options for a program
      */
-    getFilterOptions(programId: string): Promise<{
-        languages: string[];
-        locations: string[];
-        rateRanges: Array<{
-            min: number;
-            max: number;
-            label: string;
-        }>;
-    }>;
+    getFilterOptions(programNid: string): Promise<FilterListResponse>;
     /**
      * Clear cache (useful for forced refreshes)
      */

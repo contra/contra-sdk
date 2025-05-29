@@ -34,16 +34,12 @@ var FILTER_KEYS = [
   "maxRate",
   "sortBy",
   "limit",
-  "offset",
-  "q"
+  "offset"
 ];
 var SORT_OPTIONS = [
   "relevance",
-  "newest",
   "oldest",
-  "rate_asc",
-  "rate_desc",
-  "rating_desc"
+  "newest"
 ];
 
 exports.EXPERT_FIELDS = EXPERT_FIELDS;

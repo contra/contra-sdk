@@ -102,26 +102,45 @@ export interface ErrorResponse {
   message: string;
 }
 
-// Filter Types for Expert Search
+// Filter Types for Expert Search (exact from OpenAPI spec)
 export interface ExpertFilters {
-  /** Filter by availability */
+  /** Filter by availability (string enum in API) */
   available?: boolean;
-  /** Filter by languages/skills (comma-separated or array) */
+  /** Filter by languages/skills (comma-separated string or array) */
   languages?: string | string[];
-  /** Filter by location */
+  /** Filter by location (with Google Place ID) */
   location?: string;
-  /** Minimum hourly rate */
+  /** Minimum hourly rate in USD */
   minRate?: number;
-  /** Maximum hourly rate */
+  /** Maximum hourly rate in USD */
   maxRate?: number;
-  /** Sort order */
-  sortBy?: 'relevance' | 'newest' | 'oldest' | 'rate_asc' | 'rate_desc' | 'rating_desc';
+  /** Sort order (exact from OpenAPI) */
+  sortBy?: 'relevance' | 'oldest' | 'newest';
   /** Number of results per page */
   limit?: number;
-  /** Page offset */
+  /** Page offset for pagination */
   offset?: number;
-  /** Search query */
-  q?: string;
+}
+
+// Filter Definition from OpenAPI
+export interface Filter {
+  /** Field name to filter by */
+  name: string;
+  /** Data type of the filter */
+  type: 'string' | 'number' | 'boolean';
+  /** Human-readable description of the filter */
+  description: string;
+  /** Allowed values (for enum filters) */
+  options?: string[];
+  /** Minimum allowable value (for range filters) */
+  minimum?: number;
+  /** Maximum allowable value (for range filters) */
+  maximum?: number;
+}
+
+// Filter List Response from OpenAPI
+export interface FilterListResponse {
+  data: Filter[];
 }
 
 // Client Configuration
@@ -254,9 +273,9 @@ export const EXPERT_FIELDS = [
 
 export const FILTER_KEYS = [
   'available', 'languages', 'location', 'minRate', 'maxRate', 
-  'sortBy', 'limit', 'offset', 'q'
+  'sortBy', 'limit', 'offset'
 ] as const;
 
 export const SORT_OPTIONS = [
-  'relevance', 'newest', 'oldest', 'rate_asc', 'rate_desc', 'rating_desc'
+  'relevance', 'oldest', 'newest'
 ] as const; 

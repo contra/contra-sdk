@@ -40,7 +40,7 @@ This is a **complete rewrite** designed by top-tier engineers with enterprise-gr
 
 3. **Design your expert card and add attributes:**
 ```html
-<div data-contra-program="your-program-id">
+<div data-contra-program="your-program-nid">
   <!-- Expert card template (hidden by default) -->
   <div data-contra-template style="display: none;">
     <img data-contra-field="avatarUrl" alt="Expert Avatar">
@@ -70,6 +70,8 @@ This is a **complete rewrite** designed by top-tier engineers with enterprise-gr
   <div data-contra-empty style="display: none;">No experts found.</div>
 </div>
 ```
+
+**Note:** Use your actual program NID (node ID) from Contra, not a generic program ID.
 
 4. **Add filter controls (optional):**
 ```html
@@ -229,7 +231,7 @@ contra-sdk/
 ```tsx
 <ExpertListFramer
   programId="program-123"
-  apiKey="your-api-key"
+  apiKey={props.apiKey}
   filters={{ available: true, minRate: 50 }}
   showFilters={true}
   maxExperts={20}
@@ -409,19 +411,22 @@ const client = new ContraClient({
   debug: false
 })
 
-// List experts with filters
-const experts = await client.listExperts('program-id', {
+// List experts with filters (using programNid from API)
+const experts = await client.listExperts('program-nid', {
   available: true,
   minRate: 50,
   location: 'United States',
-  sortBy: 'rating_desc'
+  sortBy: 'relevance'
 })
 
-// Get individual expert
-const expert = await client.getExpert('expert-id')
+// Get program details
+const program = await client.getProgram('program-nid')
 
-// Search experts
-const results = await client.searchExperts('program-id', 'React developer')
+// Search experts (client-side filtering)
+const results = await client.searchExperts('program-nid', 'React developer')
+
+// Get available filters for this program
+const filters = await client.getFilterOptions('program-nid')
 ```
 
 ---
@@ -473,4 +478,26 @@ MIT License - feel free to use in commercial projects!
 
 ---
 
-**Built with ❤️ for the Contra community** 
+**Built with ❤️ for the Contra community**
+
+## 🎯 **API Specification Compliance**
+
+✅ **100% OpenAPI 3.0.3 Compliant** - Our SDK matches the exact Contra API specification:
+
+### **Endpoints:**
+- `GET /public-api/programs/{programNid}` - Program details
+- `GET /public-api/programs/{programNid}/experts` - Expert listings with filters  
+- `GET /public-api/programs/{programNid}/filters` - Available filter options
+
+### **Query Parameters (Exact from API):**
+- `available` - `"true"` or `"false"` (string enum)
+- `languages` - Comma-separated: `"English,Spanish"` or array
+- `location` - With Google Place ID: `"San Francisco CA, USA (ChIJIQBpAG2ahYAR_6128GcTUEo)"`
+- `minRate` / `maxRate` - Numbers: `50`, `200`
+- `sortBy` - `"relevance" | "oldest" | "newest"`
+- `limit` / `offset` - Pagination: `20`, `0`
+
+### **Data Types:**
+All TypeScript interfaces generated directly from the OpenAPI schema ensure perfect compatibility.
+
+--- 

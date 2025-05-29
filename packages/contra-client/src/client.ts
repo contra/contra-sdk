@@ -5,7 +5,9 @@ import type {
   ProgramSummary,
   ListResponse,
   ApiResponse,
-  ErrorResponse
+  ErrorResponse,
+  Filter,
+  FilterListResponse
 } from '@contra/types';
 
 /**
@@ -193,9 +195,9 @@ export class ContraClient {
   /**
    * Get program information
    */
-  async getProgram(programId: string): Promise<ProgramSummary> {
-    const cacheKey = `program:${programId}`;
-    const endpoint = `/public-api/programs/${programId}`;
+  async getProgram(programNid: string): Promise<ProgramSummary> {
+    const cacheKey = `program:${programNid}`;
+    const endpoint = `/public-api/programs/${programNid}`;
     
     const response = await this.fetchWithCache<ApiResponse<ProgramSummary>>(
       cacheKey,
@@ -210,12 +212,12 @@ export class ContraClient {
    * List experts with advanced filtering and caching
    */
   async listExperts(
-    programId: string,
+    programNid: string,
     filters: ExpertFilters = {}
   ): Promise<ListResponse<ExpertProfile>> {
     const queryString = this.buildQueryString(filters);
-    const cacheKey = `experts:${programId}:${JSON.stringify(filters)}`;
-    const endpoint = `/public-api/programs/${programId}/experts${queryString}`;
+    const cacheKey = `experts:${programNid}:${JSON.stringify(filters)}`;
+    const endpoint = `/public-api/programs/${programNid}/experts${queryString}`;
     
     return this.fetchWithCache<ListResponse<ExpertProfile>>(
       cacheKey,
@@ -225,51 +227,41 @@ export class ContraClient {
   }
 
   /**
-   * Get individual expert details
-   */
-  async getExpert(expertId: string): Promise<ExpertProfile> {
-    const cacheKey = `expert:${expertId}`;
-    const endpoint = `/public-api/experts/${expertId}`;
-    
-    const response = await this.fetchWithCache<ApiResponse<ExpertProfile>>(
-      cacheKey,
-      endpoint,
-      ContraClient.CACHE_TTL.expert
-    );
-    
-    return response.data;
-  }
-
-  /**
-   * Search experts (with client-side fallback if API doesn't support it)
+   * Search experts (using the main experts endpoint with filters)
    */
   async searchExperts(
-    programId: string,
+    programNid: string,
     query: string,
     filters: ExpertFilters = {}
   ): Promise<ListResponse<ExpertProfile>> {
-    const searchFilters = { ...filters, q: query };
-    return this.listExperts(programId, searchFilters);
+    // Search is handled by client-side filtering since API doesn't support text search
+    const experts = await this.listExperts(programNid, filters);
+    
+    // Client-side filtering for search (since API doesn't support text search)
+    if (query.trim()) {
+      const searchTerm = query.toLowerCase();
+      experts.data = experts.data.filter(expert => 
+        expert.name.toLowerCase().includes(searchTerm) ||
+        expert.oneLiner.toLowerCase().includes(searchTerm) ||
+        expert.skillTags.some(tag => tag.toLowerCase().includes(searchTerm))
+      );
+    }
+    
+    return experts;
   }
 
   /**
    * Get available filter options for a program
    */
-  async getFilterOptions(programId: string): Promise<{
-    languages: string[];
-    locations: string[];
-    rateRanges: Array<{ min: number; max: number; label: string }>;
-  }> {
-    const cacheKey = `filters:${programId}`;
-    const endpoint = `/public-api/programs/${programId}/filters`;
+  async getFilterOptions(programNid: string): Promise<FilterListResponse> {
+    const cacheKey = `filters:${programNid}`;
+    const endpoint = `/public-api/programs/${programNid}/filters`;
     
-    const response = await this.fetchWithCache<ApiResponse<any>>(
+    return this.fetchWithCache<FilterListResponse>(
       cacheKey,
       endpoint,
       ContraClient.CACHE_TTL.filters
     );
-    
-    return response.data;
   }
 
   /**

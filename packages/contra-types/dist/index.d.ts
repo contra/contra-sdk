@@ -90,24 +90,39 @@ interface ErrorResponse {
     message: string;
 }
 interface ExpertFilters {
-    /** Filter by availability */
+    /** Filter by availability (string enum in API) */
     available?: boolean;
-    /** Filter by languages/skills (comma-separated or array) */
+    /** Filter by languages/skills (comma-separated string or array) */
     languages?: string | string[];
-    /** Filter by location */
+    /** Filter by location (with Google Place ID) */
     location?: string;
-    /** Minimum hourly rate */
+    /** Minimum hourly rate in USD */
     minRate?: number;
-    /** Maximum hourly rate */
+    /** Maximum hourly rate in USD */
     maxRate?: number;
-    /** Sort order */
-    sortBy?: 'relevance' | 'newest' | 'oldest' | 'rate_asc' | 'rate_desc' | 'rating_desc';
+    /** Sort order (exact from OpenAPI) */
+    sortBy?: 'relevance' | 'oldest' | 'newest';
     /** Number of results per page */
     limit?: number;
-    /** Page offset */
+    /** Page offset for pagination */
     offset?: number;
-    /** Search query */
-    q?: string;
+}
+interface Filter {
+    /** Field name to filter by */
+    name: string;
+    /** Data type of the filter */
+    type: 'string' | 'number' | 'boolean';
+    /** Human-readable description of the filter */
+    description: string;
+    /** Allowed values (for enum filters) */
+    options?: string[];
+    /** Minimum allowable value (for range filters) */
+    minimum?: number;
+    /** Maximum allowable value (for range filters) */
+    maximum?: number;
+}
+interface FilterListResponse {
+    data: Filter[];
 }
 interface ClientConfig {
     /** API key for authentication */
@@ -217,7 +232,7 @@ type FilterKey = keyof ExpertFilters;
 declare const isExpertProfile: (obj: any) => obj is ExpertProfile;
 declare const isErrorResponse: (obj: any) => obj is ErrorResponse;
 declare const EXPERT_FIELDS: readonly ["id", "name", "oneLiner", "avatarUrl", "profileUrl", "inquiryUrl", "hourlyRateUSD", "location", "available", "averageReviewScore", "reviewsCount", "projectsCompletedCount", "followersCount", "earningsUSD", "skillTags", "socialLinks", "projects"];
-declare const FILTER_KEYS: readonly ["available", "languages", "location", "minRate", "maxRate", "sortBy", "limit", "offset", "q"];
-declare const SORT_OPTIONS: readonly ["relevance", "newest", "oldest", "rate_asc", "rate_desc", "rating_desc"];
+declare const FILTER_KEYS: readonly ["available", "languages", "location", "minRate", "maxRate", "sortBy", "limit", "offset"];
+declare const SORT_OPTIONS: readonly ["relevance", "oldest", "newest"];
 
-export { type ApiResponse, type ClientConfig, EXPERT_FIELDS, type ErrorEvent, type ErrorResponse, type ExpertCardProps, type ExpertField, type ExpertFilters, type ExpertListProps, type ExpertLoadEvent, type ExpertProfile, FILTER_KEYS, type FilterChangeEvent, type FilterControlsProps, type FilterKey, type ListResponse, type ProgramSummary, type ProjectSample, SORT_OPTIONS, type SortOption, type WebflowConfig, isErrorResponse, isExpertProfile };
+export { type ApiResponse, type ClientConfig, EXPERT_FIELDS, type ErrorEvent, type ErrorResponse, type ExpertCardProps, type ExpertField, type ExpertFilters, type ExpertListProps, type ExpertLoadEvent, type ExpertProfile, FILTER_KEYS, type Filter, type FilterChangeEvent, type FilterControlsProps, type FilterKey, type FilterListResponse, type ListResponse, type ProgramSummary, type ProjectSample, SORT_OPTIONS, type SortOption, type WebflowConfig, isErrorResponse, isExpertProfile };
