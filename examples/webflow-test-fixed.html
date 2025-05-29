@@ -32,6 +32,7 @@
     <!-- FIXED: Configuration using our professional SDK -->
     <script id="contra-config" type="application/json">
     {
+        "program": "spline_expert",
         "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
         "debug": true
     }
@@ -40,11 +41,14 @@
     <div class="debug-info">
         ✅ Using Professional Contra SDK v2.0 with correct API endpoints<br>
         📡 CDN: https://cdn.jsdelivr.net/gh/javron/contra-sdk@main/packages/contra-webflow/dist/runtime.min.js<br>
-        🔧 OpenAPI 3.0.3 Compliant Implementation
+        🔧 OpenAPI 3.0.3 Compliant Implementation<br>
+        🔗 API Base: https://contra.com/public-api/programs/spline_expert/experts<br>
+        🔑 Headers: Accept: application/json, X-API-key: [configured]
     </div>
 
-    <!-- Toolbar -->
+    <!-- Test API Direct Button -->
     <div class="contra-toolbar">
+        <button id="test-api-direct" class="contra-filter-btn">🧪 Test API Direct</button>
         <button id="contra-open-filters" class="contra-filter-btn">🜜 Filters</button>
     </div>
 
@@ -148,6 +152,46 @@
             const openBtn = document.getElementById('contra-open-filters');
             const saveBtn = document.getElementById('saveFilters');
             const clearBtn = document.getElementById('clearFilters');
+            const testBtn = document.getElementById('test-api-direct');
+
+            // Test API Direct Call
+            testBtn.onclick = async () => {
+                console.log('🧪 Testing API Direct Call...');
+                
+                // Get config (same as working example)
+                const config = JSON.parse(document.getElementById('contra-config').textContent);
+                const { program, apiKey } = config;
+                
+                try {
+                    const url = `https://contra.com/public-api/programs/${program}/experts?limit=5`;
+                    console.log('📡 Testing URL:', url);
+                    console.log('🔑 API Key:', apiKey.substring(0, 20) + '...');
+                    
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-API-key': apiKey
+                        }
+                    });
+                    
+                    console.log('📊 Response Status:', response.status);
+                    console.log('📊 Response Headers:', [...response.headers.entries()]);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('✅ API Direct Test SUCCESS:', data);
+                        alert(`✅ API Direct Test SUCCESS! Found ${data.data?.length || 0} experts. Check console for details.`);
+                    } else {
+                        const errorText = await response.text();
+                        console.error('❌ API Direct Test FAILED:', response.status, errorText);
+                        alert(`❌ API Direct Test FAILED: ${response.status} - Check console for details.`);
+                    }
+                } catch (error) {
+                    console.error('❌ API Direct Test ERROR:', error);
+                    alert('❌ API Direct Test ERROR - Check console for details.');
+                }
+            };
 
             // Open modal
             openBtn.onclick = () => modal.style.display = 'flex';

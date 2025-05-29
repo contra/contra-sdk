@@ -57,7 +57,7 @@ export class ContraClient {
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
-        'X-API-Key': this.config.apiKey,
+        'X-API-key': this.config.apiKey,
         ...options.headers,
       },
     };
