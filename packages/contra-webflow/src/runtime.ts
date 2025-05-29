@@ -404,6 +404,10 @@ export class ContraWebflowRuntime {
       }
     } else if (element instanceof HTMLInputElement) {
       element.value = String(value);
+    } else if (element instanceof HTMLImageElement) {
+      // Regular image handling for avatars and other images
+      element.src = String(value);
+      element.alt = element.alt || 'Image';
     } else {
       // Text content with formatting
       let displayValue = String(value);
@@ -434,7 +438,8 @@ export class ContraWebflowRuntime {
    */
   private isMediaField(element: Element): boolean {
     const field = this.getAttr(element, ATTRS.field);
-    return field === 'coverUrl' || field === 'avatarUrl' || (field?.toLowerCase().includes('url') ?? false);
+    // Only apply advanced media handling to project cover URLs, not avatars
+    return field === 'coverUrl';
   }
 
   /**

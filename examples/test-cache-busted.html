@@ -144,17 +144,6 @@
             opacity: 0.9;
         }
         
-        /* Handle different media types */
-        .contra-thumb[src*=".mp4"],
-        .contra-thumb[src*=".webm"],
-        .contra-thumb[src*=".mov"] {
-            object-fit: cover;
-        }
-        
-        .contra-thumb[src*=".gif"] {
-            object-fit: cover;
-        }
-        
         /* View more button */
         .contra-view-more {
             display: flex;
@@ -326,7 +315,7 @@
         ✅ Professional SDK v2.1 with attribute-driven approach<br>
         🔗 API: https://contra.com/public-api/programs/spline_expert/experts<br>
         🔑 Auth: X-API-key header<br>
-        📦 Features: Projects grid, media handling, infinite scroll, filtering
+        📦 Features: Auto MP4/video handling, projects grid, filtering, infinite scroll
         
         <div style="margin-top: 12px;">
             <button id="test-direct" class="debug-button">🧪 Test Direct API</button>
@@ -430,7 +419,7 @@
     </div>
 
     <!-- SDK with commit hash for cache-busting -->
-    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@5a78ec69b0aa56fb102554646fa7f40e051bdbe0/packages/contra-webflow/dist/runtime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@89d97b5959e83da51b532fb1209898ef1ee08ff8/packages/contra-webflow/dist/runtime.min.js"></script>
     
     <script>
         const debugResults = document.getElementById('debug-results');
@@ -558,16 +547,6 @@
         document.addEventListener('contra:expertsError', (e) => {
             addDebugResult('error', '💥 SDK Error', e.detail);
         });
-
-        // Enhanced Image Error Handling for Projects
-        document.addEventListener('error', (e) => {
-            if (e.target.matches('.contra-thumb')) {
-                console.warn('Project image failed to load:', e.target.src);
-                e.target.style.opacity = '0.3';
-                e.target.style.background = '#f3f4f6';
-                e.target.alt = 'Media unavailable';
-            }
-        }, true);
     </script>
 </body>
 </html> 
