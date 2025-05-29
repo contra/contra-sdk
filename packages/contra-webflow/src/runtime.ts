@@ -401,10 +401,10 @@ export class ContraWebflowRuntime {
    * Set element value with proper formatting
    */
   private setElementValue(element: Element, value: any, format?: string | null): void {
-    if (value == null) return;
+    if (value == null || value === '') return;
 
     // Professional media type detection and handling
-    if (this.isMediaField(element) && typeof value === 'string') {
+    if (this.isMediaField(element) && typeof value === 'string' && value.trim()) {
       this.setMediaValue(element, value);
       return;
     }
@@ -541,6 +541,11 @@ export class ContraWebflowRuntime {
    * Detect media type from URL
    */
   private detectMediaType(url: string): 'image' | 'video' {
+    if (!url || typeof url !== 'string') {
+      this.log('Invalid URL provided to detectMediaType:', url);
+      return 'image';
+    }
+    
     const urlLower = url.toLowerCase();
     
     // Video formats
@@ -763,6 +768,11 @@ export class ContraWebflowRuntime {
    * Evaluate a condition against expert data
    */
   private evaluateCondition(expert: ExpertProfile, condition: string): boolean {
+    if (!condition || typeof condition !== 'string') {
+      this.log('Invalid condition provided:', condition);
+      return false;
+    }
+    
     // Simple condition evaluation (can be extended)
     // Format: "field:value" or "field:>value" or "field:<value"
     const [field, operator, value] = condition.split(':');
@@ -780,7 +790,9 @@ export class ContraWebflowRuntime {
       case '<=':
         return Number(expertValue) <= Number(value);
       default:
-        return String(expertValue).toLowerCase() === value.toLowerCase();
+        const expertStr = String(expertValue);
+        const valueStr = String(value || '');
+        return expertStr.toLowerCase() === valueStr.toLowerCase();
     }
   }
 

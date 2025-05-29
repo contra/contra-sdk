@@ -72,6 +72,13 @@
             color: #111827;
         }
         
+        .contra-location {
+            margin: 0;
+            font-size: .875rem;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        
         .contra-tag {
             margin: 0;
             font-size: .875rem;
@@ -79,8 +86,31 @@
             margin-top: 4px;
         }
         
-        .contra-cta {
+        /* Availability */
+        .contra-availability-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             margin-left: auto;
+            margin-right: 1rem;
+        }
+        
+        .contra-availability-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .contra-availability-text {
+            font-size: .875rem;
+            color: #10b981;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .contra-cta {
             background: #111827;
             color: #fff;
             padding: .5rem 1rem;
@@ -88,6 +118,7 @@
             font-size: .875rem;
             text-decoration: none;
             transition: background 0.2s ease;
+            flex-shrink: 0;
         }
         
         .contra-cta:hover {
@@ -101,11 +132,77 @@
             font-size: .75rem;
             color: #667085;
             flex-wrap: wrap;
+            align-items: center;
+            padding: 12px 0;
+            border-top: 1px solid #f3f4f6;
+            border-bottom: 1px solid #f3f4f6;
+            margin: 12px 0;
+        }
+        
+        .contra-stat {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .contra-stat-label {
+            font-weight: 400;
+            color: #6b7280;
+        }
+        
+        .contra-stat-divider {
+            color: #e5e7eb;
+            margin: 0 -8px;
+        }
+        
+        /* Rate section */
+        .contra-rate-wrapper {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 12px;
         }
         
         .contra-rate {
             font-weight: 600;
             color: #111827;
+            font-size: 1rem;
+        }
+        
+        .contra-rate-label {
+            font-size: .875rem;
+            color: #6b7280;
+        }
+        
+        /* Star ratings */
+        .contra-star {
+            color: #fbbf24;
+            font-size: 14px;
+            margin-right: 1px;
+        }
+        
+        .contra-star-full {
+            color: #fbbf24;
+        }
+        
+        .contra-star-half {
+            color: #fbbf24;
+            position: relative;
+        }
+        
+        .contra-star-half::after {
+            content: '☆';
+            position: absolute;
+            left: 0;
+            color: #e5e7eb;
+            width: 50%;
+            overflow: hidden;
+        }
+        
+        .contra-star-empty {
+            color: #e5e7eb;
         }
         
         /* Projects Grid */
@@ -304,9 +401,35 @@
     {
         "program": "spline_expert",
         "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
-        "debug": true
+        "debug": true,
+        "videoAutoplay": false,
+        "videoHoverPlay": true,
+        "videoMuted": true,
+        "videoLoop": true,
+        "videoControls": false
     }
     </script>
+    
+    <!-- 
+    ============================================
+    ENTERPRISE VIDEO CONFIGURATION OPTIONS:
+    ============================================
+    
+    The SDK automatically detects MP4/video content and creates proper <video> elements.
+    
+    Options:
+    - videoAutoplay: false    // Set to true for automatic playback
+    - videoHoverPlay: true    // Videos play on hover (ignored if autoplay is true)
+    - videoMuted: true        // Required for autoplay in most browsers
+    - videoLoop: true         // Videos loop continuously
+    - videoControls: false    // Set to true to show video controls
+    
+    Example for autoplay videos:
+    "videoAutoplay": true,
+    "videoHoverPlay": false,  // Hover play is disabled when autoplay is on
+    
+    ============================================
+    -->
 
     <h1>🚀 Contra Expert Directory</h1>
     
@@ -315,7 +438,9 @@
         ✅ Professional SDK v2.1 with attribute-driven approach<br>
         🔗 API: https://contra.com/public-api/programs/spline_expert/experts<br>
         🔑 Auth: X-API-key header<br>
-        📦 Features: Auto MP4/video handling, projects grid, filtering, infinite scroll
+        📦 Features: Auto MP4/video handling, projects grid, filtering, infinite scroll<br>
+        🎬 Video Config: Hover-to-play (default), configurable autoplay<br>
+        ⭐ Enhanced Fields: Location, earnings, star ratings, availability status
         
         <div style="margin-top: 12px;">
             <button id="test-direct" class="debug-button">🧪 Test Direct API</button>
@@ -339,15 +464,41 @@
                 <img data-contra-field="avatarUrl" class="contra-avatar" alt="Expert Avatar">
                 <div class="contra-name-wrap">
                     <h4 data-contra-field="name" class="contra-name">Expert Name</h4>
-                    <p data-contra-field="oneLiner" class="contra-tag">Expert tagline</p>
+                    <p data-contra-field="location" class="contra-location">Location</p>
+                </div>
+                <div class="contra-availability-wrapper">
+                    <span class="contra-availability-dot" data-contra-show-when="available:true"></span>
+                    <span class="contra-availability-text" data-contra-show-when="available:true">Available Now</span>
                 </div>
                 <a data-contra-field="inquiryUrl" class="contra-cta" target="_blank" rel="noopener">Message</a>
             </div>
 
             <div class="contra-stats">
-                <span><span data-contra-field="projectsCompletedCount">0</span> Hired</span>
-                <span><span data-contra-field="followersCount">0</span> Followers</span>
+                <span class="contra-stat">
+                    <span data-contra-field="earningsUSD" data-contra-format="earnings">$0</span>
+                    <span class="contra-stat-label">Earned</span>
+                </span>
+                <span class="contra-stat-divider">|</span>
+                <span class="contra-stat">
+                    <span data-contra-field="projectsCompletedCount">0</span>x
+                    <span class="contra-stat-label">Hired</span>
+                </span>
+                <span class="contra-stat-divider">|</span>
+                <span class="contra-stat">
+                    <span data-contra-stars></span>
+                    <span data-contra-field="averageReviewScore">0</span>
+                    <span class="contra-stat-label">Rating</span>
+                </span>
+                <span class="contra-stat-divider">|</span>
+                <span class="contra-stat">
+                    <span data-contra-field="followersCount">0</span>
+                    <span class="contra-stat-label">Followers</span>
+                </span>
+            </div>
+
+            <div class="contra-rate-wrapper">
                 <span data-contra-field="hourlyRateUSD" data-contra-format="rate" class="contra-rate">$— /hr</span>
+                <span class="contra-rate-label">Hourly rate</span>
             </div>
 
             <!-- Projects Grid (up to 4 projects) -->
@@ -419,7 +570,7 @@
     </div>
 
     <!-- SDK with commit hash for cache-busting -->
-    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@021b10f22f3746137aa0dd064da94a18931fe990/packages/contra-webflow/dist/runtime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@9bd9baa39996bdfff7c199c637d235d4c112dcf3/packages/contra-webflow/dist/runtime.min.js"></script>
     
     <script>
         const debugResults = document.getElementById('debug-results');
