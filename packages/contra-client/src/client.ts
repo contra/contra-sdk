@@ -29,7 +29,7 @@ export class ContraClient {
 
   constructor(config: ClientConfig) {
     this.config = {
-      baseUrl: 'https://api.contra.com',
+      baseUrl: 'https://contra.com',
       timeout: 10000,
       debug: false,
       ...config,
@@ -56,8 +56,8 @@ export class ContraClient {
       ...options,
       signal: controller.signal,
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.config.apiKey}`,
+        'Accept': 'application/json',
+        'X-API-Key': this.config.apiKey,
         ...options.headers,
       },
     };
