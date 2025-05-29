@@ -241,9 +241,9 @@ export class ContraClient {
     if (query.trim()) {
       const searchTerm = query.toLowerCase();
       experts.data = experts.data.filter(expert => 
-        expert.name.toLowerCase().includes(searchTerm) ||
-        expert.oneLiner.toLowerCase().includes(searchTerm) ||
-        expert.skillTags.some(tag => tag.toLowerCase().includes(searchTerm))
+        (expert.name && expert.name.toLowerCase().includes(searchTerm)) ||
+        (expert.oneLiner && expert.oneLiner.toLowerCase().includes(searchTerm)) ||
+        (expert.skillTags && expert.skillTags.some(tag => tag && tag.toLowerCase().includes(searchTerm)))
       );
     }
     
