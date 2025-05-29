@@ -3,14 +3,310 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contra SDK v2.1 - Cache Busted Test</title>
+    <title>Contra Expert Directory - SDK v2.1</title>
     <style>
-        body { font-family: system-ui; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .debug { background: #f0f9ff; padding: 16px; border-radius: 8px; margin: 16px 0; font-family: monospace; font-size: 14px; }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: #f8f9fa;
+        }
+        
+        /* Toolbar */
+        .contra-toolbar {
+            display: flex;
+            margin: 2rem 0;
+        }
+        
+        .contra-filter-btn {
+            background: #f2f4f7;
+            border: 1px solid #d0d5dd;
+            border-radius: 8px;
+            padding: .5rem 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 1rem;
+        }
+        
+        /* Expert Cards */
+        .contra-card {
+            border: 1px solid #e4e7ec;
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background: white;
+            transition: all 0.2s ease;
+        }
+        
+        .contra-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        
+        .contra-card-top {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .contra-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        
+        .contra-name-wrap {
+            flex: 1;
+        }
+        
+        .contra-name {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .contra-tag {
+            margin: 0;
+            font-size: .875rem;
+            color: #667085;
+            margin-top: 4px;
+        }
+        
+        .contra-cta {
+            margin-left: auto;
+            background: #111827;
+            color: #fff;
+            padding: .5rem 1rem;
+            border-radius: 24px;
+            font-size: .875rem;
+            text-decoration: none;
+            transition: background 0.2s ease;
+        }
+        
+        .contra-cta:hover {
+            background: #374151;
+        }
+        
+        /* Stats */
+        .contra-stats {
+            display: flex;
+            gap: 1.5rem;
+            font-size: .75rem;
+            color: #667085;
+            flex-wrap: wrap;
+        }
+        
+        .contra-rate {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        /* Projects Grid */
+        .contra-projects {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: .5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .contra-projects:empty {
+            display: none;
+        }
+        
+        .contra-thumb-link {
+            display: block;
+            border-radius: 8px;
+            overflow: hidden;
+            text-decoration: none;
+            transition: transform 0.2s ease;
+        }
+        
+        .contra-thumb-link:hover {
+            transform: scale(1.02);
+        }
+        
+        .contra-thumb {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: opacity 0.3s ease;
+        }
+        
+        .contra-thumb:hover {
+            opacity: 0.9;
+        }
+        
+        /* Handle different media types */
+        .contra-thumb[src*=".mp4"],
+        .contra-thumb[src*=".webm"],
+        .contra-thumb[src*=".mov"] {
+            object-fit: cover;
+        }
+        
+        .contra-thumb[src*=".gif"] {
+            object-fit: cover;
+        }
+        
+        /* View more button */
+        .contra-view-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed #d0d5dd;
+            border-radius: 8px;
+            color: #475467;
+            font-size: .875rem;
+            aspect-ratio: 4/3;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        
+        .contra-view-more:hover {
+            border-color: #9ca3af;
+            background: #f9fafb;
+        }
+        
+        /* Loading and Error States */
+        .contra-loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            background: #f0f9ff;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        
+        .contra-error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+        }
+        
+        .contra-empty {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        
+        /* Debug Panel */
+        .debug-panel {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .debug-panel h3 {
+            margin: 0 0 12px 0;
+            font-family: system-ui;
+        }
+        
+        .debug-button {
+            background: #2563eb;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 4px;
+            font-size: 12px;
+        }
+        
+        .debug-result {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 8px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
         .success { background: #dcfce7; color: #166534; }
         .error { background: #fee2e2; color: #dc2626; }
-        .button { background: #2563eb; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; margin: 8px; }
-        .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        
+        /* Modal Styles */
+        .contra-modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,.4);
+            z-index: 9999;
+        }
+        
+        .contra-modal-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 460px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .contra-input {
+            width: 100%;
+            padding: .5rem .75rem;
+            border: 1px solid #d0d5dd;
+            border-radius: 8px;
+        }
+        
+        .contra-range {
+            display: flex;
+            gap: .5rem;
+        }
+        
+        .contra-modal-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: .5rem;
+        }
+        
+        .contra-link {
+            background: none;
+            border: none;
+            color: #475467;
+            font-size: .875rem;
+            cursor: pointer;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .contra-projects {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .contra-card-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .contra-cta {
+                margin-left: 0;
+                align-self: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
@@ -23,73 +319,140 @@
     }
     </script>
 
-    <h1>🧪 Contra SDK v2.1 - Cache Busted Test</h1>
+    <h1>🚀 Contra Expert Directory</h1>
     
-    <div class="debug">
-        ✅ Professional SDK with cache-busted CDN<br>
-        🔗 Base URL: https://contra.com (fixed)<br>
-        🔑 Headers: X-API-key (fixed case)<br>
-        ⚡ Cache: Purged via jsDelivr API<br>
-        🕐 Test Time: 2025-05-29 14:52
+    <div class="debug-panel">
+        <h3>SDK Status & Debugging</h3>
+        ✅ Professional SDK v2.1 with attribute-driven approach<br>
+        🔗 API: https://contra.com/public-api/programs/spline_expert/experts<br>
+        🔑 Auth: X-API-key header<br>
+        📦 Features: Projects grid, media handling, infinite scroll, filtering
+        
+        <div style="margin-top: 12px;">
+            <button id="test-direct" class="debug-button">🧪 Test Direct API</button>
+            <button id="test-sdk" class="debug-button">🔧 Inspect SDK</button>
+            <button id="clear-debug" class="debug-button">🗑️ Clear</button>
+        </div>
+        <div id="debug-results"></div>
     </div>
 
-    <div>
-        <button id="test-direct" class="button">🧪 Test Direct API</button>
-        <button id="test-sdk" class="button">🔧 Test Full SDK</button>
-        <button id="clear-all" class="button">🗑️ Clear All</button>
+    <!-- Toolbar -->
+    <div class="contra-toolbar">
+        <button id="contra-open-filters" class="contra-filter-btn">🜜 Filters</button>
+        <button id="reload-experts" class="contra-filter-btn">🔄 Reload</button>
     </div>
-
-    <div id="results"></div>
 
     <!-- Expert Directory Container -->
-    <div data-contra-program="spline_expert" data-contra-limit="10">
-        <!-- Template -->
-        <div data-contra-template class="card" style="display: none;">
-            <h4 data-contra-field="name"></h4>
-            <p data-contra-field="oneLiner"></p>
-            <div>Rate: <span data-contra-field="hourlyRateUSD" data-contra-format="rate"></span></div>
+    <div data-contra-program="spline_expert" data-contra-limit="20">
+        <!-- Expert Card Template -->
+        <div data-contra-template class="contra-card" style="display: none;">
+            <div class="contra-card-top">
+                <img data-contra-field="avatarUrl" class="contra-avatar" alt="Expert Avatar">
+                <div class="contra-name-wrap">
+                    <h4 data-contra-field="name" class="contra-name">Expert Name</h4>
+                    <p data-contra-field="oneLiner" class="contra-tag">Expert tagline</p>
+                </div>
+                <a data-contra-field="inquiryUrl" class="contra-cta" target="_blank" rel="noopener">Message</a>
+            </div>
+
+            <div class="contra-stats">
+                <span><span data-contra-field="projectsCompletedCount">0</span> Hired</span>
+                <span><span data-contra-field="followersCount">0</span> Followers</span>
+                <span data-contra-field="hourlyRateUSD" data-contra-format="rate" class="contra-rate">$— /hr</span>
+            </div>
+
+            <!-- Projects Grid (up to 4 projects) -->
+            <div class="contra-projects" data-contra-repeat="projects" data-contra-max="4">
+                <a data-contra-field="projectUrl" class="contra-thumb-link" target="_blank" rel="noopener">
+                    <img data-contra-field="coverUrl" class="contra-thumb" loading="lazy" alt="Project">
+                </a>
+            </div>
         </div>
         
         <!-- Loading State -->
-        <div data-contra-loading class="debug" style="display: none;">
-            🔄 Loading experts...
+        <div data-contra-loading class="contra-loading">
+            🔄 Loading amazing experts...
         </div>
         
         <!-- Error State -->
-        <div data-contra-error class="error" style="display: none;"></div>
+        <div data-contra-error class="contra-error"></div>
         
         <!-- Empty State -->
-        <div data-contra-empty class="debug" style="display: none;">
-            No experts found.
+        <div data-contra-empty class="contra-empty">
+            No experts match your criteria. Try adjusting your filters.
         </div>
     </div>
 
-    <!-- SDK with commit hash to bypass ALL caching -->
+    <!-- Filters Modal -->
+    <div id="contra-modal" class="contra-modal">
+        <div class="contra-modal-box">
+            <h3>Filters</h3>
+
+            <label>Sort by
+                <select data-contra-filter="sortBy" class="contra-input">
+                    <option value="relevance">Relevance</option>
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                </select>
+            </label>
+
+            <label>Hourly rate</label>
+            <div class="contra-range">
+                <input data-contra-filter="minRate" class="contra-input" type="number" placeholder="Min $" />
+                <input data-contra-filter="maxRate" class="contra-input" type="number" placeholder="Max $" />
+            </div>
+
+            <label>
+                <input type="checkbox" data-contra-filter="available" value="true"> Available only
+            </label>
+
+            <label>Location
+                <input data-contra-filter="location" class="contra-input" placeholder="e.g. San Francisco" />
+            </label>
+
+            <label>Languages
+                <select data-contra-filter="languages" class="contra-input" multiple size="6">
+                    <option value="English">English</option>
+                    <option value="Spanish">Spanish</option>
+                    <option value="French">French</option>
+                    <option value="German">German</option>
+                    <option value="Portuguese">Portuguese</option>
+                    <option value="Italian">Italian</option>
+                </select>
+                <small>Select multiple with Cmd/Ctrl</small>
+            </label>
+
+            <div class="contra-modal-actions">
+                <button id="clearFilters" class="contra-link">Clear all</button>
+                <button id="saveFilters" class="contra-cta">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SDK with commit hash for cache-busting -->
     <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@5a78ec69b0aa56fb102554646fa7f40e051bdbe0/packages/contra-webflow/dist/runtime.min.js"></script>
     
     <script>
-        const results = document.getElementById('results');
+        const debugResults = document.getElementById('debug-results');
         
-        function addResult(type, message, data = null) {
+        function addDebugResult(type, message, data = null) {
             const div = document.createElement('div');
-            div.className = `debug ${type}`;
-            div.innerHTML = `${message}${data ? '<br><pre>' + JSON.stringify(data, null, 2) + '</pre>' : ''}`;
-            results.appendChild(div);
+            div.className = `debug-result ${type}`;
+            div.innerHTML = `<strong>${message}</strong>${data ? '<br><pre style="margin: 8px 0; font-size: 11px; overflow-x: auto;">' + JSON.stringify(data, null, 2) + '</pre>' : ''}`;
+            debugResults.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        // Test Direct API Call
+        // Debug Tools
         document.getElementById('test-direct').onclick = async () => {
-            addResult('', '🧪 Testing Direct API Call...');
+            addDebugResult('', '🧪 Testing Direct API Call...');
             
             try {
                 const configElement = document.getElementById('contra-config');
                 const config = JSON.parse(configElement.textContent);
                 const { program, apiKey } = config;
                 
-                addResult('', `📋 Config: program=${program}, apiKey=${apiKey.substring(0, 20)}...`);
-                
                 const url = `https://contra.com/public-api/programs/${program}/experts?limit=3`;
-                addResult('', `📡 URL: ${url}`);
                 
                 const response = await fetch(url, {
                     headers: {
@@ -98,58 +461,113 @@
                     }
                 });
                 
-                addResult('', `📊 Status: ${response.status}`);
-                
                 if (response.ok) {
                     const data = await response.json();
-                    addResult('success', `✅ API SUCCESS: Found ${data.data?.length || 0} experts`, { 
+                    addDebugResult('success', `✅ API SUCCESS: Found ${data.data?.length || 0} experts`, { 
                         totalCount: data.totalCount,
-                        firstExpert: data.data?.[0]?.name 
+                        firstExpertProjects: data.data?.[0]?.projects?.length || 0,
+                        sampleProject: data.data?.[0]?.projects?.[0]
                     });
                 } else {
                     const errorText = await response.text();
-                    addResult('error', `❌ API FAILED: ${response.status}`, errorText);
+                    addDebugResult('error', `❌ API FAILED: ${response.status}`, errorText);
                 }
             } catch (error) {
-                addResult('error', `❌ ERROR: ${error.message}`, error);
+                addDebugResult('error', `❌ ERROR: ${error.message}`, error);
             }
         };
 
-        // Test Full SDK
         document.getElementById('test-sdk').onclick = () => {
-            addResult('', '🔧 Testing Full SDK...');
+            addDebugResult('', '🔧 Inspecting SDK Runtime...');
             
             if (window.contraRuntime) {
-                addResult('success', '✅ SDK Runtime found', {
-                    runtime: typeof window.contraRuntime,
-                    config: window.contraRuntime.config
+                addDebugResult('success', '✅ SDK Runtime Active', {
+                    clientBaseUrl: window.contraRuntime.client?.config?.baseUrl,
+                    debug: window.contraRuntime.config?.debug,
+                    expertContainers: document.querySelectorAll('[data-contra-program]').length,
+                    templates: document.querySelectorAll('[data-contra-template]').length
                 });
             } else {
-                addResult('error', '❌ SDK Runtime not found');
+                addDebugResult('error', '❌ SDK Runtime Not Found');
             }
         };
 
-        // Clear results
-        document.getElementById('clear-all').onclick = () => {
-            results.innerHTML = '';
+        document.getElementById('clear-debug').onclick = () => {
+            debugResults.innerHTML = '';
         };
+
+        // Modal Controls
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('contra-modal');
+            const openBtn = document.getElementById('contra-open-filters');
+            const saveBtn = document.getElementById('saveFilters');
+            const clearBtn = document.getElementById('clearFilters');
+            const reloadBtn = document.getElementById('reload-experts');
+
+            // Open modal
+            openBtn.onclick = () => modal.style.display = 'flex';
+
+            // Close modal on backdrop click
+            modal.addEventListener('click', e => {
+                if (e.target === modal) modal.style.display = 'none';
+            });
+
+            // Save filters
+            saveBtn.onclick = () => {
+                modal.style.display = 'none';
+                addDebugResult('', '🔄 Filters applied - SDK will auto-refresh');
+            };
+
+            // Clear filters
+            clearBtn.onclick = () => {
+                modal.querySelectorAll('[data-contra-filter]').forEach(input => {
+                    if (input.type === 'checkbox') {
+                        input.checked = false;
+                    } else if (input.tagName === 'SELECT') {
+                        input.selectedIndex = 0;
+                        if (input.multiple) {
+                            Array.from(input.options).forEach(opt => opt.selected = false);
+                        }
+                    } else {
+                        input.value = '';
+                    }
+                });
+                addDebugResult('', '🗑️ Filters cleared');
+            };
+
+            // Reload experts
+            reloadBtn.onclick = () => {
+                if (window.contraRuntime) {
+                    window.contraRuntime.client.clearCache('experts:');
+                    location.reload();
+                }
+            };
+
+            addDebugResult('', '🚀 Page initialized - SDK should auto-load experts');
+        });
 
         // SDK Event Listeners
         document.addEventListener('contra:expertsLoaded', (e) => {
-            addResult('success', '🎉 SDK Event: Experts Loaded', {
+            addDebugResult('success', '🎉 Experts Loaded by SDK', {
                 count: e.detail.experts.length,
-                experts: e.detail.experts.map(ex => ex.name)
+                totalCount: e.detail.totalCount,
+                hasProjects: e.detail.experts.filter(ex => ex.projects?.length > 0).length
             });
         });
 
         document.addEventListener('contra:expertsError', (e) => {
-            addResult('error', '💥 SDK Event: Error', e.detail);
+            addDebugResult('error', '💥 SDK Error', e.detail);
         });
 
-        // Initial test
-        setTimeout(() => {
-            addResult('', '🚀 Page loaded, SDK should auto-initialize...');
-        }, 1000);
+        // Enhanced Image Error Handling for Projects
+        document.addEventListener('error', (e) => {
+            if (e.target.matches('.contra-thumb')) {
+                console.warn('Project image failed to load:', e.target.src);
+                e.target.style.opacity = '0.3';
+                e.target.style.background = '#f3f4f6';
+                e.target.alt = 'Media unavailable';
+            }
+        }, true);
     </script>
 </body>
 </html> 

@@ -62,6 +62,34 @@ declare class ContraWebflowRuntime {
      */
     private setElementValue;
     /**
+     * Enterprise-grade media type detection and element handling
+     */
+    private isMediaField;
+    /**
+     * Professional media value setting with automatic type detection
+     */
+    private setMediaValue;
+    /**
+     * Detect media type from URL
+     */
+    private detectMediaType;
+    /**
+     * Create professional video element with fallback
+     */
+    private createVideoElement;
+    /**
+     * Create professional image element with error handling
+     */
+    private createImageElement;
+    /**
+     * Extract video thumbnail from Cloudinary URL
+     */
+    private extractVideoThumbnail;
+    /**
+     * Transfer attributes and classes from old element to new
+     */
+    private transferAttributes;
+    /**
      * Handle repeating elements (projects, social links)
      */
     private populateRepeatingElements;

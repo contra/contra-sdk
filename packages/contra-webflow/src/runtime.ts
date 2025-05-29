@@ -391,10 +391,13 @@ export class ContraWebflowRuntime {
   private setElementValue(element: Element, value: any, format?: string | null): void {
     if (value == null) return;
 
-    if (element instanceof HTMLImageElement) {
-      element.src = String(value);
-      element.alt = element.alt || 'Image';
-    } else if (element instanceof HTMLAnchorElement) {
+    // Professional media type detection and handling
+    if (this.isMediaField(element) && typeof value === 'string') {
+      this.setMediaValue(element, value);
+      return;
+    }
+
+    if (element instanceof HTMLAnchorElement) {
       element.href = String(value);
       if (!element.textContent?.trim()) {
         element.textContent = String(value);
@@ -423,6 +426,198 @@ export class ContraWebflowRuntime {
       }
       
       element.textContent = displayValue;
+    }
+  }
+
+  /**
+   * Enterprise-grade media type detection and element handling
+   */
+  private isMediaField(element: Element): boolean {
+    const field = this.getAttr(element, ATTRS.field);
+    return field === 'coverUrl' || field === 'avatarUrl' || (field?.toLowerCase().includes('url') ?? false);
+  }
+
+  /**
+   * Professional media value setting with automatic type detection
+   */
+  private setMediaValue(element: Element, url: string): void {
+    const mediaType = this.detectMediaType(url);
+    const parent = element.parentElement;
+    
+    if (!parent) {
+      this.log('Media element has no parent for replacement', element);
+      return;
+    }
+
+    // Remove existing media element
+    element.remove();
+
+    // Create appropriate media element
+    let mediaElement: HTMLElement;
+    
+    switch (mediaType) {
+      case 'video':
+        mediaElement = this.createVideoElement(url, element);
+        break;
+      case 'image':
+      default:
+        mediaElement = this.createImageElement(url, element);
+        break;
+    }
+
+    // Preserve classes and attributes from original element
+    this.transferAttributes(element, mediaElement);
+    
+    // Insert new media element
+    parent.appendChild(mediaElement);
+    
+    this.log(`Created ${mediaType} element for URL: ${url}`);
+  }
+
+  /**
+   * Detect media type from URL
+   */
+  private detectMediaType(url: string): 'image' | 'video' {
+    const urlLower = url.toLowerCase();
+    
+    // Video formats
+    const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.ogg'];
+    const isVideo = videoExtensions.some(ext => urlLower.includes(ext));
+    
+    // Special handling for Cloudinary video URLs
+    const isCloudinaryVideo = urlLower.includes('cloudinary.com/') && urlLower.includes('/video/');
+    
+    return (isVideo || isCloudinaryVideo) ? 'video' : 'image';
+  }
+
+  /**
+   * Create professional video element with fallback
+   */
+  private createVideoElement(url: string, originalElement: Element): HTMLVideoElement {
+    const video = document.createElement('video');
+    
+    // Professional video attributes
+    video.src = url;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+    video.controls = false;
+    
+    // Maintain aspect ratio and object-fit from original
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
+    video.style.borderRadius = 'inherit';
+    
+    // Error handling with fallback to poster or placeholder
+    video.onerror = () => {
+      this.log(`Video failed to load: ${url}`);
+      // Try to extract a thumbnail from Cloudinary video URL
+      const posterUrl = this.extractVideoThumbnail(url);
+      if (posterUrl) {
+        const fallbackImg = this.createImageElement(posterUrl, originalElement);
+        video.parentElement?.replaceChild(fallbackImg, video);
+      } else {
+        // Show placeholder
+        video.style.background = '#f3f4f6';
+        video.style.position = 'relative';
+        video.innerHTML = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#9ca3af;font-size:12px;">Video unavailable</div>';
+      }
+    };
+
+    // Auto-play on hover for better UX
+    video.addEventListener('mouseenter', () => {
+      video.currentTime = 0;
+      video.play().catch(() => {
+        // Ignore play errors (browser policies)
+      });
+    });
+
+    video.addEventListener('mouseleave', () => {
+      video.pause();
+      video.currentTime = 0;
+    });
+
+    return video;
+  }
+
+  /**
+   * Create professional image element with error handling
+   */
+  private createImageElement(url: string, originalElement: Element): HTMLImageElement {
+    const img = document.createElement('img');
+    
+    img.src = url;
+    img.alt = originalElement.getAttribute('alt') || 'Media content';
+    img.loading = 'lazy';
+    
+    // Maintain styling
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = 'inherit';
+    
+    // Professional error handling
+    img.onerror = () => {
+      this.log(`Image failed to load: ${url}`);
+      img.style.background = '#f3f4f6';
+      img.style.opacity = '0.5';
+      img.alt = 'Image unavailable';
+      
+      // Add broken image icon
+      img.style.position = 'relative';
+      const placeholder = document.createElement('div');
+      placeholder.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #9ca3af;
+        font-size: 12px;
+        text-align: center;
+      `;
+      placeholder.textContent = '🖼️ Image unavailable';
+      img.parentElement?.appendChild(placeholder);
+    };
+
+    return img;
+  }
+
+  /**
+   * Extract video thumbnail from Cloudinary URL
+   */
+  private extractVideoThumbnail(videoUrl: string): string | null {
+    if (videoUrl.includes('cloudinary.com/') && videoUrl.includes('/video/')) {
+      // Convert video URL to image thumbnail
+      return videoUrl
+        .replace('/video/', '/image/')
+        .replace(/\.(mp4|webm|mov|avi|mkv)$/i, '.jpg')
+        .replace('fl_progressive', 'f_auto,q_auto,c_fill');
+    }
+    return null;
+  }
+
+  /**
+   * Transfer attributes and classes from old element to new
+   */
+  private transferAttributes(from: Element, to: HTMLElement): void {
+    // Transfer classes
+    if (from.className) {
+      to.className = from.className;
+    }
+    
+    // Transfer data attributes (except contra-field)
+    Array.from(from.attributes).forEach(attr => {
+      if (attr.name.startsWith('data-') && attr.name !== `${ATTR_PREFIX}${ATTRS.field}`) {
+        to.setAttribute(attr.name, attr.value);
+      }
+    });
+    
+    // Transfer style
+    if (from.getAttribute('style')) {
+      const existingStyle = to.getAttribute('style') || '';
+      to.setAttribute('style', existingStyle + '; ' + from.getAttribute('style'));
     }
   }
 
