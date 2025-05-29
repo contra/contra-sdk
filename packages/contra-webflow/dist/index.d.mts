@@ -11,6 +11,11 @@ interface RuntimeConfig {
     autoReload?: boolean;
     debounceDelay?: number;
     maxRetries?: number;
+    videoAutoplay?: boolean;
+    videoHoverPlay?: boolean;
+    videoMuted?: boolean;
+    videoLoop?: boolean;
+    videoControls?: boolean;
 }
 /**
  * Main Runtime Class
@@ -61,6 +66,10 @@ declare class ContraWebflowRuntime {
      * Set element value with proper formatting
      */
     private setElementValue;
+    /**
+     * Professional star rating rendering
+     */
+    private renderStarRating;
     /**
      * Enterprise-grade media type detection and element handling
      */

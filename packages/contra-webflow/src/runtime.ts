@@ -23,6 +23,12 @@ interface RuntimeConfig {
   autoReload?: boolean;
   debounceDelay?: number;
   maxRetries?: number;
+  // Video configuration
+  videoAutoplay?: boolean;
+  videoHoverPlay?: boolean;
+  videoMuted?: boolean;
+  videoLoop?: boolean;
+  videoControls?: boolean;
 }
 
 // Attribute constants
@@ -111,6 +117,12 @@ export class ContraWebflowRuntime {
       autoReload: true,
       debounceDelay: 300,
       maxRetries: 3,
+      // Video configuration - Enterprise defaults
+      videoAutoplay: false,      // No autoplay by default (better UX)
+      videoHoverPlay: true,       // Hover to play by default
+      videoMuted: true,           // Muted for autoplay compatibility
+      videoLoop: true,            // Loop videos
+      videoControls: false,       // No controls for cleaner look
       ...config
     };
 
@@ -380,7 +392,7 @@ export class ContraWebflowRuntime {
     const starsElements = this.querySelectorAll(card, '[data-contra-stars]');
     starsElements.forEach(element => {
       if (expert.averageReviewScore) {
-        element.innerHTML = utils.renderStars(expert.averageReviewScore);
+        this.renderStarRating(element, expert.averageReviewScore);
       }
     });
   }
@@ -420,17 +432,63 @@ export class ContraWebflowRuntime {
           case 'rate':
             displayValue = utils.formatRate(typeof value === 'number' ? value : null);
             break;
+          case 'earnings':
+            // Format earnings like $25k+
+            if (typeof value === 'number') {
+              if (value >= 1000000) {
+                displayValue = `$${Math.floor(value / 1000000)}M+`;
+              } else if (value >= 1000) {
+                displayValue = `$${Math.floor(value / 1000)}k+`;
+              } else {
+                displayValue = `$${value}`;
+              }
+            }
+            break;
           case 'number':
             displayValue = typeof value === 'number' ? value.toLocaleString() : displayValue;
             break;
           case 'truncate':
             displayValue = displayValue.length > 100 ? displayValue.substring(0, 97) + '...' : displayValue;
             break;
+          case 'boolean':
+            displayValue = value ? 'Yes' : 'No';
+            break;
+          case 'availability':
+            displayValue = value ? 'Available' : 'Not Available';
+            break;
         }
       }
       
       element.textContent = displayValue;
     }
+  }
+
+  /**
+   * Professional star rating rendering
+   */
+  private renderStarRating(element: Element, rating: number): void {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    
+    let starsHtml = '';
+    
+    // Full stars
+    for (let i = 0; i < fullStars; i++) {
+      starsHtml += '<span class="contra-star contra-star-full">★</span>';
+    }
+    
+    // Half star
+    if (hasHalfStar) {
+      starsHtml += '<span class="contra-star contra-star-half">★</span>';
+    }
+    
+    // Empty stars
+    for (let i = 0; i < emptyStars; i++) {
+      starsHtml += '<span class="contra-star contra-star-empty">☆</span>';
+    }
+    
+    element.innerHTML = starsHtml;
   }
 
   /**
@@ -503,17 +561,23 @@ export class ContraWebflowRuntime {
     
     // Professional video attributes
     video.src = url;
-    video.muted = true;
-    video.loop = true;
+    video.muted = this.config.videoMuted;
+    video.loop = this.config.videoLoop;
     video.playsInline = true;
     video.preload = 'metadata';
-    video.controls = false;
+    video.controls = this.config.videoControls;
     
     // Maintain aspect ratio and object-fit from original
     video.style.width = '100%';
     video.style.height = '100%';
     video.style.objectFit = 'cover';
     video.style.borderRadius = 'inherit';
+    
+    // Autoplay configuration
+    if (this.config.videoAutoplay) {
+      video.autoplay = true;
+      video.setAttribute('autoplay', '');
+    }
     
     // Error handling with fallback to poster or placeholder
     video.onerror = () => {
@@ -531,18 +595,20 @@ export class ContraWebflowRuntime {
       }
     };
 
-    // Auto-play on hover for better UX
-    video.addEventListener('mouseenter', () => {
-      video.currentTime = 0;
-      video.play().catch(() => {
-        // Ignore play errors (browser policies)
+    // Hover-to-play functionality (if enabled and not autoplay)
+    if (this.config.videoHoverPlay && !this.config.videoAutoplay) {
+      video.addEventListener('mouseenter', () => {
+        video.currentTime = 0;
+        video.play().catch(() => {
+          // Ignore play errors (browser policies)
+        });
       });
-    });
 
-    video.addEventListener('mouseleave', () => {
-      video.pause();
-      video.currentTime = 0;
-    });
+      video.addEventListener('mouseleave', () => {
+        video.pause();
+        video.currentTime = 0;
+      });
+    }
 
     return video;
   }
