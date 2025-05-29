@@ -43,7 +43,8 @@
         📡 CDN: https://cdn.jsdelivr.net/gh/javron/contra-sdk@main/packages/contra-webflow/dist/runtime.min.js<br>
         🔧 OpenAPI 3.0.3 Compliant Implementation<br>
         🔗 API Base: https://contra.com/public-api/programs/spline_expert/experts<br>
-        🔑 Headers: Accept: application/json, X-API-key: [configured]
+        🔑 Headers: Accept: application/json, X-API-key: [configured]<br>
+        ⚡ Cache-busted: v2.1
     </div>
 
     <!-- Test API Direct Button -->
@@ -142,12 +143,27 @@
         </div>
     </div>
 
-    <!-- FIXED: Use our professional SDK from CDN -->
-    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@main/packages/contra-webflow/dist/runtime.min.js"></script>
+    <!-- SDK Script from CDN with cache-busting -->
+    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@main/packages/contra-webflow/dist/runtime.min.js?v=2.1"></script>
     
     <script>
         // Simple modal controls (SDK handles the data)
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 DOM Loaded, checking config...');
+            
+            // Debug config parsing
+            const configElement = document.getElementById('contra-config');
+            if (configElement) {
+                try {
+                    const config = JSON.parse(configElement.textContent);
+                    console.log('✅ Config parsed successfully:', config);
+                } catch (error) {
+                    console.error('❌ Config parsing failed:', error);
+                }
+            } else {
+                console.error('❌ No config element found');
+            }
+            
             const modal = document.getElementById('contra-modal');
             const openBtn = document.getElementById('contra-open-filters');
             const saveBtn = document.getElementById('saveFilters');
@@ -159,13 +175,26 @@
                 console.log('🧪 Testing API Direct Call...');
                 
                 // Get config (same as working example)
-                const config = JSON.parse(document.getElementById('contra-config').textContent);
-                const { program, apiKey } = config;
-                
                 try {
+                    const configElement = document.getElementById('contra-config');
+                    if (!configElement) {
+                        alert('❌ No config element found!');
+                        return;
+                    }
+                    
+                    const config = JSON.parse(configElement.textContent);
+                    const { program, apiKey } = config;
+                    
+                    if (!program) {
+                        alert('❌ No program in config!');
+                        console.error('Config:', config);
+                        return;
+                    }
+                    
+                    console.log('✅ Config loaded:', { program, apiKey: apiKey.substring(0, 20) + '...' });
+                    
                     const url = `https://contra.com/public-api/programs/${program}/experts?limit=5`;
                     console.log('📡 Testing URL:', url);
-                    console.log('🔑 API Key:', apiKey.substring(0, 20) + '...');
                     
                     const response = await fetch(url, {
                         method: 'GET',

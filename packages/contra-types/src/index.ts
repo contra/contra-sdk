@@ -147,7 +147,7 @@ export interface FilterListResponse {
 export interface ClientConfig {
   /** API key for authentication */
   apiKey: string;
-  /** Base URL for API (defaults to https://api.contra.com) */
+  /** Base URL for API (defaults to https://contra.com) */
   baseUrl?: string;
   /** Request timeout in milliseconds */
   timeout?: number;

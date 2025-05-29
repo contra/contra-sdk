@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contra SDK v2.1 - Cache Busted Test</title>
+    <style>
+        body { font-family: system-ui; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .debug { background: #f0f9ff; padding: 16px; border-radius: 8px; margin: 16px 0; font-family: monospace; font-size: 14px; }
+        .success { background: #dcfce7; color: #166534; }
+        .error { background: #fee2e2; color: #dc2626; }
+        .button { background: #2563eb; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; margin: 8px; }
+        .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <!-- Configuration for SDK -->
+    <script id="contra-config" type="application/json">
+    {
+        "program": "spline_expert",
+        "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
+        "debug": true
+    }
+    </script>
+
+    <h1>🧪 Contra SDK v2.1 - Cache Busted Test</h1>
+    
+    <div class="debug">
+        ✅ Professional SDK with cache-busted CDN<br>
+        🔗 Base URL: https://contra.com (fixed)<br>
+        🔑 Headers: X-API-key (fixed case)<br>
+        ⚡ Cache: Purged via jsDelivr API<br>
+        🕐 Test Time: 2025-05-29 14:52
+    </div>
+
+    <div>
+        <button id="test-direct" class="button">🧪 Test Direct API</button>
+        <button id="test-sdk" class="button">🔧 Test Full SDK</button>
+        <button id="clear-all" class="button">🗑️ Clear All</button>
+    </div>
+
+    <div id="results"></div>
+
+    <!-- Expert Directory Container -->
+    <div data-contra-program="spline_expert" data-contra-limit="10">
+        <!-- Template -->
+        <div data-contra-template class="card" style="display: none;">
+            <h4 data-contra-field="name"></h4>
+            <p data-contra-field="oneLiner"></p>
+            <div>Rate: <span data-contra-field="hourlyRateUSD" data-contra-format="rate"></span></div>
+        </div>
+        
+        <!-- Loading State -->
+        <div data-contra-loading class="debug" style="display: none;">
+            🔄 Loading experts...
+        </div>
+        
+        <!-- Error State -->
+        <div data-contra-error class="error" style="display: none;"></div>
+        
+        <!-- Empty State -->
+        <div data-contra-empty class="debug" style="display: none;">
+            No experts found.
+        </div>
+    </div>
+
+    <!-- SDK with commit hash to bypass ALL caching -->
+    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@5a78ec69b0aa56fb102554646fa7f40e051bdbe0/packages/contra-webflow/dist/runtime.min.js"></script>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(type, message, data = null) {
+            const div = document.createElement('div');
+            div.className = `debug ${type}`;
+            div.innerHTML = `${message}${data ? '<br><pre>' + JSON.stringify(data, null, 2) + '</pre>' : ''}`;
+            results.appendChild(div);
+        }
+
+        // Test Direct API Call
+        document.getElementById('test-direct').onclick = async () => {
+            addResult('', '🧪 Testing Direct API Call...');
+            
+            try {
+                const configElement = document.getElementById('contra-config');
+                const config = JSON.parse(configElement.textContent);
+                const { program, apiKey } = config;
+                
+                addResult('', `📋 Config: program=${program}, apiKey=${apiKey.substring(0, 20)}...`);
+                
+                const url = `https://contra.com/public-api/programs/${program}/experts?limit=3`;
+                addResult('', `📡 URL: ${url}`);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-API-key': apiKey
+                    }
+                });
+                
+                addResult('', `📊 Status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('success', `✅ API SUCCESS: Found ${data.data?.length || 0} experts`, { 
+                        totalCount: data.totalCount,
+                        firstExpert: data.data?.[0]?.name 
+                    });
+                } else {
+                    const errorText = await response.text();
+                    addResult('error', `❌ API FAILED: ${response.status}`, errorText);
+                }
+            } catch (error) {
+                addResult('error', `❌ ERROR: ${error.message}`, error);
+            }
+        };
+
+        // Test Full SDK
+        document.getElementById('test-sdk').onclick = () => {
+            addResult('', '🔧 Testing Full SDK...');
+            
+            if (window.contraRuntime) {
+                addResult('success', '✅ SDK Runtime found', {
+                    runtime: typeof window.contraRuntime,
+                    config: window.contraRuntime.config
+                });
+            } else {
+                addResult('error', '❌ SDK Runtime not found');
+            }
+        };
+
+        // Clear results
+        document.getElementById('clear-all').onclick = () => {
+            results.innerHTML = '';
+        };
+
+        // SDK Event Listeners
+        document.addEventListener('contra:expertsLoaded', (e) => {
+            addResult('success', '🎉 SDK Event: Experts Loaded', {
+                count: e.detail.experts.length,
+                experts: e.detail.experts.map(ex => ex.name)
+            });
+        });
+
+        document.addEventListener('contra:expertsError', (e) => {
+            addResult('error', '💥 SDK Event: Error', e.detail);
+        });
+
+        // Initial test
+        setTimeout(() => {
+            addResult('', '🚀 Page loaded, SDK should auto-initialize...');
+        }, 1000);
+    </script>
+</body>
+</html> 
