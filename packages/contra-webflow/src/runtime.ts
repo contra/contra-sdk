@@ -800,7 +800,7 @@ export class ContraWebflowRuntime {
     const restOfCondition = parts.slice(1).join(':'); // Handle colons in values
     const expertValue = (expert as any)[field];
     
-    this.log(`Evaluating condition: ${field} (${expertValue}) ${condition}`);
+    this.log(`Evaluating condition: ${field} (${expertValue}, type: ${typeof expertValue}) against ${restOfCondition}`);
     
     if (expertValue == null) {
       this.log(`Field '${field}' is null/undefined, condition fails`);
@@ -829,11 +829,33 @@ export class ContraWebflowRuntime {
       this.log(`Comparison: ${expertValue} < ${value} = ${result}`);
       return result;
     } else {
-      // Direct value comparison
-      const expertStr = String(expertValue);
-      const valueStr = String(restOfCondition);
-      const result = expertStr.toLowerCase() === valueStr.toLowerCase();
-      this.log(`Direct comparison: '${expertStr}' === '${valueStr}' = ${result}`);
+      // Direct value comparison with type-aware handling
+      let result = false;
+      
+      // Handle boolean fields specially
+      if (typeof expertValue === 'boolean') {
+        // Convert string condition to boolean for comparison
+        if (restOfCondition.toLowerCase() === 'true') {
+          result = expertValue === true;
+        } else if (restOfCondition.toLowerCase() === 'false') {
+          result = expertValue === false;
+        } else {
+          result = false;
+        }
+        this.log(`Boolean comparison: ${expertValue} === ${restOfCondition.toLowerCase() === 'true'} = ${result}`);
+      } else if (typeof expertValue === 'number') {
+        // Handle numeric comparisons
+        const numValue = Number(restOfCondition);
+        result = !isNaN(numValue) && expertValue === numValue;
+        this.log(`Number comparison: ${expertValue} === ${numValue} = ${result}`);
+      } else {
+        // String comparison (case-insensitive)
+        const expertStr = String(expertValue);
+        const valueStr = String(restOfCondition);
+        result = expertStr.toLowerCase() === valueStr.toLowerCase();
+        this.log(`String comparison: '${expertStr}' === '${valueStr}' = ${result}`);
+      }
+      
       return result;
     }
   }
@@ -950,14 +972,39 @@ export class ContraWebflowRuntime {
     const state = this.state.getState(programId);
     const newFilters = { ...state.filters };
 
+    // Handle special cases for filter value conversion
+    let processedValue = value;
+    
+    if (filterKey === 'available') {
+      // Convert string values to boolean for availability filter
+      if (typeof value === 'string') {
+        if (value === 'true') {
+          processedValue = true;
+        } else if (value === 'false') {
+          processedValue = false;
+        } else if (value === '' || value === null) {
+          processedValue = undefined; // No filter
+        }
+      }
+    } else if (filterKey === 'minRate' || filterKey === 'maxRate') {
+      // Convert empty strings to undefined for rate filters
+      if (value === '' || value === null) {
+        processedValue = undefined;
+      } else {
+        processedValue = Number(value);
+      }
+    }
+
     if (type === 'append' && Array.isArray(newFilters[filterKey as keyof ExpertFilters])) {
       const currentArray = newFilters[filterKey as keyof ExpertFilters] as any[];
-      newFilters[filterKey as keyof ExpertFilters] = [...currentArray, value] as any;
+      newFilters[filterKey as keyof ExpertFilters] = [...currentArray, processedValue] as any;
     } else {
-      (newFilters as any)[filterKey] = value;
+      (newFilters as any)[filterKey] = processedValue;
     }
 
     this.state.updateState(programId, { filters: newFilters });
+    
+    this.log(`Filter updated: ${filterKey} = ${processedValue} (original: ${value})`);
     
     // Dispatch filter change event
     const event: FilterChangeEvent = {

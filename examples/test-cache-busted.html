@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contra Expert Directory - SDK v2.1</title>
+    <title>Contra Expert Directory - Complete SDK Showcase</title>
     <style>
         body { 
             font-family: system-ui, -apple-system, sans-serif; 
@@ -17,6 +17,8 @@
         .contra-toolbar {
             display: flex;
             margin: 2rem 0;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
         
         .contra-filter-btn {
@@ -26,14 +28,17 @@
             padding: .5rem 1rem;
             font-weight: 600;
             cursor: pointer;
-            margin-right: 1rem;
+        }
+        
+        .contra-filter-btn:hover {
+            background: #e4e7ec;
         }
         
         /* Expert Cards */
         .contra-card {
             border: 1px solid #e4e7ec;
             border-radius: 16px;
-            padding: 1.25rem;
+            padding: 1.5rem;
             margin-bottom: 1.5rem;
             display: flex;
             flex-direction: column;
@@ -47,52 +52,57 @@
             transform: translateY(-2px);
         }
         
-        .contra-card-top {
+        .contra-card-header {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 1rem;
         }
         
         .contra-avatar {
-            width: 56px;
-            height: 56px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
         }
         
-        .contra-name-wrap {
+        .contra-expert-info {
             flex: 1;
         }
         
         .contra-name {
             margin: 0;
-            font-size: 1rem;
+            font-size: 1.125rem;
             font-weight: 600;
             color: #111827;
+        }
+        
+        .contra-tagline {
+            margin: 4px 0 8px 0;
+            font-size: .875rem;
+            color: #667085;
+            line-height: 1.4;
         }
         
         .contra-location {
             margin: 0;
             font-size: .875rem;
             color: #6b7280;
-            margin-top: 2px;
-        }
-        
-        .contra-tag {
-            margin: 0;
-            font-size: .875rem;
-            color: #667085;
-            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         
         /* Availability */
-        .contra-availability-wrapper {
+        .contra-availability {
             display: flex;
             align-items: center;
             gap: 6px;
             margin-left: auto;
-            margin-right: 1rem;
+            padding: 4px 12px;
+            background: #ecfdf5;
+            border: 1px solid #d1fae5;
+            border-radius: 16px;
         }
         
         .contra-availability-dot {
@@ -100,87 +110,29 @@
             height: 8px;
             background: #10b981;
             border-radius: 50%;
-            flex-shrink: 0;
         }
         
         .contra-availability-text {
-            font-size: .875rem;
-            color: #10b981;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        
-        .contra-cta {
-            background: #111827;
-            color: #fff;
-            padding: .5rem 1rem;
-            border-radius: 24px;
-            font-size: .875rem;
-            text-decoration: none;
-            transition: background 0.2s ease;
-            flex-shrink: 0;
-        }
-        
-        .contra-cta:hover {
-            background: #374151;
-        }
-        
-        /* Stats */
-        .contra-stats {
-            display: flex;
-            gap: 1.5rem;
             font-size: .75rem;
-            color: #667085;
-            flex-wrap: wrap;
+            color: #059669;
+            font-weight: 500;
+        }
+        
+        /* Rating Display */
+        .contra-rating-display {
+            display: flex;
             align-items: center;
-            padding: 12px 0;
-            border-top: 1px solid #f3f4f6;
-            border-bottom: 1px solid #f3f4f6;
-            margin: 12px 0;
-        }
-        
-        .contra-stat {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-            font-weight: 600;
-            color: #111827;
-        }
-        
-        .contra-stat-label {
-            font-weight: 400;
-            color: #6b7280;
-        }
-        
-        .contra-stat-divider {
-            color: #e5e7eb;
-            margin: 0 -8px;
-        }
-        
-        /* Rate section */
-        .contra-rate-wrapper {
-            display: flex;
-            align-items: baseline;
             gap: 8px;
-            margin-bottom: 12px;
+            margin: 8px 0;
         }
         
-        .contra-rate {
-            font-weight: 600;
-            color: #111827;
-            font-size: 1rem;
+        .contra-stars {
+            display: flex;
+            gap: 1px;
         }
         
-        .contra-rate-label {
-            font-size: .875rem;
-            color: #6b7280;
-        }
-        
-        /* Star ratings */
         .contra-star {
-            color: #fbbf24;
             font-size: 14px;
-            margin-right: 1px;
         }
         
         .contra-star-full {
@@ -189,75 +141,247 @@
         
         .contra-star-half {
             color: #fbbf24;
-            position: relative;
-        }
-        
-        .contra-star-half::after {
-            content: '☆';
-            position: absolute;
-            left: 0;
-            color: #e5e7eb;
-            width: 50%;
-            overflow: hidden;
         }
         
         .contra-star-empty {
             color: #e5e7eb;
         }
         
+        .contra-rating-text {
+            font-size: .875rem;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        /* Stats Grid */
+        .contra-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            padding: 1rem 0;
+            border-top: 1px solid #f3f4f6;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .contra-stat {
+            text-align: center;
+        }
+        
+        .contra-stat-value {
+            display: block;
+            font-weight: 600;
+            font-size: 1.125rem;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+        
+        .contra-stat-label {
+            font-size: .75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Rate Section */
+        .contra-rate-section {
+            margin: 12px 0;
+        }
+        
+        .contra-rate {
+            font-weight: 600;
+            color: #111827;
+            font-size: 1rem;
+        }
+        
+        /* Skill Tags */
+        .contra-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 12px 0;
+        }
+        
+        .contra-skill-tag {
+            background: #f3f4f6;
+            color: #374151;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: .75rem;
+            font-weight: 500;
+        }
+        
         /* Projects Grid */
         .contra-projects {
+            margin-top: 1rem;
+        }
+        
+        .contra-projects-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .contra-projects-title {
+            font-size: .875rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
+        
+        .contra-projects-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: .5rem;
-            margin-top: 0.5rem;
+            gap: 8px;
         }
         
-        .contra-projects:empty {
-            display: none;
-        }
-        
-        .contra-thumb-link {
-            display: block;
+        .contra-project-item {
+            position: relative;
             border-radius: 8px;
             overflow: hidden;
+            aspect-ratio: 4/3;
+        }
+        
+        .contra-project-link {
+            display: block;
+            width: 100%;
+            height: 100%;
             text-decoration: none;
+        }
+        
+        .contra-project-media {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             transition: transform 0.2s ease;
         }
         
-        .contra-thumb-link:hover {
-            transform: scale(1.02);
+        .contra-project-link:hover .contra-project-media {
+            transform: scale(1.05);
         }
         
-        .contra-thumb {
-            width: 100%;
-            aspect-ratio: 4/3;
-            object-fit: cover;
-            border-radius: 8px;
-            transition: opacity 0.3s ease;
+        .contra-project-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: white;
+            padding: 8px;
+            font-size: .75rem;
+            font-weight: 500;
         }
         
-        .contra-thumb:hover {
-            opacity: 0.9;
+        /* Social Links */
+        .contra-social-links {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
         }
         
-        /* View more button */
-        .contra-view-more {
+        .contra-social-link {
             display: flex;
             align-items: center;
-            justify-content: center;
-            border: 1px dashed #d0d5dd;
-            border-radius: 8px;
-            color: #475467;
-            font-size: .875rem;
-            aspect-ratio: 4/3;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
             text-decoration: none;
+            font-size: .75rem;
+            color: #374151;
             transition: all 0.2s ease;
         }
         
-        .contra-view-more:hover {
-            border-color: #9ca3af;
+        .contra-social-link:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+        
+        /* Actions */
+        .contra-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+        
+        .contra-cta {
+            background: #111827;
+            color: #fff;
+            padding: .75rem 1.5rem;
+            border-radius: 8px;
+            font-size: .875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .contra-cta:hover {
+            background: #374151;
+        }
+        
+        .contra-cta-secondary {
             background: #f9fafb;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .contra-cta-secondary:hover {
+            background: #f3f4f6;
+        }
+        
+        /* Pagination & Info */
+        .contra-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .contra-pagination-info {
+            font-size: .875rem;
+            color: #6b7280;
+        }
+        
+        .contra-pagination-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .contra-pagination-btn {
+            padding: 8px 16px;
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: .875rem;
+            color: #374151;
+        }
+        
+        .contra-pagination-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .contra-pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Filter Summary */
+        .contra-filter-summary {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 16px 0;
+            font-size: .875rem;
+            color: #1e40af;
         }
         
         /* Loading and Error States */
@@ -274,7 +398,7 @@
             background: #fee2e2;
             color: #dc2626;
             padding: 16px;
-            border-radius: 6px;
+            border-radius: 8px;
             margin: 16px 0;
         }
         
@@ -342,8 +466,10 @@
             background: #fff;
             border-radius: 12px;
             padding: 2rem;
-            max-width: 460px;
+            max-width: 500px;
             width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 1rem;
@@ -378,19 +504,27 @@
         
         /* Responsive Design */
         @media (max-width: 768px) {
-            .contra-projects {
+            .contra-projects-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
             
-            .contra-card-top {
+            .contra-card-header {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 0.5rem;
             }
             
-            .contra-cta {
-                margin-left: 0;
-                align-self: flex-start;
+            .contra-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .contra-projects-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .contra-stats {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -399,7 +533,6 @@
     <!-- Configuration for SDK -->
     <script id="contra-config" type="application/json">
     {
-        "program": "spline_expert",
         "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
         "debug": true,
         "videoAutoplay": false,
@@ -409,106 +542,131 @@
         "videoControls": false
     }
     </script>
-    
-    <!-- 
-    ============================================
-    ENTERPRISE VIDEO CONFIGURATION OPTIONS:
-    ============================================
-    
-    The SDK automatically detects MP4/video content and creates proper <video> elements.
-    
-    Options:
-    - videoAutoplay: false    // Set to true for automatic playback
-    - videoHoverPlay: true    // Videos play on hover (ignored if autoplay is true)
-    - videoMuted: true        // Required for autoplay in most browsers
-    - videoLoop: true         // Videos loop continuously
-    - videoControls: false    // Set to true to show video controls
-    
-    Example for autoplay videos:
-    "videoAutoplay": true,
-    "videoHoverPlay": false,  // Hover play is disabled when autoplay is on
-    
-    ============================================
-    -->
 
-    <h1>🚀 Contra Expert Directory</h1>
+    <h1>🚀 Contra Expert Directory - Complete SDK Showcase</h1>
     
     <div class="debug-panel">
-        <h3>SDK Status & Debugging</h3>
-        ✅ Professional SDK v2.1 with attribute-driven approach<br>
+        <h3>SDK Status & Features</h3>
+        ✅ Complete Webflow SDK with all features<br>
         🔗 API: https://contra.com/public-api/programs/spline_expert/experts<br>
         🔑 Auth: X-API-key header<br>
-        📦 Features: Auto MP4/video handling, projects grid, filtering, infinite scroll<br>
-        🎬 Video Config: Hover-to-play (default), configurable autoplay<br>
-        ⭐ Enhanced Fields: Location, earnings, star ratings, availability status
+        📦 Features: Decimal ratings, project titles, availability, social links, skill tags<br>
+        🎬 Video Config: Auto MP4/video detection with hover-to-play<br>
+        ⭐ Enhanced: Professional formatting, conditional display, pagination
         
         <div style="margin-top: 12px;">
             <button id="test-direct" class="debug-button">🧪 Test Direct API</button>
             <button id="test-sdk" class="debug-button">🔧 Inspect SDK</button>
+            <button id="test-availability" class="debug-button">✅ Test Availability</button>
             <button id="clear-debug" class="debug-button">🗑️ Clear</button>
         </div>
         <div id="debug-results"></div>
     </div>
 
+    <!-- Filter Summary -->
+    <div data-contra-filter-summary class="contra-filter-summary">
+        No filters applied
+    </div>
+
     <!-- Toolbar -->
     <div class="contra-toolbar">
-        <button id="contra-open-filters" class="contra-filter-btn">🜜 Filters</button>
+        <button id="contra-open-filters" class="contra-filter-btn">🎛️ Filters</button>
         <button id="reload-experts" class="contra-filter-btn">🔄 Reload</button>
+        <button data-contra-action="clear-filters" class="contra-filter-btn">🗑️ Clear Filters</button>
     </div>
 
     <!-- Expert Directory Container -->
-    <div data-contra-program="spline_expert" data-contra-limit="20">
+    <div data-contra-program="spline_expert" data-contra-limit="10">
         <!-- Expert Card Template -->
-        <div data-contra-template class="contra-card" style="display: none;">
-            <div class="contra-card-top">
-                <img data-contra-field="avatarUrl" class="contra-avatar" alt="Expert Avatar">
-                <div class="contra-name-wrap">
-                    <h4 data-contra-field="name" class="contra-name">Expert Name</h4>
-                    <p data-contra-field="location" class="contra-location">Location</p>
+        <article data-contra-template class="contra-card" style="display: none;">
+            <header class="contra-card-header">
+                <img data-contra-field="avatarUrl" class="contra-avatar" alt="Expert Avatar" loading="lazy">
+                <div class="contra-expert-info">
+                    <h3 data-contra-field="name" class="contra-name">Expert Name</h3>
+                    <p data-contra-field="tagline" class="contra-tagline">Professional tagline</p>
+                    <p class="contra-location">
+                        📍 <span data-contra-field="location">Location</span>
+                    </p>
                 </div>
-                <div class="contra-availability-wrapper">
-                    <span class="contra-availability-dot" data-contra-show-when="available:true"></span>
-                    <span class="contra-availability-text" data-contra-show-when="available:true">Available Now</span>
+                <div data-contra-show-when="available:true" class="contra-availability">
+                    <div class="contra-availability-dot"></div>
+                    <span class="contra-availability-text">Available Now</span>
                 </div>
-                <a data-contra-field="inquiryUrl" class="contra-cta" target="_blank" rel="noopener">Message</a>
+            </header>
+
+            <!-- Rating Display with Decimal Formatting -->
+            <div class="contra-rating-display">
+                <div data-contra-stars class="contra-stars"></div>
+                <span data-contra-rating-text class="contra-rating-text">0.0</span>
+                <span style="font-size: .875rem; color: #6b7280;">
+                    (<span data-contra-field="reviewsCount">0</span> reviews)
+                </span>
             </div>
 
+            <!-- Rate Section -->
+            <div class="contra-rate-section" data-contra-hide-when="hourlyRateUSD:null">
+                <span data-contra-field="hourlyRateUSD" data-contra-format="rate" class="contra-rate">$0/hr</span>
+            </div>
+
+            <!-- Stats Grid -->
             <div class="contra-stats">
-                <span class="contra-stat">
-                    <span data-contra-field="earningsUSD" data-contra-format="earnings">$0</span>
+                <div class="contra-stat">
+                    <span data-contra-field="earningsUSD" data-contra-format="earnings" class="contra-stat-value">$0</span>
                     <span class="contra-stat-label">Earned</span>
-                </span>
-                <span class="contra-stat-divider">|</span>
-                <span class="contra-stat">
-                    <span data-contra-field="projectsCompletedCount">0</span>x
-                    <span class="contra-stat-label">Hired</span>
-                </span>
-                <span class="contra-stat-divider">|</span>
-                <span class="contra-stat">
-                    <span data-contra-stars></span>
-                    <span data-contra-field="averageReviewScore">0</span>
-                    <span class="contra-stat-label">Rating</span>
-                </span>
-                <span class="contra-stat-divider">|</span>
-                <span class="contra-stat">
-                    <span data-contra-field="followersCount">0</span>
+                </div>
+                <div class="contra-stat">
+                    <span data-contra-field="projectsCompletedCount" data-contra-format="number" class="contra-stat-value">0</span>
+                    <span class="contra-stat-label">Projects</span>
+                </div>
+                <div class="contra-stat">
+                    <span data-contra-field="followersCount" data-contra-format="number" class="contra-stat-value">0</span>
                     <span class="contra-stat-label">Followers</span>
-                </span>
-                <span class="contra-stat-divider">|</span>
-                <span class="contra-stat">
-                    <span data-contra-field="hourlyRateUSD" data-contra-format="rate" class="contra-rate">$— /hr</span>
-                    <span class="contra-stat-label">Hourly rate</span>
-                </span>
+                </div>
+                <div class="contra-stat">
+                    <span data-contra-field="averageReviewScore" data-contra-format="rating" class="contra-stat-value">0.0</span>
+                    <span class="contra-stat-label">Rating</span>
+                </div>
             </div>
 
+            <!-- Skill Tags -->
+            <div class="contra-skills" data-contra-repeat="skillTags" data-contra-max="8">
+                <span data-contra-field="name" class="contra-skill-tag">Skill</span>
+            </div>
 
-            <!-- Projects Grid (up to 4 projects) -->
-            <div class="contra-projects" data-contra-repeat="projects" data-contra-max="4">
-                <a data-contra-field="projectUrl" class="contra-thumb-link" target="_blank" rel="noopener">
-                    <img data-contra-field="coverUrl" class="contra-thumb" loading="lazy" alt="Project">
+            <!-- Projects Section -->
+            <div class="contra-projects">
+                <div class="contra-projects-header">
+                    <h4 class="contra-projects-title">Recent Work</h4>
+                </div>
+                <div class="contra-projects-grid" data-contra-repeat="projects" data-contra-max="4">
+                    <div class="contra-project-item">
+                        <a data-contra-field="projectUrl" class="contra-project-link" target="_blank" rel="noopener">
+                            <img data-contra-field="coverUrl" class="contra-project-media" loading="lazy" alt="Project">
+                            <div class="contra-project-overlay">
+                                <div data-contra-field="title">Project Title</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Links -->
+            <div class="contra-social-links" data-contra-repeat="socialLinks" data-contra-max="5">
+                <a data-contra-field="url" class="contra-social-link" target="_blank" rel="noopener">
+                    🔗 <span data-contra-field="label">Social Platform</span>
                 </a>
             </div>
-        </div>
+
+            <!-- Actions -->
+            <div class="contra-actions">
+                <a data-contra-field="profileUrl" class="contra-cta" target="_blank" rel="noopener">
+                    View Profile
+                </a>
+                <a data-contra-field="inquiryUrl" class="contra-cta contra-cta-secondary" target="_blank" rel="noopener">
+                    Send Message
+                </a>
+            </div>
+        </article>
         
         <!-- Loading State -->
         <div data-contra-loading class="contra-loading">
@@ -520,35 +678,52 @@
         
         <!-- Empty State -->
         <div data-contra-empty class="contra-empty">
-            No experts match your criteria. Try adjusting your filters.
+            😔 No experts match your criteria. Try adjusting your filters.
         </div>
     </div>
 
-    <!-- Filters Modal -->
+    <!-- Pagination Controls -->
+    <div class="contra-pagination">
+        <div data-contra-pagination-info class="contra-pagination-info">
+            Loading...
+        </div>
+        <div class="contra-pagination-controls">
+            <button data-contra-action="prev-page" class="contra-pagination-btn">← Previous</button>
+            <button data-contra-action="next-page" class="contra-pagination-btn">Next →</button>
+        </div>
+    </div>
+
+    <!-- Comprehensive Filters Modal -->
     <div id="contra-modal" class="contra-modal">
         <div class="contra-modal-box">
-            <h3>Filters</h3>
+            <h3>🎛️ Expert Filters</h3>
 
             <label>Sort by
                 <select data-contra-filter="sortBy" class="contra-input">
                     <option value="relevance">Relevance</option>
                     <option value="newest">Newest</option>
                     <option value="oldest">Oldest</option>
+                    <option value="earnings">Highest Earnings</option>
+                    <option value="rating">Highest Rated</option>
                 </select>
             </label>
 
-            <label>Hourly rate</label>
+            <label>Hourly Rate Range</label>
             <div class="contra-range">
                 <input data-contra-filter="minRate" class="contra-input" type="number" placeholder="Min $" />
                 <input data-contra-filter="maxRate" class="contra-input" type="number" placeholder="Max $" />
             </div>
 
-            <label>
-                <input type="checkbox" data-contra-filter="available" value="true"> Available only
+            <label>Availability
+                <select data-contra-filter="available" class="contra-input">
+                    <option value="">All Experts</option>
+                    <option value="true">Available Only</option>
+                    <option value="false">Not Available</option>
+                </select>
             </label>
 
             <label>Location
-                <input data-contra-filter="location" class="contra-input" placeholder="e.g. San Francisco" />
+                <input data-contra-filter="location" class="contra-input" placeholder="e.g. San Francisco, Remote" />
             </label>
 
             <label>Languages
@@ -559,18 +734,30 @@
                     <option value="German">German</option>
                     <option value="Portuguese">Portuguese</option>
                     <option value="Italian">Italian</option>
+                    <option value="Chinese">Chinese</option>
+                    <option value="Japanese">Japanese</option>
                 </select>
-                <small>Select multiple with Cmd/Ctrl</small>
+                <small style="color: #6b7280;">Hold Cmd/Ctrl to select multiple</small>
+            </label>
+
+            <label>Minimum Rating
+                <select data-contra-filter="minRating" class="contra-input">
+                    <option value="">Any Rating</option>
+                    <option value="4.5">4.5+ Stars</option>
+                    <option value="4.0">4.0+ Stars</option>
+                    <option value="3.5">3.5+ Stars</option>
+                    <option value="3.0">3.0+ Stars</option>
+                </select>
             </label>
 
             <div class="contra-modal-actions">
-                <button id="clearFilters" class="contra-link">Clear all</button>
-                <button id="saveFilters" class="contra-cta">Apply</button>
+                <button id="clearFilters" class="contra-link">Clear all filters</button>
+                <button id="saveFilters" class="contra-cta">Apply Filters</button>
             </div>
         </div>
     </div>
 
-    <!-- SDK with commit hash for cache-busting -->
+    <!-- SDK with latest version -->
     <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js"></script>
     
     <script>
@@ -591,9 +778,9 @@
             try {
                 const configElement = document.getElementById('contra-config');
                 const config = JSON.parse(configElement.textContent);
-                const { program, apiKey } = config;
+                const { apiKey } = config;
                 
-                const url = `https://contra.com/public-api/programs/${program}/experts?limit=3`;
+                const url = `https://contra.com/public-api/programs/spline_expert/experts?limit=3`;
                 
                 const response = await fetch(url, {
                     headers: {
@@ -604,10 +791,17 @@
                 
                 if (response.ok) {
                     const data = await response.json();
+                    const firstExpert = data.data?.[0];
                     addDebugResult('success', `✅ API SUCCESS: Found ${data.data?.length || 0} experts`, { 
                         totalCount: data.totalCount,
-                        firstExpertProjects: data.data?.[0]?.projects?.length || 0,
-                        sampleProject: data.data?.[0]?.projects?.[0]
+                        firstExpert: {
+                            name: firstExpert?.name,
+                            available: firstExpert?.available,
+                            rating: firstExpert?.averageReviewScore,
+                            projects: firstExpert?.projects?.length || 0,
+                            skillTags: firstExpert?.skillTags?.length || 0,
+                            socialLinks: firstExpert?.socialLinks?.length || 0
+                        }
                     });
                 } else {
                     const errorText = await response.text();
@@ -622,14 +816,66 @@
             addDebugResult('', '🔧 Inspecting SDK Runtime...');
             
             if (window.contraRuntime) {
+                const expertCards = document.querySelectorAll('.contra-card:not([data-contra-template])');
+                const templates = document.querySelectorAll('[data-contra-template]');
+                
                 addDebugResult('success', '✅ SDK Runtime Active', {
                     clientBaseUrl: window.contraRuntime.client?.config?.baseUrl,
                     debug: window.contraRuntime.config?.debug,
                     expertContainers: document.querySelectorAll('[data-contra-program]').length,
-                    templates: document.querySelectorAll('[data-contra-template]').length
+                    templates: templates.length,
+                    renderedCards: expertCards.length,
+                    featuresDetected: {
+                        availability: document.querySelectorAll('[data-contra-show-when="available:true"]').length,
+                        ratings: document.querySelectorAll('[data-contra-stars]').length,
+                        ratingText: document.querySelectorAll('[data-contra-rating-text]').length,
+                        projects: document.querySelectorAll('[data-contra-repeat="projects"]').length,
+                        skillTags: document.querySelectorAll('[data-contra-repeat="skillTags"]').length,
+                        socialLinks: document.querySelectorAll('[data-contra-repeat="socialLinks"]').length
+                    }
                 });
             } else {
                 addDebugResult('error', '❌ SDK Runtime Not Found');
+            }
+        };
+
+        document.getElementById('test-availability').onclick = async () => {
+            addDebugResult('', '🧪 Testing Availability...');
+            
+            try {
+                const configElement = document.getElementById('contra-config');
+                const config = JSON.parse(configElement.textContent);
+                const { apiKey } = config;
+                
+                const url = `https://contra.com/public-api/programs/spline_expert/experts?limit=3`;
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-API-key': apiKey
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const firstExpert = data.data?.[0];
+                    addDebugResult('success', '✅ Availability Test Successful', { 
+                        totalCount: data.totalCount,
+                        firstExpert: {
+                            name: firstExpert?.name,
+                            available: firstExpert?.available,
+                            rating: firstExpert?.averageReviewScore,
+                            projects: firstExpert?.projects?.length || 0,
+                            skillTags: firstExpert?.skillTags?.length || 0,
+                            socialLinks: firstExpert?.socialLinks?.length || 0
+                        }
+                    });
+                } else {
+                    const errorText = await response.text();
+                    addDebugResult('error', `❌ Availability Test FAILED: ${response.status}`, errorText);
+                }
+            } catch (error) {
+                addDebugResult('error', `❌ ERROR: ${error.message}`, error);
             }
         };
 
@@ -679,25 +925,37 @@
             // Reload experts
             reloadBtn.onclick = () => {
                 if (window.contraRuntime) {
-                    window.contraRuntime.client.clearCache('experts:');
+                    window.contraRuntime.client.clearCache();
                     location.reload();
                 }
             };
 
-            addDebugResult('', '🚀 Page initialized - SDK should auto-load experts');
+            addDebugResult('', '🚀 Complete SDK showcase initialized');
         });
 
         // SDK Event Listeners
         document.addEventListener('contra:expertsLoaded', (e) => {
-            addDebugResult('success', '🎉 Experts Loaded by SDK', {
-                count: e.detail.experts.length,
+            const experts = e.detail.experts;
+            const availableCount = experts.filter(ex => ex.available).length;
+            const withProjects = experts.filter(ex => ex.projects?.length > 0).length;
+            const withSkills = experts.filter(ex => ex.skillTags?.length > 0).length;
+            
+            addDebugResult('success', '🎉 Experts Loaded with All Features', {
+                totalExperts: experts.length,
                 totalCount: e.detail.totalCount,
-                hasProjects: e.detail.experts.filter(ex => ex.projects?.length > 0).length
+                available: availableCount,
+                withProjects: withProjects,
+                withSkillTags: withSkills,
+                avgRating: (experts.reduce((sum, ex) => sum + (ex.averageReviewScore || 0), 0) / experts.length).toFixed(1)
             });
         });
 
         document.addEventListener('contra:expertsError', (e) => {
             addDebugResult('error', '💥 SDK Error', e.detail);
+        });
+
+        document.addEventListener('contra:filterChange', (e) => {
+            addDebugResult('', '🎛️ Filters Changed', e.detail.filters);
         });
     </script>
 </body>
