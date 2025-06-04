@@ -1,6 +1,6 @@
 /**
- * Professional Webflow Runtime for Contra Experts
- * Features: Performance optimization, advanced filtering, error handling, loading states
+ * Webflow Runtime for Contra Experts
+ * Features: Performance optimization, filtering, error handling, loading states
  */
 interface RuntimeConfig {
     apiKey: string;
@@ -67,15 +67,15 @@ declare class ContraWebflowRuntime {
      */
     private setElementValue;
     /**
-     * Professional star rating rendering
+     * Star rating rendering
      */
     private renderStarRating;
     /**
-     * Enterprise-grade media type detection and element handling
+     * Media type detection and element handling
      */
     private isMediaField;
     /**
-     * Professional media value setting with automatic type detection
+     * Media value setting with automatic type detection
      */
     private setMediaValue;
     /**
@@ -83,11 +83,11 @@ declare class ContraWebflowRuntime {
      */
     private detectMediaType;
     /**
-     * Create professional video element with fallback
+     * Create video element with fallback
      */
     private createVideoElement;
     /**
-     * Create professional image element with error handling
+     * Create image element with error handling
      */
     private createImageElement;
     /**

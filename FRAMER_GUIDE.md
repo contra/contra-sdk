@@ -12,9 +12,15 @@ Contact Contra to obtain:
 - **Program ID**: Your expert program identifier
 
 ### Step 2: Add Component to Framer
-1. Copy this URL: `https://framer.com/m/ExpertGrid-xxxx.js`
-2. In Framer, press `Cmd/Ctrl + V` to paste
-3. The component will appear in your Assets panel
+1. Open the `ExpertGridFramer.tsx` (for the full grid) or `ExpertCardFramer.tsx` (for a single card) file from the Contra SDK in a text editor.
+2. Select and copy the entire code content of the file.
+3. In your Framer project, create a new Code Component (Assets > Code > New Component).
+4. Give it a name (e.g., `ContraExpertGrid` or `ContraExpertCard`).
+5. Paste the copied code into the Framer code editor for this new component, replacing any default boilerplate code.
+6. The component will compile and should then appear in your Assets panel.
+7. **To get the shareable URL for this specific component in your project:** Once the component is created and working in your Framer project, right-click it in the Assets panel and select "Copy URL". Use this auto-generated URL for sharing or re-using within your Framer project if needed (though typically you drag from Assets).
+
+**(Note: The Framer-generated URL is for sharing the component *from your specific Framer project*. The primary method of use is copying the source code as described above.)**
 
 ### Step 3: Configure via Property Panel
 1. Select the component on canvas

@@ -1,15 +1,15 @@
 {
   "name": "@contra/webflow",
   "version": "1.0.0",
-  "description": "Professional attribute-driven Webflow runtime for Contra experts with advanced filtering, performance optimizations, and robust error handling",
+  "description": "Webflow runtime for embedding Contra expert directories with attribute-based templating",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     }
   },
   "files": [

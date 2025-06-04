@@ -1,8 +1,8 @@
-# Contra Expert Directory SDK - Webflow Runtime
+# Contra Webflow SDK
 
-**Enterprise-grade JavaScript SDK for embedding Contra expert directories in Webflow projects**
+JavaScript runtime for embedding Contra expert directories in Webflow projects.
 
-Version: 2.1.0 | License: MIT | Status: Production Ready
+Version: 1.0.0 | License: MIT
 
 ---
 
@@ -10,9 +10,9 @@ Version: 2.1.0 | License: MIT | Status: Production Ready
 
 1. [Quick Start](#quick-start)
 2. [Configuration](#configuration)
-3. [Core Attributes Reference](#core-attributes-reference)
+3. [Attributes Reference](#attributes-reference)
 4. [Advanced Features](#advanced-features)
-5. [Enterprise Media Handling](#enterprise-media-handling)
+5. [Media Handling](#media-handling)
 6. [Filtering & Search](#filtering--search)
 7. [Styling & Customization](#styling--customization)
 8. [Events & JavaScript API](#events--javascript-api)
@@ -33,34 +33,77 @@ Add this HTML structure to your Webflow page:
 <!-- Configuration Script (Required) -->
 <script id="contra-config" type="application/json">
 {
-  "program": "your_program_id",
-  "apiKey": "your_api_key",
-  "debug": false
+  "apiKey": "your_api_key",           // Required: Your API key
+  "debug": false,                     // Optional: Enable debug logging
+  "autoReload": true,                 // Optional: Auto-reload on filter changes
+  "debounceDelay": 300,              // Optional: Filter debounce delay (ms)
+  "maxRetries": 3,                   // Optional: API retry attempts
+  
+  // Video Configuration
+  "videoAutoplay": false,            // Optional: Auto-play videos
+  "videoHoverPlay": true,            // Optional: Play on hover
+  "videoMuted": true,               // Optional: Mute videos
+  "videoLoop": true,                // Optional: Loop videos
+  "videoControls": false            // Optional: Show video controls
 }
 </script>
 
-<!-- Expert Directory Container -->
-<div data-contra-program="your_program_id" data-contra-limit="20">
-  <!-- Expert Card Template -->
-  <div data-contra-template class="expert-card" style="display: none;">
-    <img data-contra-field="avatarUrl" class="avatar" alt="Expert Avatar">
-    <h3 data-contra-field="name" class="expert-name">Expert Name</h3>
-    <p data-contra-field="oneLiner" class="expert-bio">Expert Bio</p>
-    <a data-contra-field="inquiryUrl" class="cta-button" target="_blank">Contact</a>
+<!-- Program ID is specified on the container element -->
+<div data-contra-program="your_program_id">
+  <!-- Expert Directory Container -->
+  <div data-contra-program="your_program_id" data-contra-limit="20">
+    <!-- Expert Card Template -->
+    <article data-contra-template class="expert-card" style="display: none;">
+      <header class="expert-header">
+        <img data-contra-field="avatarUrl" class="expert-avatar" alt="Expert Profile" loading="lazy">
+        <div class="expert-info">
+          <h3 data-contra-field="name" class="expert-name">Expert Name</h3>
+          <p data-contra-field="location" class="expert-location">Location</p>
+          <p data-contra-field="oneLiner" class="expert-bio">Expert Bio</p>
+        </div>
+        <span data-contra-show-when="available:true" class="availability-badge">
+          Available
+        </span>
+      </header>
+      
+      <div class="expert-stats">
+        <div class="stat">
+          <span data-contra-field="earningsUSD" data-contra-format="earnings" class="stat-value">$0</span>
+          <span class="stat-label">Earned</span>
+        </div>
+        <div class="stat">
+          <div data-contra-stars class="star-rating"></div>
+          <span data-contra-field="averageReviewScore" class="rating-value">0</span>
+        </div>
+      </div>
+      
+      <footer class="expert-actions">
+        <a data-contra-field="profileUrl" class="profile-link" target="_blank" rel="noopener">
+          View Profile
+        </a>
+        <a data-contra-field="inquiryUrl" class="contact-btn" target="_blank" rel="noopener">
+          Contact Expert
+        </a>
+      </footer>
+    </article>
+    
+    <!-- Loading State -->
+    <div data-contra-loading class="loading-state" style="display: none;">
+      <div class="loading-spinner"></div>
+      <p>Loading experts...</p>
+    </div>
+    
+    <!-- Error State -->
+    <div data-contra-error class="error-state" style="display: none;"></div>
+    
+    <!-- Empty State -->
+    <div data-contra-empty class="empty-state" style="display: none;">
+      <p>No experts found matching your criteria.</p>
+    </div>
   </div>
-  
-  <!-- Loading State -->
-  <div data-contra-loading class="loading-state">Loading experts...</div>
-  
-  <!-- Error State -->
-  <div data-contra-error class="error-state"></div>
-  
-  <!-- Empty State -->
-  <div data-contra-empty class="empty-state">No experts found.</div>
-</div>
 
 <!-- SDK Runtime (Required) -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js"></script>
+<script src="https://unpkg.com/@contra/webflow@latest/dist/runtime.min.js"></script>
 ```
 
 ### 2. Get Your Credentials
@@ -75,19 +118,18 @@ Contact Contra to obtain:
 
 ### Global Configuration
 
-The SDK is configured via a JSON script tag with ID `contra-config`:
+Configure the SDK via a JSON script tag with ID `contra-config`:
 
 ```html
 <script id="contra-config" type="application/json">
 {
-  "program": "your_program_id",        // Required: Your program ID
   "apiKey": "your_api_key",           // Required: Your API key
   "debug": false,                     // Optional: Enable debug logging
   "autoReload": true,                 // Optional: Auto-reload on filter changes
   "debounceDelay": 300,              // Optional: Filter debounce delay (ms)
   "maxRetries": 3,                   // Optional: API retry attempts
   
-  // Video Configuration (Enterprise Feature)
+  // Video Configuration
   "videoAutoplay": false,            // Optional: Auto-play videos
   "videoHoverPlay": true,            // Optional: Play on hover
   "videoMuted": true,               // Optional: Mute videos
@@ -101,7 +143,6 @@ The SDK is configured via a JSON script tag with ID `contra-config`:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `program` | `string` | **Required** | Your Contra program identifier |
 | `apiKey` | `string` | **Required** | Your API authentication key |
 | `debug` | `boolean` | `false` | Enable console debugging |
 | `autoReload` | `boolean` | `true` | Auto-refresh when filters change |
@@ -115,7 +156,7 @@ The SDK is configured via a JSON script tag with ID `contra-config`:
 
 ---
 
-## 📖 Core Attributes Reference
+## 📖 Attributes Reference
 
 ### Container Attributes
 
@@ -238,7 +279,7 @@ The SDK is configured via a JSON script tag with ID `contra-config`:
 ```html
 <!-- Projects Grid -->
 <div data-contra-repeat="projects" data-contra-max="4" class="projects-grid">
-  <a data-contra-field="projectUrl" class="project-link" target="_blank">
+  <a data-contra-field="projectUrl" class="project-link" target="_blank" rel="noopener">
     <img data-contra-field="coverUrl" class="project-image" alt="Project">
     <h4 data-contra-field="title" class="project-title">Project Title</h4>
   </a>
@@ -251,8 +292,8 @@ The SDK is configured via a JSON script tag with ID `contra-config`:
 
 <!-- Social Links -->
 <div data-contra-repeat="socialLinks" class="social-links">
-  <a data-contra-field="url" data-contra-field-label="label" target="_blank">
-    Social Link
+  <a data-contra-field="url" target="_blank">
+    <span data-contra-field="label">Social Platform</span>
   </a>
 </div>
 ```
@@ -291,11 +332,23 @@ The SDK is configured via a JSON script tag with ID `contra-config`:
 ```
 
 **Condition Operators:**
-- `field:value` - Exact match
-- `field:>value` - Greater than
-- `field:<value` - Less than
-- `field:>=value` - Greater than or equal
-- `field:<=value` - Less than or equal
+- `field:value` - Exact match (case-insensitive)
+- `field:>value` - Greater than (numeric)
+- `field:<value` - Less than (numeric)
+- `field:>=value` - Greater than or equal (numeric)
+- `field:<=value` - Less than or equal (numeric)
+
+**Examples:**
+```html
+<!-- Show for available experts -->
+<span data-contra-show-when="available:true">Available Now</span>
+
+<!-- Show for high earners -->
+<span data-contra-show-when="earningsUSD:>100000">Top Earner</span>
+
+<!-- Hide if no rate specified -->
+<div data-contra-hide-when="hourlyRateUSD:null">Rate info</div>
+```
 
 ### Special Features
 
@@ -307,11 +360,47 @@ The SDK is configured via a JSON script tag with ID `contra-config`:
 </div>
 ```
 
+#### `data-contra-pagination-info`
+**Display pagination information**
+```html
+<div data-contra-pagination-info class="pagination-info">
+  <!-- Automatically shows "Page X of Y (Z total)" -->
+</div>
+```
+
+#### `data-contra-filter-summary`
+**Display active filters summary**
+```html
+<div data-contra-filter-summary class="filter-summary">
+  <!-- Shows currently applied filters -->
+</div>
+```
+
+### Action Buttons
+
+#### `data-contra-action`
+**Interactive action buttons**
+```html
+<!-- Pagination Actions -->
+<button data-contra-action="next-page">Next Page</button>
+<button data-contra-action="prev-page">Previous Page</button>
+
+<!-- Filter Actions -->
+<button data-contra-action="clear-filters">Clear All Filters</button>
+<button data-contra-action="reload">Reload Data</button>
+```
+
+**Available Actions:**
+- `next-page` - Load next page of results
+- `prev-page` - Load previous page of results
+- `clear-filters` - Remove all applied filters
+- `reload` - Clear cache and reload data
+
 ---
 
 ## 🎯 Advanced Features
 
-### Professional Project Layouts
+### Project Layouts
 
 #### Standard 4-Column Grid
 ```html
@@ -339,7 +428,7 @@ The SDK is configured via a JSON script tag with ID `contra-config`:
 </div>
 ```
 
-### Professional Stats Layout
+### Stats Layout
 
 ```html
 <div class="expert-stats">
@@ -365,22 +454,27 @@ The SDK is configured via a JSON script tag with ID `contra-config`:
 
 ---
 
-## 🎬 Enterprise Media Handling
+## 🎬 Media Handling
 
-The SDK automatically detects and handles different media types with professional fallbacks.
+The SDK automatically detects and handles different media types with fallbacks.
 
 ### Automatic Video Detection
 
-The SDK automatically converts MP4, WebM, and MOV URLs to proper `<video>` elements:
+The SDK automatically converts video URLs to proper `<video>` elements for project cover images:
 
 ```html
-<!-- This image tag will become a video element if coverUrl is a video -->
-<img data-contra-field="coverUrl" class="media-element" alt="Media">
+<!-- This will become a video element if coverUrl is a video -->
+<img data-contra-field="coverUrl" class="project-media" alt="Project Media">
+
+<!-- Avatar images remain as regular images -->
+<img data-contra-field="avatarUrl" class="avatar" alt="Expert Avatar">
 ```
 
-**Detected Video Formats:**
-- `.mp4`, `.webm`, `.mov`, `.avi`, `.mkv`, `.ogg`
-- Cloudinary video URLs
+**Video Detection:**
+- **Applies to**: `coverUrl` fields only (project media)
+- **Image fields**: `avatarUrl` and other image fields remain as standard images
+- **Supported formats**: `.mp4`, `.webm`, `.mov`, `.avi`, `.mkv`, `.ogg`
+- **Cloudinary**: Special handling for Cloudinary video URLs
 
 ### Video Configuration
 
@@ -396,7 +490,7 @@ Configure video behavior globally:
 }
 ```
 
-### Professional Video Features
+### Video Features
 
 - **Hover-to-Play**: Videos play on mouse hover (default behavior)
 - **Autoplay Support**: Configurable autoplay with mute
@@ -760,17 +854,16 @@ document.addEventListener('contra:filterChange', (event) => {
 Access the runtime programmatically:
 
 ```javascript
-// Access the global runtime instance
+// Access the global runtime instance (available after auto-initialization)
 const runtime = window.contraRuntime;
 
-// Clear cache and reload
-runtime.client.clearCache('experts:');
+// Clear cache for a specific program
+runtime.client.clearCache('experts:your_program_id');
 
-// Get cache statistics
-const stats = runtime.client.getCacheStats();
-console.log('Cache size:', stats.size);
+// Clear all cache
+runtime.client.clearCache();
 
-// Manual configuration
+// Manual initialization (if needed)
 const customRuntime = new ContraWebflowRuntime({
   apiKey: 'your-api-key',
   debug: true,
@@ -780,6 +873,14 @@ const customRuntime = new ContraWebflowRuntime({
 // Initialize manually
 customRuntime.init();
 ```
+
+**Available Methods:**
+- `runtime.client.clearCache(key?)` - Clear cached data
+- `runtime.init()` - Initialize the runtime
+- `runtime.log(message, ...args)` - Debug logging (when debug enabled)
+
+**Configuration:**
+The runtime is automatically initialized from the `#contra-config` script tag and exposed as `window.contraRuntime`.
 
 ### Debugging
 
@@ -804,13 +905,11 @@ Debug output includes:
 
 ### Intelligent Caching
 
-The SDK implements multi-level caching:
+The SDK implements caching via the underlying Contra client:
 
-| Cache Type | TTL | Purpose |
-|------------|-----|---------|
-| Experts | 5 minutes | Expert list data |
-| Program | 30 minutes | Program information |
-| Filters | 60 minutes | Available filter options |
+- **Request Deduplication**: Prevents duplicate API calls during the same session
+- **Cache Management**: Programmatic cache clearing for fresh data
+- **Performance**: Reduces API calls for repeated requests
 
 ### Cache Management
 
@@ -820,18 +919,15 @@ runtime.client.clearCache('experts:program_id');
 
 // Clear all cache
 runtime.client.clearCache();
-
-// Get cache statistics
-const stats = runtime.client.getCacheStats();
 ```
 
 ### Performance Features
 
 - **Request Deduplication**: Prevents duplicate API calls
-- **Exponential Backoff**: Smart retry logic for failed requests
+- **Debounced Filters**: Prevents excessive API calls during filtering (configurable delay)
 - **Lazy Loading**: Images and videos load on demand
-- **Debounced Filters**: Prevents excessive API calls during filtering
-- **CDN Optimization**: Served via jsDelivr CDN
+- **Error Handling**: Graceful fallbacks for failed media
+- **Auto-retry Logic**: Configurable retry attempts for failed requests
 
 ### Best Practices
 
@@ -855,7 +951,6 @@ const stats = runtime.client.getCacheStats();
 <!-- Check configuration -->
 <script id="contra-config" type="application/json">
 {
-  "program": "correct_program_id",
   "apiKey": "valid_api_key",
   "debug": true
 }
@@ -1073,7 +1168,7 @@ When reporting issues, include:
 
 ### Version Information
 
-- **SDK Version**: 2.1.0
+- **SDK Version**: 1.0.0
 - **API Version**: 1.0.0
 - **Last Updated**: 2024
 - **Compatibility**: Webflow, HTML, modern browsers
@@ -1086,4 +1181,4 @@ MIT License - See LICENSE file for details.
 
 ---
 
-*This documentation covers the complete Contra Expert Directory SDK for Webflow. For the latest updates and examples, visit the [GitHub repository](https://github.com/javron/contra-sdk).* 
+*This documentation covers the complete Contra Expert Directory SDK for Webflow. For the latest updates and support, contact your Contra integration manager.* 

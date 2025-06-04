@@ -9,8 +9,8 @@ import type {
 } from '@contra/types';
 
 /**
- * Professional Webflow Runtime for Contra Experts
- * Features: Performance optimization, advanced filtering, error handling, loading states
+ * Webflow Runtime for Contra Experts
+ * Features: Performance optimization, filtering, error handling, loading states
  */
 
 // Configuration interface
@@ -117,7 +117,7 @@ export class ContraWebflowRuntime {
       autoReload: true,
       debounceDelay: 300,
       maxRetries: 3,
-      // Video configuration - Enterprise defaults
+      // Video configuration defaults
       videoAutoplay: false,      // No autoplay by default (better UX)
       videoHoverPlay: true,       // Hover to play by default
       videoMuted: true,           // Muted for autoplay compatibility
@@ -403,7 +403,7 @@ export class ContraWebflowRuntime {
   private setElementValue(element: Element, value: any, format?: string | null): void {
     if (value == null || value === '') return;
 
-    // Professional media type detection and handling
+    // Media type detection and handling
     if (this.isMediaField(element) && typeof value === 'string' && value.trim()) {
       this.setMediaValue(element, value);
       return;
@@ -464,7 +464,7 @@ export class ContraWebflowRuntime {
   }
 
   /**
-   * Professional star rating rendering
+   * Star rating rendering
    */
   private renderStarRating(element: Element, rating: number): void {
     const fullStars = Math.floor(rating);
@@ -492,7 +492,7 @@ export class ContraWebflowRuntime {
   }
 
   /**
-   * Enterprise-grade media type detection and element handling
+   * Media type detection and element handling
    */
   private isMediaField(element: Element): boolean {
     const field = this.getAttr(element, ATTRS.field);
@@ -501,7 +501,7 @@ export class ContraWebflowRuntime {
   }
 
   /**
-   * Professional media value setting with automatic type detection
+   * Media value setting with automatic type detection
    */
   private setMediaValue(element: Element, url: string): void {
     const mediaType = this.detectMediaType(url);
@@ -559,12 +559,12 @@ export class ContraWebflowRuntime {
   }
 
   /**
-   * Create professional video element with fallback
+   * Create video element with fallback
    */
   private createVideoElement(url: string, originalElement: Element): HTMLVideoElement {
     const video = document.createElement('video');
     
-    // Professional video attributes
+    // Video attributes
     video.src = url;
     video.muted = this.config.videoMuted;
     video.loop = this.config.videoLoop;
@@ -619,7 +619,7 @@ export class ContraWebflowRuntime {
   }
 
   /**
-   * Create professional image element with error handling
+   * Create image element with error handling
    */
   private createImageElement(url: string, originalElement: Element): HTMLImageElement {
     const img = document.createElement('img');
@@ -634,7 +634,7 @@ export class ContraWebflowRuntime {
     img.style.objectFit = 'cover';
     img.style.borderRadius = 'inherit';
     
-    // Professional error handling
+    // Error handling
     img.onerror = () => {
       this.log(`Image failed to load: ${url}`);
       img.style.background = '#f3f4f6';
