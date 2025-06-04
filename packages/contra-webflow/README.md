@@ -322,7 +322,7 @@ Configure the SDK via a JSON script tag with ID `contra-config`:
 ```html
 <!-- Show availability indicator when expert is available -->
 <span data-contra-show-when="available:true" class="available-badge">
-  Available Now
+  🟢 Available Now
 </span>
 
 <!-- Show premium badge for high earners -->
@@ -330,6 +330,33 @@ Configure the SDK via a JSON script tag with ID `contra-config`:
   Top Earner
 </span>
 ```
+
+**Availability Examples:**
+```html
+<!-- Simple availability text (recommended) -->
+<span data-contra-show-when="available:true" class="availability-text">
+  Available
+</span>
+
+<!-- With styling -->
+<span data-contra-show-when="available:true" class="availability-badge">
+  🟢 Available Now
+</span>
+
+<!-- Custom availability message -->
+<div data-contra-show-when="available:true" class="availability-card">
+  <p>This expert is currently available for new projects!</p>
+</div>
+```
+
+**Debug Availability:**
+To troubleshoot availability display, enable debug mode:
+```json
+{
+  "debug": true
+}
+```
+This will log condition evaluations in the browser console.
 
 #### `data-contra-hide-when`
 **Hide element when condition is met**

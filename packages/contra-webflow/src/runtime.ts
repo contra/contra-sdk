@@ -789,26 +789,52 @@ export class ContraWebflowRuntime {
       return false;
     }
     
-    // Simple condition evaluation (can be extended)
-    // Format: "field:value" or "field:>value" or "field:<value"
-    const [field, operator, value] = condition.split(':');
+    // Parse condition: "field:value" or "field:>value" etc.
+    const parts = condition.split(':');
+    if (parts.length < 2) {
+      this.log('Invalid condition format:', condition);
+      return false;
+    }
+    
+    const field = parts[0];
+    const restOfCondition = parts.slice(1).join(':'); // Handle colons in values
     const expertValue = (expert as any)[field];
     
-    if (expertValue == null) return false;
+    this.log(`Evaluating condition: ${field} (${expertValue}) ${condition}`);
     
-    switch (operator) {
-      case '>':
-        return Number(expertValue) > Number(value);
-      case '<':
-        return Number(expertValue) < Number(value);
-      case '>=':
-        return Number(expertValue) >= Number(value);
-      case '<=':
-        return Number(expertValue) <= Number(value);
-      default:
-        const expertStr = String(expertValue);
-        const valueStr = String(value || '');
-        return expertStr.toLowerCase() === valueStr.toLowerCase();
+    if (expertValue == null) {
+      this.log(`Field '${field}' is null/undefined, condition fails`);
+      return false;
+    }
+    
+    // Check for comparison operators
+    if (restOfCondition.startsWith('>=')) {
+      const value = restOfCondition.substring(2);
+      const result = Number(expertValue) >= Number(value);
+      this.log(`Comparison: ${expertValue} >= ${value} = ${result}`);
+      return result;
+    } else if (restOfCondition.startsWith('<=')) {
+      const value = restOfCondition.substring(2);
+      const result = Number(expertValue) <= Number(value);
+      this.log(`Comparison: ${expertValue} <= ${value} = ${result}`);
+      return result;
+    } else if (restOfCondition.startsWith('>')) {
+      const value = restOfCondition.substring(1);
+      const result = Number(expertValue) > Number(value);
+      this.log(`Comparison: ${expertValue} > ${value} = ${result}`);
+      return result;
+    } else if (restOfCondition.startsWith('<')) {
+      const value = restOfCondition.substring(1);
+      const result = Number(expertValue) < Number(value);
+      this.log(`Comparison: ${expertValue} < ${value} = ${result}`);
+      return result;
+    } else {
+      // Direct value comparison
+      const expertStr = String(expertValue);
+      const valueStr = String(restOfCondition);
+      const result = expertStr.toLowerCase() === valueStr.toLowerCase();
+      this.log(`Direct comparison: '${expertStr}' === '${valueStr}' = ${result}`);
+      return result;
     }
   }
 
