@@ -67,7 +67,7 @@ declare class ContraWebflowRuntime {
      */
     private setElementValue;
     /**
-     * Star rating rendering
+     * Star rating rendering with optional text display
      */
     private renderStarRating;
     /**

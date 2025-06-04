@@ -214,20 +214,27 @@ Configure the SDK via a JSON script tag with ID `contra-config`:
 **Bind data fields to elements**
 
 **Available Fields:**
-- `name` - Expert's full name
-- `avatarUrl` - Profile image URL
-- `oneLiner` - Short bio/tagline
+- `name` - Expert name
+- `profileUrl` - Link to expert profile
+- `inquiryUrl` - Link to send inquiry
+- `avatarUrl` - Profile image
+- `tagline` - Professional tagline
 - `location` - Geographic location
-- `profileUrl` - Contra profile URL
-- `inquiryUrl` - Contact/inquiry URL
 - `hourlyRateUSD` - Hourly rate in USD
 - `earningsUSD` - Total earnings
-- `projectsCompletedCount` - Number of projects completed
+- `projectsCompletedCount` - Number of completed projects
+- `averageReviewScore` - Star rating (1-5)
 - `followersCount` - Number of followers
-- `reviewsCount` - Number of reviews
-- `averageReviewScore` - Average rating (0-5)
 - `available` - Availability status (boolean)
-- `skillTags` - Array of skill tags
+
+**Project Fields:**
+- `title` - Project name/title
+- `projectUrl` - Link to project
+- `coverUrl` - Project image/video
+
+**Social Link Fields:**
+- `url` - Social platform URL
+- `label` - Platform name
 
 ```html
 <!-- Text content -->
@@ -253,6 +260,7 @@ Configure the SDK via a JSON script tag with ID `contra-config`:
 **Available Formats:**
 - `rate` - Format hourly rate (`$150/hr` or `Rate on request`)
 - `earnings` - Format earnings (`$25k+`, `$1M+`)
+- `rating` - Format rating to one decimal place (`5.0`, `4.9`)
 - `currency` - Add dollar sign prefix
 - `number` - Add thousand separators
 - `boolean` - Convert to Yes/No
@@ -262,6 +270,7 @@ Configure the SDK via a JSON script tag with ID `contra-config`:
 ```html
 <span data-contra-field="hourlyRateUSD" data-contra-format="rate">$0/hr</span>
 <span data-contra-field="earningsUSD" data-contra-format="earnings">$0</span>
+<span data-contra-field="averageReviewScore" data-contra-format="rating">0.0</span>
 <span data-contra-field="followersCount" data-contra-format="number">0</span>
 <span data-contra-field="available" data-contra-format="availability">Available</span>
 ```
@@ -357,6 +366,19 @@ Configure the SDK via a JSON script tag with ID `contra-config`:
 ```html
 <div data-contra-stars class="star-rating">
   <!-- Automatically filled with star rating based on averageReviewScore -->
+</div>
+```
+
+#### `data-contra-rating-text`
+**Display rating as formatted text**
+```html
+<!-- Displays "5.0", "4.9", etc. with one decimal place -->
+<span data-contra-rating-text class="rating-text">0.0</span>
+
+<!-- Combined star and text rating -->
+<div class="rating-display">
+  <div data-contra-stars class="star-rating"></div>
+  <span data-contra-rating-text class="rating-score">0.0</span>
 </div>
 ```
 
@@ -563,16 +585,31 @@ Add filter controls that automatically update the expert list:
 
 ### Available Filters
 
-| Filter | Type | Description | Example Values |
-|--------|------|-------------|----------------|
-| `sortBy` | select | Sort order | `relevance`, `newest`, `oldest` |
+**Supported Filters:**
+
+| Filter | Input Type | Description | Values |
+|--------|------------|-------------|---------|
 | `available` | checkbox | Availability status | `true`, `false` |
-| `location` | text | Geographic location | `San Francisco CA, USA` |
-| `languages` | multi-select | Spoken languages | `English`, `Spanish`, `French` |
-| `minRate` | number | Minimum hourly rate | `50`, `100`, `150` |
-| `maxRate` | number | Maximum hourly rate | `200`, `300`, `500` |
-| `limit` | number | Results per page | `10`, `20`, `50` |
-| `offset` | number | Pagination offset | `0`, `20`, `40` |
+| `location` | text | Geographic location | Any string |
+| `languages` | select/checkbox | Spoken languages | Language codes |
+| `minRate` | number | Minimum hourly rate | Number in USD |
+| `maxRate` | number | Maximum hourly rate | Number in USD |
+
+### Filter Attributes
+
+You can also set default filters directly on the container:
+
+```html
+<!-- Show only available experts by default -->
+<div data-contra-program="spline_expert" data-contra-available="true" data-contra-limit="20">
+  <!-- Expert cards -->
+</div>
+
+<!-- Set default location filter -->
+<div data-contra-program="spline_expert" data-contra-location="New York" data-contra-limit="20">
+  <!-- Expert cards -->
+</div>
+```
 
 ### Filter Types
 

@@ -53,6 +53,9 @@ const ATTRS = {
   filter: 'filter',
   filterType: 'filter-type',
   
+  // Filter attributes
+  available: 'available',
+  
   // Sorting and pagination
   sort: 'sort',
   page: 'page',
@@ -432,6 +435,10 @@ export class ContraWebflowRuntime {
           case 'rate':
             displayValue = utils.formatRate(typeof value === 'number' ? value : null);
             break;
+          case 'rating':
+            // Format rating to one decimal place (5.0, 4.9, etc.)
+            displayValue = typeof value === 'number' ? value.toFixed(1) : displayValue;
+            break;
           case 'earnings':
             // Format earnings like $25k+
             if (typeof value === 'number') {
@@ -464,7 +471,7 @@ export class ContraWebflowRuntime {
   }
 
   /**
-   * Star rating rendering
+   * Star rating rendering with optional text display
    */
   private renderStarRating(element: Element, rating: number): void {
     const fullStars = Math.floor(rating);
@@ -489,6 +496,15 @@ export class ContraWebflowRuntime {
     }
     
     element.innerHTML = starsHtml;
+    
+    // Also update any rating text elements in the same card
+    const card = element.closest('[data-contra-template]') || element.closest('.expert-card');
+    if (card) {
+      const ratingTextElements = this.querySelectorAll(card, '[data-contra-rating-text]');
+      ratingTextElements.forEach(textElement => {
+        textElement.textContent = rating.toFixed(1);
+      });
+    }
   }
 
   /**
