@@ -527,6 +527,117 @@
                 grid-template-columns: 1fr;
             }
         }
+        
+        /* Enhanced Load More Button States */
+        .contra-cta.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+            position: relative;
+        }
+        
+        .contra-cta.loading::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .contra-cta.error {
+            background-color: #ef4444;
+            color: white;
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        .contra-cta.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #9ca3af;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        /* Enhanced Pagination Controls */
+        .pagination-info-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .contra-pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: #f3f4f6;
+            color: #9ca3af;
+        }
+        
+        .contra-pagination-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: #f3f4f6;
+            color: #9ca3af;
+        }
+        
+        /* Pagination Mode Panel */
+        #pagination-info-panel {
+            margin: 16px 0;
+            transition: all 0.3s ease;
+        }
+        
+        #pagination-info-panel h3 {
+            margin: 0 0 8px 0;
+            color: #1e40af;
+        }
+        
+        /* Quick Filters Enhancement */
+        .contra-toolbar select {
+            transition: all 0.2s ease;
+        }
+        
+        .contra-toolbar select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Loading Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Enhanced Debug Panel */
+        .debug-panel {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .debug-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            animation: loading-bar 2s infinite;
+        }
+        
+        @keyframes loading-bar {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -535,12 +646,17 @@
     {
         "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
         "debug": true,
+        "autoReload": true,
+        "debounceDelay": 300,
+        "maxRetries": 3,
+        
         "paginationMode": "hybrid",
         "infiniteScrollThreshold": 500,
         "preloadNextPage": true,
         "maxCachedPages": 5,
         "smoothScrollBehavior": "smooth",
         "loadMoreText": "Load More Experts",
+        
         "videoAutoplay": false,
         "videoHoverPlay": true,
         "videoMuted": true,
@@ -549,21 +665,23 @@
     }
     </script>
 
-    <h1>🚀 Contra Expert Directory - Complete SDK Showcase</h1>
+    <h1>🚀 Contra Expert Directory - Complete SDK Showcase with Load More Pagination</h1>
     
     <div class="debug-panel">
-        <h3>SDK Status & Features</h3>
-        ✅ Complete Webflow SDK with all features<br>
+        <h3>🎯 SDK Status & Latest Features</h3>
+        ✅ Complete Webflow SDK with Load More Pagination<br>
         🔗 API: https://contra.com/public-api/programs/spline_expert/experts<br>
         🔑 Auth: X-API-key header<br>
-        📦 Features: Decimal ratings, project titles, availability, social links, skill tags<br>
-        🎬 Video Config: Auto MP4/video detection with hover-to-play<br>
-        ⭐ Enhanced: Professional formatting, conditional display, pagination
+        📦 Features: Load More, Infinite Scroll, Hybrid Mode, Smart Button States<br>
+        🎬 Video Config: Auto MP4/video detection with mobile optimization<br>
+        ⭐ Enhanced: Professional formatting, conditional display, comprehensive pagination<br>
+        🔄 Pagination: Traditional, Infinite, and Hybrid modes with smart state management
         
         <div style="margin-top: 12px;">
             <button id="test-direct" class="debug-button">🧪 Test Direct API</button>
             <button id="test-sdk" class="debug-button">🔧 Inspect SDK</button>
-            <button id="test-availability" class="debug-button">✅ Test Availability</button>
+            <button id="test-pagination" class="debug-button">📄 Test Pagination</button>
+            <button id="test-load-more" class="debug-button">♾️ Test Load More</button>
             <button id="clear-debug" class="debug-button">🗑️ Clear</button>
         </div>
         <div id="debug-results"></div>
@@ -574,17 +692,30 @@
         No filters applied
     </div>
 
-    <!-- Toolbar -->
+    <!-- Enhanced Toolbar with Pagination Controls -->
     <div class="contra-toolbar">
-        <button id="contra-open-filters" class="contra-filter-btn">🎛️ Filters</button>
-        <button id="reload-experts" class="contra-filter-btn">🔄 Reload</button>
-        <button data-contra-action="clear-filters" class="contra-filter-btn">🗑️ Clear Filters</button>
+        <button id="contra-open-filters" class="contra-filter-btn">🎛️ Advanced Filters</button>
+        <button data-contra-action="reload" class="contra-filter-btn">🔄 Reload Data</button>
+        <button data-contra-action="clear-filters" class="contra-filter-btn">🗑️ Clear All Filters</button>
         
         <!-- Pagination Mode Controls -->
         <select id="pagination-mode-select" class="contra-filter-btn" style="padding: .5rem; border: 1px solid #d0d5dd; border-radius: 8px;">
             <option value="traditional">📄 Traditional Pagination</option>
-            <option value="infinite">♾️ Infinite Scroll</option>
-            <option value="hybrid" selected>🔀 Hybrid Mode</option>
+            <option value="infinite">♾️ Infinite Scroll (Load More)</option>
+            <option value="hybrid" selected>🔀 Hybrid Mode (Both)</option>
+        </select>
+        
+        <!-- Quick Filters -->
+        <select id="quick-available" data-contra-filter="available" class="contra-filter-btn" style="padding: .5rem; border: 1px solid #d0d5dd; border-radius: 8px;">
+            <option value="">All Experts</option>
+            <option value="true">✅ Available Only</option>
+            <option value="false">❌ Not Available</option>
+        </select>
+        
+        <select id="quick-sort" data-contra-filter="sortBy" class="contra-filter-btn" style="padding: .5rem; border: 1px solid #d0d5dd; border-radius: 8px;">
+            <option value="relevance">🎯 Most Relevant</option>
+            <option value="newest">🆕 Newest First</option>
+            <option value="oldest">📅 Oldest First</option>
         </select>
     </div>
 
@@ -700,23 +831,53 @@
         </div>
     </div>
 
-    <!-- Enhanced Pagination Controls -->
+    <!-- Comprehensive Pagination Controls -->
     <div class="contra-pagination">
-        <div data-contra-pagination-info class="contra-pagination-info">
-            Loading...
+        <div class="pagination-info-section">
+            <div data-contra-pagination-info class="contra-pagination-info">
+                Loading pagination info...
+            </div>
+            <div class="pagination-stats" style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                <span id="pagination-mode-display">Mode: Hybrid</span> | 
+                <span id="cache-status">Cache: Active</span>
+            </div>
         </div>
         
         <!-- Traditional Pagination Controls -->
         <div id="traditional-controls" class="contra-pagination-controls">
-            <button data-contra-action="first-page" class="contra-pagination-btn">⏪ First</button>
-            <button data-contra-action="prev-page" class="contra-pagination-btn">← Previous</button>
-            <button data-contra-action="next-page" class="contra-pagination-btn">Next →</button>
-            <button data-contra-action="last-page" class="contra-pagination-btn">Last ⏩</button>
+            <button data-contra-action="first-page" class="contra-pagination-btn" title="Go to first page">⏪ First</button>
+            <button data-contra-action="prev-page" class="contra-pagination-btn" title="Go to previous page">← Previous</button>
+            <button data-contra-action="next-page" class="contra-pagination-btn" title="Go to next page">Next →</button>
+            <button data-contra-action="last-page" class="contra-pagination-btn" title="Go to last page">Last ⏩</button>
         </div>
         
-        <!-- Load More Button (Infinite/Hybrid Mode) -->
-        <div id="load-more-controls" class="contra-pagination-controls" style="display: none;">
-            <button data-contra-action="load-more" class="contra-cta">Load More Experts</button>
+        <!-- Load More Controls (Infinite/Hybrid Mode) -->
+        <div id="load-more-controls" class="contra-pagination-controls">
+            <button data-contra-action="load-more" class="contra-cta" style="min-width: 160px;">
+                Load More Experts
+            </button>
+        </div>
+    </div>
+
+    <!-- Load More Loading Indicator -->
+    <div data-contra-infinite-loading class="contra-loading" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <div style="width: 20px; height: 20px; border: 2px solid #f3f3f3; border-top: 2px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <span>🔄 Loading more experts...</span>
+        </div>
+    </div>
+
+    <!-- Pagination Mode Information Panel -->
+    <div id="pagination-info-panel" class="debug-panel" style="background: #f0f9ff; border-color: #bae6fd;">
+        <h3>📄 Current Pagination Mode: <span id="current-mode-display">Hybrid</span></h3>
+        <div id="mode-description">
+            <strong>Hybrid Mode:</strong> Combines traditional pagination with Load More functionality. 
+            Use Previous/Next for page navigation or Load More to append additional experts.
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; color: #6b7280;">
+            <div>• <strong>Traditional:</strong> Page-based navigation with Previous/Next buttons</div>
+            <div>• <strong>Infinite:</strong> Load More button appends new experts to the list</div>
+            <div>• <strong>Hybrid:</strong> Both traditional and infinite scroll features available</div>
         </div>
     </div>
 
@@ -784,8 +945,8 @@
         </div>
     </div>
 
-    <!-- SDK with latest version -->
-    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js"></script>
+    <!-- SDK with latest local build -->
+    <script src="../packages/contra-webflow/dist/runtime.min.js"></script>
     
     <script>
         const debugResults = document.getElementById('debug-results');
@@ -798,7 +959,7 @@
             div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        // Debug Tools
+        // Enhanced Debug Tools
         document.getElementById('test-direct').onclick = async () => {
             addDebugResult('', '🧪 Testing Direct API Call...');
             
@@ -807,7 +968,7 @@
                 const config = JSON.parse(configElement.textContent);
                 const { apiKey } = config;
                 
-                const url = `https://contra.com/public-api/programs/spline_expert/experts?limit=3`;
+                const url = `https://contra.com/public-api/programs/spline_expert/experts?limit=5&offset=0`;
                 
                 const response = await fetch(url, {
                     headers: {
@@ -845,10 +1006,13 @@
             if (window.contraRuntime) {
                 const expertCards = document.querySelectorAll('.contra-card:not([data-contra-template])');
                 const templates = document.querySelectorAll('[data-contra-template]');
+                const container = document.querySelector('[data-contra-program]');
+                const paginationMode = container?.getAttribute('data-contra-pagination-mode') || 'traditional';
                 
                 addDebugResult('success', '✅ SDK Runtime Active', {
                     clientBaseUrl: window.contraRuntime.client?.config?.baseUrl,
                     debug: window.contraRuntime.config?.debug,
+                    paginationMode: paginationMode,
                     expertContainers: document.querySelectorAll('[data-contra-program]').length,
                     templates: templates.length,
                     renderedCards: expertCards.length,
@@ -858,7 +1022,10 @@
                         ratingText: document.querySelectorAll('[data-contra-rating-text]').length,
                         projects: document.querySelectorAll('[data-contra-repeat="projects"]').length,
                         skillTags: document.querySelectorAll('[data-contra-repeat="skillTags"]').length,
-                        socialLinks: document.querySelectorAll('[data-contra-repeat="socialLinks"]').length
+                        socialLinks: document.querySelectorAll('[data-contra-repeat="socialLinks"]').length,
+                        loadMoreButtons: document.querySelectorAll('[data-contra-action="load-more"]').length,
+                        paginationInfo: document.querySelectorAll('[data-contra-pagination-info]').length,
+                        infiniteLoading: document.querySelectorAll('[data-contra-infinite-loading]').length
                     }
                 });
             } else {
@@ -866,43 +1033,66 @@
             }
         };
 
-        document.getElementById('test-availability').onclick = async () => {
-            addDebugResult('', '🧪 Testing Availability...');
+        document.getElementById('test-pagination').onclick = () => {
+            addDebugResult('', '📄 Testing Pagination Features...');
             
-            try {
-                const configElement = document.getElementById('contra-config');
-                const config = JSON.parse(configElement.textContent);
-                const { apiKey } = config;
+            const container = document.querySelector('[data-contra-program]');
+            const paginationMode = container?.getAttribute('data-contra-pagination-mode') || 'traditional';
+            const limit = container?.getAttribute('data-contra-limit') || '20';
+            
+            const paginationButtons = {
+                loadMore: document.querySelectorAll('[data-contra-action="load-more"]').length,
+                nextPage: document.querySelectorAll('[data-contra-action="next-page"]').length,
+                prevPage: document.querySelectorAll('[data-contra-action="prev-page"]').length,
+                firstPage: document.querySelectorAll('[data-contra-action="first-page"]').length,
+                lastPage: document.querySelectorAll('[data-contra-action="last-page"]').length,
+                reload: document.querySelectorAll('[data-contra-action="reload"]').length,
+                clearFilters: document.querySelectorAll('[data-contra-action="clear-filters"]').length
+            };
+            
+            addDebugResult('success', '📄 Pagination Configuration', {
+                mode: paginationMode,
+                itemsPerPage: limit,
+                buttons: paginationButtons,
+                paginationInfo: document.querySelectorAll('[data-contra-pagination-info]').length,
+                infiniteLoading: document.querySelectorAll('[data-contra-infinite-loading]').length,
+                traditionalControlsVisible: document.getElementById('traditional-controls')?.style.display !== 'none',
+                loadMoreControlsVisible: document.getElementById('load-more-controls')?.style.display !== 'none'
+            });
+        };
+
+        document.getElementById('test-load-more').onclick = () => {
+            addDebugResult('', '♾️ Testing Load More Functionality...');
+            
+            const loadMoreButton = document.querySelector('[data-contra-action="load-more"]');
+            const expertCards = document.querySelectorAll('.contra-card:not([data-contra-template])');
+            const paginationInfo = document.querySelector('[data-contra-pagination-info]');
+            const infiniteLoading = document.querySelector('[data-contra-infinite-loading]');
+            
+            if (loadMoreButton) {
+                const buttonState = {
+                    disabled: loadMoreButton.disabled,
+                    text: loadMoreButton.textContent?.trim(),
+                    classes: Array.from(loadMoreButton.classList),
+                    visible: loadMoreButton.style.display !== 'none'
+                };
                 
-                const url = `https://contra.com/public-api/programs/spline_expert/experts?limit=3`;
-                
-                const response = await fetch(url, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-API-key': apiKey
-                    }
+                addDebugResult('success', '♾️ Load More Button Analysis', {
+                    buttonFound: true,
+                    buttonState: buttonState,
+                    currentExpertCount: expertCards.length,
+                    paginationInfoText: paginationInfo?.textContent?.trim(),
+                    infiniteLoadingVisible: infiniteLoading?.style.display !== 'none',
+                    canTriggerLoadMore: !loadMoreButton.disabled && buttonState.visible
                 });
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    const firstExpert = data.data?.[0];
-                    addDebugResult('success', '✅ Availability Test Successful', { 
-                        totalCount: data.totalCount,
-                        firstExpert: {
-                            name: firstExpert?.name,
-                            available: firstExpert?.available,
-                            rating: firstExpert?.averageReviewScore,
-                            projects: firstExpert?.projects?.length || 0,
-                            skillTags: firstExpert?.skillTags?.length || 0,
-                            socialLinks: firstExpert?.socialLinks?.length || 0
-                        }
-                    });
-                } else {
-                    const errorText = await response.text();
-                    addDebugResult('error', `❌ Availability Test FAILED: ${response.status}`, errorText);
+                // Simulate click if possible
+                if (!loadMoreButton.disabled && buttonState.visible) {
+                    addDebugResult('', '🔄 Simulating Load More click...');
+                    loadMoreButton.click();
                 }
-            } catch (error) {
-                addDebugResult('error', `❌ ERROR: ${error.message}`, error);
+            } else {
+                addDebugResult('error', '❌ Load More Button Not Found');
             }
         };
 
@@ -957,33 +1147,47 @@
                 }
             };
 
-            // Pagination Mode Switcher
+            // Enhanced Pagination Mode Switcher
             const paginationModeSelect = document.getElementById('pagination-mode-select');
             const traditionalControls = document.getElementById('traditional-controls');
             const loadMoreControls = document.getElementById('load-more-controls');
             const expertContainer = document.querySelector('[data-contra-program]');
+            const currentModeDisplay = document.getElementById('current-mode-display');
+            const paginationModeDisplay = document.getElementById('pagination-mode-display');
+            const modeDescription = document.getElementById('mode-description');
 
             function updatePaginationMode(mode) {
                 // Update container attribute
                 expertContainer.setAttribute('data-contra-pagination-mode', mode);
                 
-                // Show/hide appropriate controls
+                // Update displays
+                currentModeDisplay.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+                paginationModeDisplay.textContent = `Mode: ${mode.charAt(0).toUpperCase() + mode.slice(1)}`;
+                
+                // Show/hide appropriate controls and update descriptions
                 if (mode === 'traditional') {
                     traditionalControls.style.display = 'flex';
                     loadMoreControls.style.display = 'none';
+                    modeDescription.innerHTML = '<strong>Traditional Mode:</strong> Page-based navigation with Previous/Next buttons. Each page replaces the current results.';
                 } else if (mode === 'infinite') {
                     traditionalControls.style.display = 'none';
                     loadMoreControls.style.display = 'flex';
+                    modeDescription.innerHTML = '<strong>Infinite Mode:</strong> Load More button appends new experts to the existing list. Perfect for social media style feeds.';
                 } else if (mode === 'hybrid') {
                     traditionalControls.style.display = 'flex';
                     loadMoreControls.style.display = 'flex';
+                    modeDescription.innerHTML = '<strong>Hybrid Mode:</strong> Combines traditional pagination with Load More functionality. Use Previous/Next for page navigation or Load More to append additional experts.';
                 }
                 
+                // Log the change
+                addDebugResult('', `🔄 Switched to ${mode} pagination mode - Page will reload to apply changes`);
+                
                 // Reload to apply new mode
-                if (window.contraRuntime) {
-                    addDebugResult('', `🔄 Switched to ${mode} pagination mode`);
-                    location.reload();
-                }
+                setTimeout(() => {
+                    if (window.contraRuntime) {
+                        location.reload();
+                    }
+                }, 1000);
             }
 
             paginationModeSelect.addEventListener('change', (e) => {
@@ -993,32 +1197,48 @@
             // Initialize with current mode
             updatePaginationMode(paginationModeSelect.value);
 
-            addDebugResult('', '🚀 Complete SDK showcase initialized');
-        });
-
-        // SDK Event Listeners
-        document.addEventListener('contra:expertsLoaded', (e) => {
-            const experts = e.detail.experts;
-            const availableCount = experts.filter(ex => ex.available).length;
-            const withProjects = experts.filter(ex => ex.projects?.length > 0).length;
-            const withSkills = experts.filter(ex => ex.skillTags?.length > 0).length;
-            
-            addDebugResult('success', '🎉 Experts Loaded with All Features', {
-                totalExperts: experts.length,
-                totalCount: e.detail.totalCount,
-                available: availableCount,
-                withProjects: withProjects,
-                withSkillTags: withSkills,
-                avgRating: (experts.reduce((sum, ex) => sum + (ex.averageReviewScore || 0), 0) / experts.length).toFixed(1)
+            // Enhanced SDK Event Listeners
+            document.addEventListener('contra:expertsLoaded', (e) => {
+                const experts = e.detail.experts;
+                const totalExperts = e.detail.totalExperts || experts;
+                const isLoadMore = e.detail.isLoadMore || false;
+                const availableCount = experts.filter(ex => ex.available).length;
+                const withProjects = experts.filter(ex => ex.projects?.length > 0).length;
+                const withSkills = experts.filter(ex => ex.skillTags?.length > 0).length;
+                
+                const eventType = isLoadMore ? '♾️ Load More Completed' : '🎉 Initial Experts Loaded';
+                
+                addDebugResult('success', eventType, {
+                    expertsThisBatch: experts.length,
+                    totalExpertsNow: Array.isArray(totalExperts) ? totalExperts.length : 'Unknown',
+                    totalCount: e.detail.totalCount,
+                    available: availableCount,
+                    withProjects: withProjects,
+                    withSkillTags: withSkills,
+                    avgRating: experts.length > 0 ? (experts.reduce((sum, ex) => sum + (ex.averageReviewScore || 0), 0) / experts.length).toFixed(1) : '0.0',
+                    isLoadMore: isLoadMore,
+                    page: e.detail.page || 1
+                });
+                
+                // Update cache status
+                document.getElementById('cache-status').textContent = 'Cache: Updated';
             });
-        });
 
-        document.addEventListener('contra:expertsError', (e) => {
-            addDebugResult('error', '💥 SDK Error', e.detail);
-        });
+            document.addEventListener('contra:expertsError', (e) => {
+                addDebugResult('error', '💥 SDK Error', {
+                    error: e.detail.error?.message || 'Unknown error',
+                    context: e.detail.context || 'No context provided'
+                });
+            });
 
-        document.addEventListener('contra:filterChange', (e) => {
-            addDebugResult('', '🎛️ Filters Changed', e.detail.filters);
+            document.addEventListener('contra:filterChange', (e) => {
+                addDebugResult('', '🎛️ Filters Changed', {
+                    filters: e.detail.filters,
+                    activeFilterCount: Object.keys(e.detail.filters || {}).length
+                });
+            });
+
+            addDebugResult('', '🚀 Complete SDK showcase with Load More pagination initialized');
         });
     </script>
 </body>

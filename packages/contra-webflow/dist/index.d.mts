@@ -145,6 +145,18 @@ declare class ContraWebflowRuntime {
      */
     private updateUIStates;
     /**
+     * Handle action buttons (pagination, sorting, etc.)
+     */
+    private handleAction;
+    /**
+     * Load more experts - unified method for all pagination modes
+     */
+    private loadMoreExperts;
+    /**
+     * Update load more button state
+     */
+    private updateLoadMoreButtonState;
+    /**
      * Load next page for infinite scroll
      */
     private loadNextPageInfinite;
@@ -170,7 +182,6 @@ declare class ContraWebflowRuntime {
     private parseFiltersFromElement;
     private getControlValue;
     private updateFilter;
-    private handleAction;
     private showLoading;
     private showError;
     private dispatchEvent;
