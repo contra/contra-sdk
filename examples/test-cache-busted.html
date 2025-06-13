@@ -535,6 +535,12 @@
     {
         "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
         "debug": true,
+        "paginationMode": "hybrid",
+        "infiniteScrollThreshold": 500,
+        "preloadNextPage": true,
+        "maxCachedPages": 5,
+        "smoothScrollBehavior": "smooth",
+        "loadMoreText": "Load More Experts",
         "videoAutoplay": false,
         "videoHoverPlay": true,
         "videoMuted": true,
@@ -573,10 +579,17 @@
         <button id="contra-open-filters" class="contra-filter-btn">🎛️ Filters</button>
         <button id="reload-experts" class="contra-filter-btn">🔄 Reload</button>
         <button data-contra-action="clear-filters" class="contra-filter-btn">🗑️ Clear Filters</button>
+        
+        <!-- Pagination Mode Controls -->
+        <select id="pagination-mode-select" class="contra-filter-btn" style="padding: .5rem; border: 1px solid #d0d5dd; border-radius: 8px;">
+            <option value="traditional">📄 Traditional Pagination</option>
+            <option value="infinite">♾️ Infinite Scroll</option>
+            <option value="hybrid" selected>🔀 Hybrid Mode</option>
+        </select>
     </div>
 
     <!-- Expert Directory Container -->
-    <div data-contra-program="spline_expert" data-contra-limit="10">
+    <div data-contra-program="spline_expert" data-contra-limit="10" data-contra-pagination-mode="hybrid">
         <!-- Expert Card Template -->
         <article data-contra-template class="contra-card" style="display: none;">
             <header class="contra-card-header">
@@ -680,16 +693,30 @@
         <div data-contra-empty class="contra-empty">
             😔 No experts match your criteria. Try adjusting your filters.
         </div>
+        
+        <!-- Infinite Loading Indicator -->
+        <div data-contra-infinite-loading class="contra-loading" style="display: none;">
+            🔄 Loading more experts...
+        </div>
     </div>
 
-    <!-- Pagination Controls -->
+    <!-- Enhanced Pagination Controls -->
     <div class="contra-pagination">
         <div data-contra-pagination-info class="contra-pagination-info">
             Loading...
         </div>
-        <div class="contra-pagination-controls">
+        
+        <!-- Traditional Pagination Controls -->
+        <div id="traditional-controls" class="contra-pagination-controls">
+            <button data-contra-action="first-page" class="contra-pagination-btn">⏪ First</button>
             <button data-contra-action="prev-page" class="contra-pagination-btn">← Previous</button>
             <button data-contra-action="next-page" class="contra-pagination-btn">Next →</button>
+            <button data-contra-action="last-page" class="contra-pagination-btn">Last ⏩</button>
+        </div>
+        
+        <!-- Load More Button (Infinite/Hybrid Mode) -->
+        <div id="load-more-controls" class="contra-pagination-controls" style="display: none;">
+            <button data-contra-action="load-more" class="contra-cta">Load More Experts</button>
         </div>
     </div>
 
@@ -929,6 +956,42 @@
                     location.reload();
                 }
             };
+
+            // Pagination Mode Switcher
+            const paginationModeSelect = document.getElementById('pagination-mode-select');
+            const traditionalControls = document.getElementById('traditional-controls');
+            const loadMoreControls = document.getElementById('load-more-controls');
+            const expertContainer = document.querySelector('[data-contra-program]');
+
+            function updatePaginationMode(mode) {
+                // Update container attribute
+                expertContainer.setAttribute('data-contra-pagination-mode', mode);
+                
+                // Show/hide appropriate controls
+                if (mode === 'traditional') {
+                    traditionalControls.style.display = 'flex';
+                    loadMoreControls.style.display = 'none';
+                } else if (mode === 'infinite') {
+                    traditionalControls.style.display = 'none';
+                    loadMoreControls.style.display = 'flex';
+                } else if (mode === 'hybrid') {
+                    traditionalControls.style.display = 'flex';
+                    loadMoreControls.style.display = 'flex';
+                }
+                
+                // Reload to apply new mode
+                if (window.contraRuntime) {
+                    addDebugResult('', `🔄 Switched to ${mode} pagination mode`);
+                    location.reload();
+                }
+            }
+
+            paginationModeSelect.addEventListener('change', (e) => {
+                updatePaginationMode(e.target.value);
+            });
+
+            // Initialize with current mode
+            updatePaginationMode(paginationModeSelect.value);
 
             addDebugResult('', '🚀 Complete SDK showcase initialized');
         });

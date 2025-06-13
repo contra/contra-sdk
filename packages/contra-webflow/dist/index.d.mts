@@ -11,6 +11,12 @@ interface RuntimeConfig {
     autoReload?: boolean;
     debounceDelay?: number;
     maxRetries?: number;
+    paginationMode?: 'traditional' | 'infinite' | 'hybrid';
+    infiniteScrollThreshold?: number;
+    preloadNextPage?: boolean;
+    maxCachedPages?: number;
+    smoothScrollBehavior?: 'auto' | 'smooth';
+    loadMoreText?: string;
     videoAutoplay?: boolean;
     videoHoverPlay?: boolean;
     videoMuted?: boolean;
@@ -38,6 +44,26 @@ declare class ContraWebflowRuntime {
      * Setup container with initial state and classes
      */
     private setupContainer;
+    /**
+     * Determine pagination mode from container attributes or config
+     */
+    private determinePaginationMode;
+    /**
+     * Setup pagination system based on mode
+     */
+    private setupPagination;
+    /**
+     * Setup infinite scroll functionality
+     */
+    private setupInfiniteScroll;
+    /**
+     * Setup traditional pagination button states
+     */
+    private setupTraditionalPagination;
+    /**
+     * Setup load more button for infinite scroll
+     */
+    private setupLoadMoreButton;
     /**
      * Wire up filter controls to auto-update
      */
@@ -118,6 +144,22 @@ declare class ContraWebflowRuntime {
      * Update UI states based on current data
      */
     private updateUIStates;
+    /**
+     * Load next page for infinite scroll
+     */
+    private loadNextPageInfinite;
+    /**
+     * Update pagination control states
+     */
+    private updatePaginationControls;
+    /**
+     * Update infinite loading state
+     */
+    private updateInfiniteLoadingState;
+    /**
+     * Render new experts for infinite scroll (append mode)
+     */
+    private renderNewExperts;
     /**
      * Utility Methods
      */

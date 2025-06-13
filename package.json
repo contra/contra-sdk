@@ -9,7 +9,7 @@
   "scripts": {
     "build": "npm run build:types && npm run build:client && npm run build:webflow && npm run build:react",
     "build:types": "npm run build -w @contra/types",
-    "build:client": "npm run build -w @contra/client", 
+    "build:client": "npm run build -w @contra/client",
     "build:webflow": "npm run build -w @contra/webflow",
     "build:react": "npm run build -w @contra/react",
     "dev": "npm run dev --workspaces",
@@ -19,8 +19,8 @@
     "deploy": "git add . && git commit -m \"build: update dist files\" && git push origin main"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "tsup": "^8.0.0"
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
   },
   "repository": {
     "type": "git",
@@ -36,5 +36,9 @@
     "api"
   ],
   "author": "Contra SDK Team",
-  "license": "MIT"
-} 
+  "license": "MIT",
+  "dependencies": {
+    "framer": "^2.4.1",
+    "framer-motion": "^10.18.0"
+  }
+}

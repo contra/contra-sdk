@@ -38,8 +38,19 @@ export function MediaRenderer({
   const { config } = useContraContext();
   const [error, setError] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isHovering, setIsHovering] = useState(false);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Detect media type
   useEffect(() => {
@@ -55,7 +66,7 @@ export function MediaRenderer({
 
   // Handle hover-to-play functionality
   useEffect(() => {
-    if (!videoRef.current || !config.videoHoverPlay || config.videoAutoplay) return;
+    if (!videoRef.current || !config.videoHoverPlay || config.videoAutoplay || isMobile) return;
 
     const video = videoRef.current;
     
@@ -67,7 +78,7 @@ export function MediaRenderer({
       video.pause();
       video.currentTime = 0;
     }
-  }, [isHovering, config.videoHoverPlay, config.videoAutoplay]);
+  }, [isHovering, config.videoHoverPlay, config.videoAutoplay, isMobile]);
 
   const handleError = () => {
     setError(true);
@@ -133,10 +144,35 @@ export function MediaRenderer({
       <div
         className="contra-media-container"
         style={containerStyle}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
+        onMouseEnter={() => !isMobile && setIsHovering(true)}
+        onMouseLeave={() => !isMobile && setIsHovering(false)}
+        onClick={(e) => {
+          if (isMobile && videoRef.current) {
+            const video = videoRef.current;
+            if (video.paused) {
+              video.play().catch(() => {});
+            } else {
+              video.pause();
+            }
+          }
+        }}
       >
-        <video ref={videoRef} {...videoAttributes} />
+        <video ref={videoRef} {...videoAttributes}>
+          <source src={src} type="video/mp4" />
+          <source src={src.replace('.mp4', '.webm')} type="video/webm" />
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#9ca3af',
+            fontSize: '12px',
+            textAlign: 'center',
+            cursor: isMobile ? 'pointer' : 'default',
+          }}>
+            {isMobile ? '👆 Tap to play' : '🎬 Video'}
+          </div>
+        </video>
       </div>
     );
   }

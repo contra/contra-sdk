@@ -23,6 +23,15 @@ interface RuntimeConfig {
   autoReload?: boolean;
   debounceDelay?: number;
   maxRetries?: number;
+  
+  // Pagination Configuration
+  paginationMode?: 'traditional' | 'infinite' | 'hybrid';
+  infiniteScrollThreshold?: number;        // Pixels from bottom to trigger load
+  preloadNextPage?: boolean;              // Preload next page for performance
+  maxCachedPages?: number;                // Max pages to keep in memory
+  smoothScrollBehavior?: 'auto' | 'smooth';
+  loadMoreText?: string;                  // Custom "Load More" button text
+  
   // Video configuration
   videoAutoplay?: boolean;
   videoHoverPlay?: boolean;
@@ -61,6 +70,11 @@ const ATTRS = {
   page: 'page',
   limit: 'limit',
   
+  // Pagination mode and controls
+  paginationMode: 'pagination-mode',
+  infiniteLoading: 'infinite-loading',
+  paginationInfo: 'pagination-info',
+  
   // UI states
   showWhen: 'show-when',
   hideWhen: 'hide-when',
@@ -79,6 +93,14 @@ class RuntimeState {
     error: Error | null;
     currentPage: number;
     totalCount: number;
+    // Advanced pagination state
+    cachedPages: Map<number, ExpertProfile[]>;
+    loadingPages: Set<number>;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    isInfiniteLoading: boolean;
+    lastScrollPosition: number;
+    paginationMode: 'traditional' | 'infinite' | 'hybrid';
   }>();
 
   getState(programId: string) {
@@ -89,7 +111,15 @@ class RuntimeState {
         loading: false,
         error: null,
         currentPage: 1,
-        totalCount: 0
+        totalCount: 0,
+        // Advanced pagination defaults
+        cachedPages: new Map(),
+        loadingPages: new Set(),
+        hasNextPage: false,
+        hasPreviousPage: false,
+        isInfiniteLoading: false,
+        lastScrollPosition: 0,
+        paginationMode: 'traditional'
       });
     }
     return this.states.get(programId)!;
@@ -99,6 +129,37 @@ class RuntimeState {
     const state = this.getState(programId);
     Object.assign(state, updates);
     this.states.set(programId, state);
+  }
+
+  // Advanced pagination helpers
+  cachePage(programId: string, pageNumber: number, experts: ExpertProfile[]) {
+    const state = this.getState(programId);
+    state.cachedPages.set(pageNumber, experts);
+    
+    // Implement LRU cache cleanup
+    if (state.cachedPages.size > 5) { // maxCachedPages from config
+      const oldestPage = Math.min(...state.cachedPages.keys());
+      state.cachedPages.delete(oldestPage);
+    }
+  }
+
+  getCachedPage(programId: string, pageNumber: number): ExpertProfile[] | null {
+    const state = this.getState(programId);
+    return state.cachedPages.get(pageNumber) || null;
+  }
+
+  setPageLoading(programId: string, pageNumber: number, loading: boolean) {
+    const state = this.getState(programId);
+    if (loading) {
+      state.loadingPages.add(pageNumber);
+    } else {
+      state.loadingPages.delete(pageNumber);
+    }
+  }
+
+  isPageLoading(programId: string, pageNumber: number): boolean {
+    const state = this.getState(programId);
+    return state.loadingPages.has(pageNumber);
   }
 }
 
@@ -120,6 +181,13 @@ export class ContraWebflowRuntime {
       autoReload: true,
       debounceDelay: 300,
       maxRetries: 3,
+      // Pagination Configuration defaults
+      paginationMode: 'traditional',
+      infiniteScrollThreshold: 500,
+      preloadNextPage: true,
+      maxCachedPages: 5,
+      smoothScrollBehavior: 'auto',
+      loadMoreText: 'Load More',
       // Video configuration defaults
       videoAutoplay: false,      // No autoplay by default (better UX)
       videoHoverPlay: true,       // Hover to play by default
@@ -203,7 +271,17 @@ export class ContraWebflowRuntime {
     
     // Parse initial filters from attributes
     const initialFilters = this.parseFiltersFromElement(container);
-    this.state.updateState(programId, { filters: initialFilters });
+    
+    // Determine pagination mode
+    const paginationMode = this.determinePaginationMode(container);
+    
+    this.state.updateState(programId, { 
+      filters: initialFilters,
+      paginationMode: paginationMode
+    });
+    
+    // Setup pagination
+    this.setupPagination(container, programId, paginationMode);
     
     // Create debounced reload function
     const debouncedReload = utils.debounce(() => {
@@ -212,7 +290,88 @@ export class ContraWebflowRuntime {
     
     this.debouncedReload.set(programId, debouncedReload);
     
-    this.log(`Container setup complete for program: ${programId}`, initialFilters);
+    this.log(`Container setup complete for program: ${programId}`, { initialFilters, paginationMode });
+  }
+
+  /**
+   * Determine pagination mode from container attributes or config
+   */
+  private determinePaginationMode(container: Element): 'traditional' | 'infinite' | 'hybrid' {
+    const explicitMode = this.getAttr(container, 'pagination-mode') as 'traditional' | 'infinite' | 'hybrid';
+    return explicitMode || this.config.paginationMode;
+  }
+
+  /**
+   * Setup pagination system based on mode
+   */
+  private setupPagination(container: Element, programId: string, mode: 'traditional' | 'infinite' | 'hybrid'): void {
+    this.log(`Setting up ${mode} pagination for program: ${programId}`);
+    
+    if (mode === 'infinite' || mode === 'hybrid') {
+      this.setupInfiniteScroll(container, programId);
+    }
+    
+    if (mode === 'traditional' || mode === 'hybrid') {
+      this.setupTraditionalPagination(container, programId);
+    }
+    
+    // Setup load more button for hybrid/infinite modes
+    if (mode === 'infinite' || mode === 'hybrid') {
+      this.setupLoadMoreButton(container, programId);
+    }
+  }
+
+  /**
+   * Setup infinite scroll functionality
+   */
+  private setupInfiniteScroll(container: Element, programId: string): void {
+    let isScrolling = false;
+    
+    const handleScroll = utils.throttle(() => {
+      if (isScrolling) return;
+      
+      const state = this.state.getState(programId);
+      if (state.isInfiniteLoading || !state.hasNextPage) return;
+      
+      const scrollPosition = window.scrollY + window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const threshold = this.config.infiniteScrollThreshold;
+      
+      if (scrollPosition >= documentHeight - threshold) {
+        isScrolling = true;
+        this.loadNextPageInfinite(container, programId).finally(() => {
+          isScrolling = false;
+        });
+      }
+    }, 100);
+    
+    window.addEventListener('scroll', handleScroll);
+    
+    // Store cleanup function
+    (container as any).__infiniteScrollCleanup = () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }
+
+  /**
+   * Setup traditional pagination button states
+   */
+  private setupTraditionalPagination(container: Element, programId: string): void {
+    // Will be handled in updatePaginationControls
+    this.updatePaginationControls(container, programId);
+  }
+
+  /**
+   * Setup load more button for infinite scroll
+   */
+  private setupLoadMoreButton(container: Element, programId: string): void {
+    const loadMoreButtons = this.querySelectorAll(container, '[data-contra-action="load-more"]');
+    
+    loadMoreButtons.forEach(button => {
+      if (!button.textContent?.trim()) {
+        button.textContent = this.config.loadMoreText;
+      }
+    });
   }
 
   /**
@@ -275,7 +434,7 @@ export class ContraWebflowRuntime {
   /**
    * Load experts for a program
    */
-  private async loadExperts(container: Element, programId: string): Promise<void> {
+  private async loadExperts(container: Element, programId: string, isPageNavigation = false): Promise<void> {
     const state = this.state.getState(programId);
     
     this.log(`Loading experts for program: ${programId}`, state.filters);
@@ -285,29 +444,66 @@ export class ContraWebflowRuntime {
       this.showLoading(container, true);
       this.state.updateState(programId, { loading: true, error: null });
 
+      // Check cache first for page navigation
+      const currentPage = Math.floor((state.filters.offset || 0) / (state.filters.limit || 20)) + 1;
+      if (isPageNavigation && state.paginationMode === 'traditional') {
+        const cachedExperts = this.state.getCachedPage(programId, currentPage);
+        if (cachedExperts) {
+          this.log(`Using cached page ${currentPage}`);
+          this.renderExperts(container, cachedExperts);
+          this.state.updateState(programId, { 
+            experts: cachedExperts, 
+            currentPage: currentPage,
+            loading: false 
+          });
+          this.updatePaginationControls(container, programId);
+          this.showLoading(container, false);
+          return;
+        }
+      }
+
       // Fetch experts
       const response = await this.client.listExperts(programId, state.filters);
       
       this.log(`Loaded ${response.data.length} experts`, response);
 
-      // Update state
+      // Calculate pagination state
+      const limit = state.filters.limit || 20;
+      const offset = state.filters.offset || 0;
+      const page = Math.floor(offset / limit) + 1;
+      const totalPages = Math.ceil(response.totalCount / limit);
+      const hasNextPage = page < totalPages;
+      const hasPreviousPage = page > 1;
+
+      // Update state with pagination info
       this.state.updateState(programId, {
         experts: response.data,
         totalCount: response.totalCount,
+        currentPage: page,
+        hasNextPage: hasNextPage,
+        hasPreviousPage: hasPreviousPage,
         loading: false
       });
+
+      // Cache the page
+      this.state.cachePage(programId, page, response.data);
 
       // Render experts
       this.renderExperts(container, response.data);
       
-      // Update UI states
+      // Update UI states including pagination
       this.updateUIStates(container, programId);
+      this.updatePaginationControls(container, programId);
       
       // Dispatch event
       this.dispatchEvent(container, 'expertsLoaded', {
         experts: response.data,
         totalCount: response.totalCount,
-        filters: state.filters
+        filters: state.filters,
+        page: page,
+        totalPages: totalPages,
+        hasNextPage: hasNextPage,
+        hasPreviousPage: hasPreviousPage
       } as ExpertLoadEvent);
 
     } catch (error) {
@@ -894,6 +1090,297 @@ export class ContraWebflowRuntime {
     });
   }
 
+  /**
+   * Handle action buttons (pagination, sorting, etc.)
+   */
+  private handleAction(programId: string, action: string, _target?: string | null, button?: Element): void {
+    const state = this.state.getState(programId);
+    const container = document.querySelector(`[data-program-id="${programId}"]`);
+    
+    if (!container) {
+      this.log(`Container not found for program: ${programId}`);
+      return;
+    }
+
+    // Show button feedback
+    if (button && button instanceof HTMLButtonElement) {
+      const originalText = button.textContent;
+      button.disabled = true;
+    }
+    
+    switch (action) {
+      case 'next-page':
+        const limit = state.filters.limit || 20;
+        const nextOffset = (state.filters.offset || 0) + limit;
+        
+        if (nextOffset < state.totalCount) {
+          this.updateFilter(programId, 'offset', nextOffset);
+          // Use page navigation mode for caching
+          setTimeout(() => {
+            this.loadExperts(container as Element, programId, true);
+          }, 0);
+        }
+        break;
+        
+      case 'prev-page':
+        const prevOffset = Math.max(0, (state.filters.offset || 0) - (state.filters.limit || 20));
+        this.updateFilter(programId, 'offset', prevOffset);
+        // Use page navigation mode for caching
+        setTimeout(() => {
+          this.loadExperts(container as Element, programId, true);
+        }, 0);
+        break;
+        
+      case 'load-more':
+        // Handle load more for all pagination modes
+        this.loadMoreExperts(container as Element, programId).finally(() => {
+          if (button && button instanceof HTMLButtonElement) {
+            button.disabled = false;
+          }
+        });
+        return; // Exit early to avoid re-enabling button
+        
+      case 'first-page':
+        this.updateFilter(programId, 'offset', 0);
+        setTimeout(() => {
+          this.loadExperts(container as Element, programId, true);
+        }, 0);
+        break;
+        
+      case 'last-page':
+        const lastPageOffset = Math.max(0, Math.floor((state.totalCount - 1) / (state.filters.limit || 20)) * (state.filters.limit || 20));
+        this.updateFilter(programId, 'offset', lastPageOffset);
+        setTimeout(() => {
+          this.loadExperts(container as Element, programId, true);
+        }, 0);
+        break;
+        
+      case 'clear-filters':
+        // Reset pagination when clearing filters
+        this.state.updateState(programId, { 
+          filters: { limit: state.filters.limit }, // Keep limit
+          currentPage: 1,
+          cachedPages: new Map() // Clear cache
+        });
+        if (this.config.autoReload) {
+          this.debouncedReload.get(programId)?.();
+        }
+        break;
+        
+      case 'reload':
+        // Clear cache and reload
+        this.state.updateState(programId, { cachedPages: new Map() });
+        this.client.clearCache(`experts:${programId}`);
+        if (this.config.autoReload) {
+          this.debouncedReload.get(programId)?.();
+        }
+        break;
+    }
+    
+    // Re-enable button after action completes
+    if (button && button instanceof HTMLButtonElement && action !== 'load-more') {
+      setTimeout(() => {
+        button.disabled = false;
+      }, 100);
+    }
+  }
+
+  /**
+   * Load more experts - unified method for all pagination modes
+   */
+  private async loadMoreExperts(container: Element, programId: string): Promise<void> {
+    const state = this.state.getState(programId);
+    const limit = state.filters.limit || 20;
+    const currentOffset = state.experts.length; // Use actual loaded count as offset
+    
+    this.log(`Loading more experts: current loaded=${state.experts.length}, fetching ${limit} more`);
+
+    try {
+      this.state.updateState(programId, { isInfiniteLoading: true });
+      this.updateLoadMoreButtonState(container, programId, true);
+
+      // Fetch next batch with current offset
+      const response = await this.client.listExperts(programId, {
+        ...state.filters,
+        offset: currentOffset,
+        limit: limit
+      });
+
+      this.log(`Loaded ${response.data.length} more experts (total now: ${state.experts.length + response.data.length})`);
+
+      // Append new experts to existing ones
+      const allExperts = [...state.experts, ...response.data];
+      const newPage = Math.floor(currentOffset / limit) + 2; // +2 because we're loading the next page
+      
+      this.state.updateState(programId, {
+        experts: allExperts,
+        currentPage: newPage,
+        totalCount: response.totalCount,
+        hasNextPage: allExperts.length < response.totalCount,
+        isInfiniteLoading: false
+      });
+
+      // Cache the new page
+      this.state.cachePage(programId, newPage, response.data);
+
+      // Render only the new experts (append mode)
+      this.renderNewExperts(container, response.data);
+      
+      // Update pagination controls
+      this.updatePaginationControls(container, programId);
+
+      // Dispatch event
+      this.dispatchEvent(container, 'expertsLoaded', {
+        experts: response.data,
+        totalExperts: allExperts,
+        totalCount: response.totalCount,
+        page: newPage,
+        isLoadMore: true
+      });
+
+    } catch (error) {
+      this.log(`Failed to load more experts`, error);
+      this.state.updateState(programId, { isInfiniteLoading: false });
+      
+      // Show error in load more button
+      this.updateLoadMoreButtonState(container, programId, false, 'Error loading more');
+      
+      setTimeout(() => {
+        this.updateLoadMoreButtonState(container, programId, false);
+      }, 3000);
+    } finally {
+      this.updateLoadMoreButtonState(container, programId, false);
+    }
+  }
+
+  /**
+   * Update load more button state
+   */
+  private updateLoadMoreButtonState(container: Element, programId: string, loading: boolean, errorText?: string): void {
+    const loadMoreButtons = this.querySelectorAll(container, '[data-contra-action="load-more"]');
+    const state = this.state.getState(programId);
+    
+    loadMoreButtons.forEach(button => {
+      const btnElement = button as HTMLButtonElement;
+      
+      if (errorText) {
+        btnElement.textContent = errorText;
+        btnElement.disabled = true;
+        btnElement.classList.add('error');
+        return;
+      }
+      
+      btnElement.classList.remove('error');
+      
+      if (loading) {
+        btnElement.textContent = 'Loading...';
+        btnElement.disabled = true;
+        btnElement.classList.add('loading');
+      } else {
+        btnElement.classList.remove('loading');
+        const hasMore = state.experts.length < state.totalCount;
+        
+        if (hasMore) {
+          btnElement.textContent = this.config.loadMoreText;
+          btnElement.disabled = false;
+        } else {
+          btnElement.textContent = 'All experts loaded';
+          btnElement.disabled = true;
+          btnElement.classList.add('disabled');
+        }
+      }
+    });
+  }
+
+  /**
+   * Load next page for infinite scroll
+   */
+  private async loadNextPageInfinite(container: Element, programId: string): Promise<void> {
+    // Use the unified loadMoreExperts method
+    return this.loadMoreExperts(container, programId);
+  }
+
+  /**
+   * Update pagination control states
+   */
+  private updatePaginationControls(container: Element, programId: string): void {
+    const state = this.state.getState(programId);
+    const limit = state.filters.limit || 20;
+    const totalPages = Math.ceil(state.totalCount / limit);
+    
+    // Update button states
+    const prevButtons = this.querySelectorAll(container, '[data-contra-action="prev-page"]');
+    const nextButtons = this.querySelectorAll(container, '[data-contra-action="next-page"]');
+
+    // Previous page buttons
+    prevButtons.forEach(button => {
+      const btnElement = button as HTMLButtonElement;
+      btnElement.disabled = state.currentPage <= 1;
+      btnElement.classList.toggle('disabled', state.currentPage <= 1);
+    });
+
+    // Next page buttons
+    nextButtons.forEach(button => {
+      const btnElement = button as HTMLButtonElement;
+      btnElement.disabled = state.currentPage >= totalPages;
+      btnElement.classList.toggle('disabled', state.currentPage >= totalPages);
+    });
+
+    // Update load more buttons
+    this.updateLoadMoreButtonState(container, programId, state.isInfiniteLoading);
+
+    // Update pagination info elements
+    const paginationInfoElements = this.querySelectorAll(container, '[data-contra-pagination-info]');
+    paginationInfoElements.forEach(element => {
+      const loadedCount = state.experts.length;
+      const totalCount = state.totalCount;
+      
+      // Different info based on pagination mode
+      if (state.paginationMode === 'infinite' || state.paginationMode === 'hybrid') {
+        element.textContent = `Showing ${loadedCount} of ${totalCount} experts`;
+      } else {
+        element.textContent = `Page ${state.currentPage} of ${totalPages} (${totalCount} total)`;
+      }
+    });
+
+    this.log(`Pagination controls updated: loaded ${state.experts.length}/${state.totalCount}, hasNext: ${state.hasNextPage}`);
+  }
+
+  /**
+   * Update infinite loading state
+   */
+  private updateInfiniteLoadingState(container: Element, loading: boolean): void {
+    const loadingIndicators = this.querySelectorAll(container, '[data-contra-infinite-loading]');
+    
+    loadingIndicators.forEach(indicator => {
+      (indicator as HTMLElement).style.display = loading ? '' : 'none';
+    });
+  }
+
+  /**
+   * Render new experts for infinite scroll (append mode)
+   */
+  private renderNewExperts(container: Element, newExperts: ExpertProfile[]): void {
+    const template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
+    if (!template) {
+      this.log('No template found for rendering new experts', container);
+      return;
+    }
+
+    // Create a document fragment for efficient DOM manipulation
+    const fragment = document.createDocumentFragment();
+
+    newExperts.forEach(expert => {
+      const expertCard = this.populateExpertCard(template, expert);
+      fragment.appendChild(expertCard);
+    });
+
+    // Append all new cards at once
+    container.appendChild(fragment);
+
+    this.log(`Rendered ${newExperts.length} new expert cards for load more`);
+  }
+
   // ... (utility methods continue below)
 
   /**
@@ -1013,29 +1500,6 @@ export class ContraWebflowRuntime {
     };
     
     this.dispatchEvent(document as any, 'filterChange', event);
-  }
-
-  private handleAction(programId: string, action: string, _target?: string | null, _button?: Element): void {
-    const state = this.state.getState(programId);
-    
-    switch (action) {
-      case 'next-page':
-        this.updateFilter(programId, 'offset', (state.filters.offset || 0) + (state.filters.limit || 20));
-        break;
-      case 'prev-page':
-        this.updateFilter(programId, 'offset', Math.max(0, (state.filters.offset || 0) - (state.filters.limit || 20)));
-        break;
-      case 'clear-filters':
-        this.state.updateState(programId, { filters: {} });
-        break;
-      case 'reload':
-        this.client.clearCache(`experts:${programId}`);
-        break;
-    }
-    
-    if (this.config.autoReload) {
-      this.debouncedReload.get(programId)?.();
-    }
   }
 
   private showLoading(container: Element, show: boolean): void {

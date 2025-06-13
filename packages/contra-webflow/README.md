@@ -501,6 +501,245 @@ This will log condition evaluations in the browser console.
 </div>
 ```
 
+### Load More Pagination
+
+The Contra Webflow SDK supports a "Load More" button that allows users to progressively load additional experts without replacing the existing ones. This is perfect for creating smooth, user-friendly pagination experiences.
+
+#### Setting Up Load More Button
+
+##### 1. Basic Load More Button
+Add a button element with the `data-contra-action="load-more"` attribute:
+
+```html
+<button data-contra-action="load-more">Load More Experts</button>
+```
+
+##### 2. Load More with Custom Text
+You can customize the button text in your runtime configuration:
+
+```javascript
+const runtime = new ContraWebflowRuntime({
+  apiKey: 'your-api-key',
+  programId: 'your-program-id',
+  loadMoreText: 'Show More Experts', // Custom text
+});
+```
+
+##### 3. Pagination Info Display
+Show current loading status with pagination info elements:
+
+```html
+<div data-contra-pagination-info></div>
+<!-- Will display: "Showing 20 of 150 experts" -->
+```
+
+##### 4. Loading State Indicators
+Add loading indicators that show during load more operations:
+
+```html
+<div data-contra-infinite-loading style="display: none;">
+  <div class="loading-spinner">Loading more experts...</div>
+</div>
+```
+
+#### Complete Load More Setup Example
+
+```html
+<div data-contra-program="your-program-id" data-contra-limit="10">
+  <!-- Expert Template -->
+  <div data-contra-template style="display: none;">
+    <div class="expert-card">
+      <img data-contra-field="avatarUrl" alt="Expert Avatar">
+      <h3 data-contra-field="name"></h3>
+      <p data-contra-field="location"></p>
+      <p data-contra-field="oneLiner"></p>
+      <!-- Add more fields as needed -->
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div data-contra-loading style="display: none;">
+    <p>Loading experts...</p>
+  </div>
+
+  <!-- Error State -->
+  <div data-contra-error style="display: none;">
+    <p>Error loading experts</p>
+  </div>
+
+  <!-- Empty State -->
+  <div data-contra-empty style="display: none;">
+    <p>No experts found</p>
+  </div>
+
+  <!-- Pagination Info -->
+  <div data-contra-pagination-info class="pagination-info"></div>
+
+  <!-- Load More Button -->
+  <button data-contra-action="load-more" class="load-more-btn">
+    Load More Experts
+  </button>
+
+  <!-- Load More Loading Indicator -->
+  <div data-contra-infinite-loading style="display: none;" class="load-more-loading">
+    <div class="spinner"></div>
+    <span>Loading more experts...</span>
+  </div>
+</div>
+```
+
+#### Load More Button States
+
+The load more button automatically handles different states:
+
+1. **Normal State**: Shows your custom text (default: "Load More")
+2. **Loading State**: Shows "Loading..." and is disabled
+3. **Error State**: Shows "Error loading more" temporarily
+4. **End State**: Shows "All experts loaded" and is disabled
+5. **Disabled State**: When no more experts are available
+
+#### CSS Classes for Styling
+
+The runtime automatically adds CSS classes to help with styling:
+
+```css
+/* Load More Button States */
+.load-more-btn.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.load-more-btn.error {
+  background-color: #ef4444;
+  color: white;
+}
+
+.load-more-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Pagination Info Styling */
+.pagination-info {
+  text-align: center;
+  margin: 20px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Loading Indicator */
+.load-more-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #333;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+```
+
+#### Configuration Options
+
+Configure load more behavior in your runtime setup:
+
+```javascript
+const runtime = new ContraWebflowRuntime({
+  apiKey: 'your-api-key',
+  programId: 'your-program-id',
+  
+  // Pagination Configuration
+  paginationMode: 'infinite',        // 'traditional', 'infinite', or 'hybrid'
+  loadMoreText: 'Load More Experts', // Custom button text
+  maxCachedPages: 5,                 // How many pages to keep in memory
+  
+  // Performance
+  debounceDelay: 300,                // Delay before processing filter changes
+  maxRetries: 3,                     // Max retries for failed requests
+});
+```
+
+#### How Load More Works
+
+1. **Initial Load**: Loads the first batch of experts (based on `data-contra-limit`)
+2. **User Clicks Load More**: Fetches the next batch using the current offset
+3. **Append Results**: New experts are added to the existing list (not replaced)
+4. **Update State**: Button state and pagination info are updated
+5. **Caching**: Each page is cached for better performance
+6. **End Detection**: When fewer results than requested are returned, we've reached the end
+
+#### Advanced Features
+
+##### Infinite Scroll + Load More (Hybrid Mode)
+```javascript
+const runtime = new ContraWebflowRuntime({
+  // ... other config
+  paginationMode: 'hybrid',
+  infiniteScrollThreshold: 500, // Pixels from bottom to trigger auto-load
+});
+```
+
+##### Preloading Next Page
+```javascript
+const runtime = new ContraWebflowRuntime({
+  // ... other config
+  preloadNextPage: true, // Preload next page for instant loading
+});
+```
+
+##### Custom Event Handling
+```javascript
+// Listen for load more events
+window.addEventListener('contra:expertsLoaded', (event) => {
+  const { experts, totalExperts, isLoadMore } = event.detail;
+  
+  if (isLoadMore) {
+    console.log(`Loaded ${experts.length} more experts`);
+    console.log(`Total experts now: ${totalExperts.length}`);
+  }
+});
+```
+
+#### Troubleshooting
+
+##### Load More Button Not Working
+1. Check that `data-contra-action="load-more"` is correctly set
+2. Ensure the button is inside the expert container
+3. Verify your API key and program ID are correct
+4. Check browser console for error messages
+
+##### Button Shows "All experts loaded" Too Early
+1. Check your API's `totalCount` response
+2. Verify the `limit` parameter is being sent correctly
+3. Ensure your API supports pagination with `offset` and `limit`
+
+##### Performance Issues with Many Experts
+1. Reduce the `limit` per page (try 10-20 instead of 50+)
+2. Enable caching with `maxCachedPages`
+3. Consider using `paginationMode: 'hybrid'` for infinite scroll
+
+#### Best Practices
+
+1. **Start Small**: Begin with 10-20 experts per page
+2. **Show Progress**: Always include pagination info
+3. **Handle Errors**: Provide clear error messages
+4. **Mobile Friendly**: Test on mobile devices
+5. **Performance**: Monitor memory usage with large lists
+6. **Accessibility**: Ensure keyboard navigation works
+7. **Loading States**: Always show loading indicators
+
 ---
 
 ## 🎬 Media Handling
@@ -1245,4 +1484,169 @@ MIT License - See LICENSE file for details.
 
 ---
 
-*This documentation covers the complete Contra Expert Directory SDK for Webflow. For the latest updates and support, contact your Contra integration manager.* 
+*This documentation covers the complete Contra Expert Directory SDK for Webflow. For the latest updates and support, contact your Contra integration manager.*
+
+## Pagination Attributes Reference
+
+### Action Attributes
+Use these attributes on buttons and interactive elements:
+
+| Attribute | Description | Example |
+|-----------|-------------|---------|
+| `data-contra-action="load-more"` | Load more experts (append to existing) | `<button data-contra-action="load-more">Load More</button>` |
+| `data-contra-action="next-page"` | Go to next page (replace current) | `<button data-contra-action="next-page">Next</button>` |
+| `data-contra-action="prev-page"` | Go to previous page (replace current) | `<button data-contra-action="prev-page">Previous</button>` |
+| `data-contra-action="first-page"` | Go to first page | `<button data-contra-action="first-page">First</button>` |
+| `data-contra-action="last-page"` | Go to last page | `<button data-contra-action="last-page">Last</button>` |
+| `data-contra-action="reload"` | Reload current data | `<button data-contra-action="reload">Refresh</button>` |
+| `data-contra-action="clear-filters"` | Clear all filters and reload | `<button data-contra-action="clear-filters">Clear</button>` |
+
+### Information Display Attributes
+Use these to show pagination status:
+
+| Attribute | Description | Example Output |
+|-----------|-------------|----------------|
+| `data-contra-pagination-info` | Shows current pagination status | "Showing 20 of 150 experts" or "Page 2 of 8 (150 total)" |
+| `data-contra-infinite-loading` | Loading indicator for load more | Hidden by default, shown during load more |
+
+### Configuration Attributes
+Set these on your main container:
+
+| Attribute | Description | Default | Example |
+|-----------|-------------|---------|---------|
+| `data-contra-limit` | Items per page/load | 20 | `data-contra-limit="10"` |
+| `data-contra-pagination-mode` | Pagination type | "traditional" | `data-contra-pagination-mode="infinite"` |
+
+### Pagination Modes
+
+#### Traditional Pagination
+- Uses Next/Previous buttons
+- Replaces current results with new page
+- Good for large datasets with specific page navigation
+
+```html
+<div data-contra-program="your-program" data-contra-pagination-mode="traditional">
+  <!-- Expert template and content -->
+  
+  <div class="pagination-controls">
+    <button data-contra-action="first-page">First</button>
+    <button data-contra-action="prev-page">Previous</button>
+    <div data-contra-pagination-info></div>
+    <button data-contra-action="next-page">Next</button>
+    <button data-contra-action="last-page">Last</button>
+  </div>
+</div>
+```
+
+#### Infinite Pagination (Load More)
+- Uses Load More button
+- Appends new results to existing ones
+- Great for social media style feeds
+
+```html
+<div data-contra-program="your-program" data-contra-pagination-mode="infinite">
+  <!-- Expert template and content -->
+  
+  <div data-contra-pagination-info></div>
+  <button data-contra-action="load-more">Load More Experts</button>
+  <div data-contra-infinite-loading style="display: none;">Loading...</div>
+</div>
+```
+
+#### Hybrid Pagination
+- Combines infinite scroll with Load More button
+- Auto-loads when scrolling near bottom
+- Provides manual Load More option
+
+```html
+<div data-contra-program="your-program" data-contra-pagination-mode="hybrid">
+  <!-- Expert template and content -->
+  
+  <div data-contra-pagination-info"></div>
+  <button data-contra-action="load-more">Load More Experts</button>
+  <div data-contra-infinite-loading style="display: none;">Loading...</div>
+</div>
+```
+
+### Complete Pagination Setup Examples
+
+#### Simple Load More Setup
+```html
+<div data-contra-program="your-program-id" data-contra-limit="12">
+  <!-- Template -->
+  <div data-contra-template style="display: none;">
+    <!-- Expert card content -->
+  </div>
+  
+  <!-- States -->
+  <div data-contra-loading style="display: none;">Loading experts...</div>
+  <div data-contra-error style="display: none;">Error loading experts</div>
+  <div data-contra-empty style="display: none;">No experts found</div>
+  
+  <!-- Pagination -->
+  <div data-contra-pagination-info class="text-center"></div>
+  <button data-contra-action="load-more" class="btn-load-more">
+    Load More Experts
+  </button>
+</div>
+```
+
+#### Advanced Pagination with All Controls
+```html
+<div data-contra-program="your-program-id" 
+     data-contra-limit="10" 
+     data-contra-pagination-mode="hybrid">
+  
+  <!-- Template -->
+  <div data-contra-template style="display: none;">
+    <!-- Expert card content -->
+  </div>
+  
+  <!-- States -->
+  <div data-contra-loading style="display: none;">
+    <div class="loading-spinner"></div>
+    <p>Loading experts...</p>
+  </div>
+  
+  <div data-contra-error style="display: none;">
+    <p>Error loading experts. Please try again.</p>
+    <button data-contra-action="reload">Retry</button>
+  </div>
+  
+  <div data-contra-empty style="display: none;">
+    <p>No experts found matching your criteria.</p>
+    <button data-contra-action="clear-filters">Clear Filters</button>
+  </div>
+  
+  <!-- Pagination Controls -->
+  <div class="pagination-section">
+    <!-- Info Display -->
+    <div data-contra-pagination-info class="pagination-info"></div>
+    
+    <!-- Traditional Controls (hidden in infinite mode) -->
+    <div class="traditional-pagination">
+      <button data-contra-action="first-page">First</button>
+      <button data-contra-action="prev-page">Previous</button>
+      <button data-contra-action="next-page">Next</button>
+      <button data-contra-action="last-page">Last</button>
+    </div>
+    
+    <!-- Load More Controls -->
+    <div class="infinite-pagination">
+      <button data-contra-action="load-more" class="load-more-btn">
+        Load More Experts
+      </button>
+      
+      <div data-contra-infinite-loading style="display: none;" class="load-more-loading">
+        <div class="spinner"></div>
+        <span>Loading more experts...</span>
+      </div>
+    </div>
+    
+    <!-- Utility Controls -->
+    <div class="utility-controls">
+      <button data-contra-action="reload">Refresh</button>
+      <button data-contra-action="clear-filters">Clear Filters</button>
+    </div>
+  </div>
+</div> 

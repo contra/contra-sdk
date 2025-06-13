@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined Filter Component Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 40px;
+            background-color: #F9FAFB;
+        }
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .demo-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .filter-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 24px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: system-ui, -apple-system, sans-serif;
+            outline: none;
+            user-select: none;
+        }
+        .filter-button:hover {
+            background-color: #F9FAFB;
+            border-color: #D1D5DB;
+        }
+        .hamburger-icon {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            width: 16px;
+            height: 12px;
+        }
+        .hamburger-line {
+            background-color: #374151;
+            border-radius: 1px;
+            height: 2px;
+            transition: all 0.2s ease;
+        }
+        .hamburger-line:nth-child(1) { width: 16px; }
+        .hamburger-line:nth-child(2) { width: 12px; }
+        .hamburger-line:nth-child(3) { width: 8px; }
+        
+        /* Dark mode example */
+        .dark-mode {
+            background-color: #111827;
+            color: #F9FAFB;
+        }
+        .dark-mode .demo-section {
+            background-color: #1F2937;
+        }
+        .dark-mode .filter-button {
+            background-color: #374151;
+            border-color: #4B5563;
+            color: #F9FAFB;
+        }
+        .dark-mode .hamburger-line {
+            background-color: #F9FAFB;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-section">
+            <h2>🎯 Combined Filter Component - FilterFramer</h2>
+            <p>Now everything is combined into one easy-to-use Framer component:</p>
+            <button class="filter-button" onclick="showFilterModal()">
+                <div class="hamburger-icon">
+                    <div class="hamburger-line"></div>
+                    <div class="hamburger-line"></div>
+                    <div class="hamburger-line"></div>
+                </div>
+                Filters
+            </button>
+            <p><em>👆 Click to see the modal (in Framer, this opens the full filter interface!)</em></p>
+        </div>
+
+        <div class="demo-section">
+            <h2>✨ Simplified Framer Setup</h2>
+            <p><strong>Now you only need:</strong></p>
+            <ol>
+                <li>Add <strong>ContraConfigFramer</strong> to your page (configure API once)</li>
+                <li>Add <strong>FilterFramer</strong> button (includes both button + modal)</li>
+                <li>Add <strong>ExpertListFramer</strong> or <strong>ExpertGridFramer</strong> for results</li>
+            </ol>
+            
+            <p><strong>That's it! No more coordinating multiple components.</strong></p>
+
+            <h3>How it works:</h3>
+            <pre style="background: #F3F4F6; padding: 16px; border-radius: 8px; font-size: 14px;">
+1. User clicks FilterFramer button
+2. Modal opens with all filter controls
+3. User adjusts filters and clicks "Save filters" 
+4. FilterFramer dispatches: contra:filterChange { filters: {...} }
+5. ExpertListFramer/ExpertGridFramer receive filters and update results
+6. Modal closes automatically
+            </pre>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎨 All-in-One Design Features</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px;">
+                <div>
+                    <h4>🔘 Filter Button</h4>
+                    <ul style="font-size: 14px; margin: 8px 0;">
+                        <li>✅ Pill-shaped design (24px radius)</li>
+                        <li>✅ Hamburger icon (3 lines)</li>
+                        <li>✅ Hover & press animations</li>
+                        <li>✅ Auto-sizing layout</li>
+                        <li>✅ Full color customization</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4>🎛️ Filter Modal</h4>
+                    <ul style="font-size: 14px; margin: 8px 0;">
+                        <li>✅ Dark overlay background</li>
+                        <li>✅ Rounded modal (16px radius)</li>
+                        <li>✅ Sort dropdown</li>
+                        <li>✅ Range slider for rates</li>
+                        <li>✅ Location & language inputs</li>
+                        <li>✅ Clear/Save actions</li>
+                        <li>✅ Click outside to close</li>
+                        <li>✅ Light/dark mode support</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>⚙️ Comprehensive Property Controls</h2>
+            <p>The FilterFramer has extensive customization options organized into clear sections:</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
+                <div>
+                    <h4 style="color: #3B82F6; margin: 0 0 8px 0;">Button Colors</h4>
+                    <ul style="font-size: 13px; margin: 0; color: #6B7280;">
+                        <li>Background</li>
+                        <li>Border</li>
+                        <li>Text</li>
+                        <li>Icon</li>
+                        <li>Hover</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 style="color: #7C3AED; margin: 0 0 8px 0;">Modal Colors</h4>
+                    <ul style="font-size: 13px; margin: 0; color: #6B7280;">
+                        <li>Background</li>
+                        <li>Text & Muted Text</li>
+                        <li>Input Background/Border</li>
+                        <li>Slider Track/Active/Thumb</li>
+                        <li>Save Button</li>
+                        <li>Overlay</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 style="color: #059669; margin: 0 0 8px 0;">Button Styling</h4>
+                    <ul style="font-size: 13px; margin: 0; color: #6B7280;">
+                        <li>Text Content</li>
+                        <li>Show/Hide Icon</li>
+                        <li>Border Radius</li>
+                        <li>Padding</li>
+                        <li>Font Size/Weight</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 style="color: #DC2626; margin: 0 0 8px 0;">Filter Settings</h4>
+                    <ul style="font-size: 13px; margin: 0; color: #6B7280;">
+                        <li>Min/Max Rate Limits</li>
+                        <li>Default Rate Values</li>
+                        <li>Dark Mode Toggle</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🚀 Ready to Use</h2>
+            <p><strong>Your FilterFramer component is ready!</strong></p>
+            <ol>
+                <li>Copy the <code>FilterFramer.tsx</code> file to your Framer project</li>
+                <li>Place it anywhere on your page</li>
+                <li>Customize colors and settings in the Property Panel</li>
+                <li>It will automatically communicate with your ExpertListFramer/ExpertGridFramer</li>
+            </ol>
+            
+            <p style="background: #F0F9FF; border: 1px solid #7DD3FC; border-radius: 8px; padding: 16px; margin-top: 16px;">
+                <strong>💡 Pro Tip:</strong> The component uses auto-sizing so it will fit perfectly in any layout. The modal is rendered as a portal on top of everything else, so you don't need to worry about z-index issues!
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function showFilterModal() {
+            alert('🎉 Perfect!\n\nIn Framer, clicking this FilterFramer button will:\n\n1. Show the beautiful modal overlay\n2. Let users adjust all filter settings\n3. Save filters and update your expert list/grid\n4. Close automatically\n\nEverything is handled in one component!');
+        }
+    </script>
+</body>
+</html> 
