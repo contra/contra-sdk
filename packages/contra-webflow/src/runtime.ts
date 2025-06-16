@@ -1410,6 +1410,8 @@ export class ContraWebflowRuntime {
 
   private findExpertContainers(): Element[] {
     this.log('Looking for expert containers...');
+    this.log('Document ready state:', document.readyState);
+    this.log('Total elements in document:', document.querySelectorAll('*').length);
     
     // Simple and reliable approach: look for any element with key contra attributes
     const selectors = [
@@ -1424,6 +1426,26 @@ export class ContraWebflowRuntime {
       const elements = Array.from(document.querySelectorAll(selector));
       this.log(`Found ${elements.length} elements with selector: ${selector}`, elements);
       foundElements.push(...elements);
+    }
+    
+    // If no elements found, try a broader search
+    if (foundElements.length === 0) {
+      this.log('No elements found with standard selectors, trying broader search...');
+      
+      // Look for any data-contra attributes
+      const allContraElements = Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination-mode], [class*="contra"], [id*="contra"]'));
+      this.log(`Found ${allContraElements.length} elements with any contra attributes:`, allContraElements);
+      
+      // Look for the specific container structure we expect
+      const containerCandidates = Array.from(document.querySelectorAll('div')).filter(div => {
+        const hasLimit = div.hasAttribute('data-contra-limit');
+        const hasTemplate = div.querySelector('[data-contra-template]');
+        const hasContraClass = div.className.includes('contra');
+        return hasLimit || hasTemplate || hasContraClass;
+      });
+      
+      this.log(`Found ${containerCandidates.length} potential container candidates:`, containerCandidates);
+      foundElements.push(...containerCandidates);
     }
     
     // Get unique containers
@@ -1443,10 +1465,27 @@ export class ContraWebflowRuntime {
           this.log('Found container (template parent):', parent);
         }
       }
+      // If element has contra class, check if it's a container
+      else if (element.className.includes('contra')) {
+        // Check if this element or its children have the structure we need
+        const hasTemplate = element.querySelector('[data-contra-template]');
+        if (hasTemplate) {
+          containers.add(element);
+          this.log('Found container (has contra class and template):', element);
+        }
+      }
     }
     
     const uniqueContainers = Array.from(containers);
     this.log(`Total unique containers found: ${uniqueContainers.length}`, uniqueContainers);
+    
+    // If still no containers found, log detailed debugging info
+    if (uniqueContainers.length === 0) {
+      this.log('❌ No containers found! Debugging info:');
+      this.log('- Document body HTML:', document.body?.innerHTML?.substring(0, 500) + '...');
+      this.log('- All divs:', Array.from(document.querySelectorAll('div')).slice(0, 10));
+      this.log('- Elements with data attributes:', Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination-mode]')));
+    }
     
     return uniqueContainers;
   }
@@ -1618,24 +1657,34 @@ function autoInit(): void {
       return;
     }
     
-    const runtime = new ContraWebflowRuntime(config);
+    // Add a small delay to ensure all DOM elements are ready
+    const initializeRuntime = () => {
+      const runtime = new ContraWebflowRuntime(config);
+      
+      // Expose runtime globally for debugging
+      (window as any).contraRuntime = runtime;
+      
+      runtime.init().catch(error => {
+        console.error('[ContraWebflow] Runtime initialization failed:', error);
+      });
+    };
     
-    // Expose runtime globally for debugging
-    (window as any).contraRuntime = runtime;
-    
-    runtime.init().catch(error => {
-      console.error('[ContraWebflow] Runtime initialization failed:', error);
-    });
+    // Use setTimeout to ensure DOM is fully ready
+    setTimeout(initializeRuntime, 100);
     
   } catch (error) {
     console.error('[ContraWebflow] Failed to parse config:', error);
   }
 }
 
-// Auto-initialize when DOM is ready
+// Auto-initialize when DOM is ready with multiple fallbacks
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', autoInit);
+} else if (document.readyState === 'interactive') {
+  // DOM is ready but resources might still be loading
+  setTimeout(autoInit, 50);
 } else {
+  // DOM and resources are ready
   autoInit();
 }
 
