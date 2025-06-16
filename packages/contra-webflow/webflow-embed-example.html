@@ -25,6 +25,7 @@
         width: 100%;
         max-width: 1200px;
         margin: 0 auto;
+        padding: 20px;
     }
 
     /* Expert Card Styles */
@@ -58,6 +59,7 @@
         border-radius: 50%;
         object-fit: cover;
         border: 3px solid #f3f4f6;
+        flex-shrink: 0;
     }
 
     .expert-info h3 {
@@ -70,7 +72,7 @@
     .expert-location {
         color: #6b7280;
         font-size: 14px;
-        margin: 0;
+        margin: 0 0 8px 0;
     }
 
     .expert-bio {
@@ -121,7 +123,6 @@
         font-size: 12px;
         font-weight: 500;
         border: 1px solid #d1fae5;
-        margin-bottom: 8px;
     }
 
     .availability-dot {
@@ -221,6 +222,7 @@
     .expert-cta:hover {
         background: #374151;
         border-color: #374151;
+        color: white;
     }
 
     /* Pagination Styles */
@@ -392,8 +394,8 @@
 
 <!-- Expert Directory Container -->
 <div class="contra-expert-directory">
-    <!-- Expert Container -->
-    <div data-contra-limit="2" data-contra-pagination-mode="infinite">
+    <!-- Expert Container with proper pagination attributes -->
+    <div data-contra-limit="2" data-contra-offset="0" data-contra-pagination-mode="infinite">
         
         <!-- Expert Card Template -->
         <article data-contra-template class="expert-card" style="display: none;">
@@ -506,52 +508,53 @@
 
 <!-- Enhanced JavaScript for Better UX -->
 <script>
-    // Enhanced load more button feedback
-    document.addEventListener('contra:expertsLoaded', (event) => {
-        const { experts, totalExperts, isLoadMore } = event.detail;
-        
-        if (isLoadMore) {
-            // Show success feedback
-            const button = document.querySelector('[data-contra-action="load-more"]');
-            if (button) {
-                const originalText = button.textContent;
-                button.textContent = `Loaded ${experts.length} more experts!`;
-                button.style.background = '#10b981';
-                
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.background = '';
-                }, 2000);
-            }
-        }
-    });
-    
-    // Smooth scroll to new content after load more
-    let lastExpertCount = 0;
-    document.addEventListener('contra:expertsLoaded', (event) => {
-        const { totalExperts, isLoadMore } = event.detail;
-        
-        if (isLoadMore && totalExperts && totalExperts.length > lastExpertCount) {
-            setTimeout(() => {
-                const expertCards = document.querySelectorAll('.expert-card:not([data-contra-template])');
-                const newCardIndex = lastExpertCount;
-                
-                if (expertCards[newCardIndex]) {
-                    expertCards[newCardIndex].scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+    // Wait for runtime to be available
+    document.addEventListener('DOMContentLoaded', function() {
+        // Enhanced load more button feedback
+        document.addEventListener('contra:expertsLoaded', (event) => {
+            const { experts, totalExperts, isLoadMore } = event.detail;
+            
+            if (isLoadMore && experts && experts.length > 0) {
+                // Show success feedback
+                const button = document.querySelector('[data-contra-action="load-more"]');
+                if (button) {
+                    const originalText = button.textContent;
+                    button.textContent = `Loaded ${experts.length} more experts!`;
+                    button.style.background = '#10b981';
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                    }, 2000);
                 }
-            }, 500);
-        }
+            }
+        });
         
-        if (totalExperts) {
-            lastExpertCount = totalExperts.length;
-        }
-    });
-    
-    // Add loading animation to load more button
-    document.addEventListener('DOMContentLoaded', () => {
+        // Smooth scroll to new content after load more
+        let lastExpertCount = 0;
+        document.addEventListener('contra:expertsLoaded', (event) => {
+            const { totalExperts, isLoadMore } = event.detail;
+            
+            if (isLoadMore && totalExperts && totalExperts.length > lastExpertCount) {
+                setTimeout(() => {
+                    const expertCards = document.querySelectorAll('.expert-card:not([data-contra-template])');
+                    const newCardIndex = lastExpertCount;
+                    
+                    if (expertCards[newCardIndex]) {
+                        expertCards[newCardIndex].scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }, 500);
+            }
+            
+            if (totalExperts && totalExperts.length) {
+                lastExpertCount = totalExperts.length;
+            }
+        });
+        
+        // Add loading animation to load more button
         const loadMoreBtn = document.querySelector('[data-contra-action="load-more"]');
         if (loadMoreBtn) {
             loadMoreBtn.addEventListener('click', () => {
@@ -563,23 +566,28 @@
                 }
             });
         }
-    });
-    
-    // Error handling with user feedback
-    document.addEventListener('contra:expertsError', (event) => {
-        console.error('Expert loading error:', event.detail);
         
-        // Show user-friendly error message
-        const errorElement = document.querySelector('[data-contra-error]');
-        if (errorElement && event.detail.error) {
-            const errorMessage = event.detail.error.message || 'Unknown error occurred';
-            errorElement.innerHTML = `
-                <h3>Oops! Something went wrong</h3>
-                <p>We couldn't load the expert directory. ${errorMessage}</p>
-                <button data-contra-action="reload" class="load-more-btn" style="margin-top: 16px;">
-                    Try Again
-                </button>
-            `;
-        }
+        // Error handling with user feedback
+        document.addEventListener('contra:expertsError', (event) => {
+            console.error('Expert loading error:', event.detail);
+            
+            // Show user-friendly error message
+            const errorElement = document.querySelector('[data-contra-error]');
+            if (errorElement && event.detail.error) {
+                const errorMessage = event.detail.error.message || 'Unknown error occurred';
+                errorElement.innerHTML = `
+                    <h3>Oops! Something went wrong</h3>
+                    <p>We couldn't load the expert directory. ${errorMessage}</p>
+                    <button data-contra-action="reload" class="load-more-btn" style="margin-top: 16px;">
+                        Try Again
+                    </button>
+                `;
+            }
+        });
+        
+        // Debug logging
+        document.addEventListener('contra:expertsLoaded', (event) => {
+            console.log('Experts loaded:', event.detail);
+        });
     });
 </script> 

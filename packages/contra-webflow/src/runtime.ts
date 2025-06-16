@@ -1416,22 +1416,51 @@ export class ContraWebflowRuntime {
   }
 
   private findExpertContainers(): Element[] {
-    // With the new config format, we look for any element that could contain experts
-    // Since program is now in config, we look for elements with contra attributes
-    const containers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}template], [${ATTR_PREFIX}limit], [${ATTR_PREFIX}pagination-mode]`))
-      .map(el => el.closest('div, section, article') || el.parentElement)
-      .filter((el, index, arr) => el && arr.indexOf(el) === index) // Remove duplicates
-      .filter(el => el) as Element[];
+    this.log('Looking for expert containers...');
     
-    // If no containers found with attributes, look for any container with a template
-    if (containers.length === 0) {
-      const templateContainers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}template]`))
-        .map(template => template.parentElement)
-        .filter(el => el) as Element[];
-      return templateContainers;
+    // Look for containers with contra attributes directly
+    const directContainers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}limit], [${ATTR_PREFIX}pagination-mode]`));
+    this.log(`Found ${directContainers.length} direct containers with limit/pagination-mode attributes`);
+    
+    // Also look for containers that contain templates
+    const templateElements = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}template]`));
+    this.log(`Found ${templateElements.length} template elements`);
+    
+    const templateContainers = templateElements
+      .map(template => template.parentElement)
+      .filter(el => el) as Element[];
+    this.log(`Found ${templateContainers.length} template parent containers`);
+    
+    // Combine and deduplicate
+    const allContainers = [...directContainers, ...templateContainers];
+    const uniqueContainers = allContainers.filter((el, index, arr) => arr.indexOf(el) === index);
+    
+    this.log(`Total unique containers found: ${uniqueContainers.length}`, uniqueContainers);
+    
+    // If still no containers, try a broader search
+    if (uniqueContainers.length === 0) {
+      this.log('No containers found with standard method, trying broader search...');
+      const anyContraElements = Array.from(document.querySelectorAll('[data-contra-template], [data-contra-limit], [data-contra-pagination-mode], [data-contra-loading], [data-contra-error]'));
+      this.log(`Found ${anyContraElements.length} elements with any contra attributes`, anyContraElements);
+      
+      // Find their containers
+      const broadContainers = anyContraElements
+        .map(el => {
+          // If the element itself has limit or pagination-mode, it's a container
+          if (el.hasAttribute('data-contra-limit') || el.hasAttribute('data-contra-pagination-mode')) {
+            return el;
+          }
+          // Otherwise, find the parent container
+          return el.closest('div, section, article') || el.parentElement;
+        })
+        .filter(el => el)
+        .filter((el, index, arr) => arr.indexOf(el) === index) as Element[];
+      
+      this.log(`Broad search found ${broadContainers.length} containers`, broadContainers);
+      return broadContainers;
     }
     
-    return containers;
+    return uniqueContainers;
   }
 
   private parseFiltersFromElement(element: Element): ExpertFilters {
