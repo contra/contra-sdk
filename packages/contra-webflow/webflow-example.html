@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expert Directory - Contra SDK Demo</title>
+    
+    <!-- Webflow-style CSS -->
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fafafa;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .header p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            padding: 40px 0;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+            font-size: 14px;
+        }
+        
+        .filter-input {
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: white;
+        }
+        
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 60px 0;
+        }
+        
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+        
+        .content-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #111827;
+        }
+        
+        .filter-summary {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #0369a1;
+            margin-bottom: 30px;
+        }
+        
+        /* Expert Cards */
+        .expert-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .expert-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .expert-header {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .expert-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #f3f4f6;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .expert-avatar:hover {
+            transform: scale(1.05);
+        }
+        
+        .expert-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .expert-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        
+        .expert-name:hover {
+            color: #667eea;
+        }
+        
+        .expert-location {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .availability-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfdf5;
+            color: #059669;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid #d1fae5;
+        }
+        
+        .availability-dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+        }
+        
+        .expert-bio {
+            color: #4b5563;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .expert-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+            border-top: 1px solid #f3f4f6;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 20px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            display: block;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .star-rating {
+            display: inline-flex;
+            gap: 2px;
+            margin-bottom: 4px;
+        }
+        
+        .contra-star {
+            font-size: 16px;
+        }
+        
+        .contra-star-full {
+            color: #fbbf24;
+        }
+        
+        .contra-star-half {
+            color: #fbbf24;
+        }
+        
+        .contra-star-empty {
+            color: #e5e7eb;
+        }
+        
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .skill-tag {
+            background: #f3f4f6;
+            color: #374151;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .project-thumbnail {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .project-thumbnail:hover {
+            transform: scale(1.02);
+        }
+        
+        .project-overlay {
+            position: relative;
+        }
+        
+        .project-count {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 8px;
+        }
+        
+        .expert-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .expert-link {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            background: white;
+        }
+        
+        .expert-link:hover {
+            background: #f9fafb;
+            transform: translateY(-1px);
+        }
+        
+        .expert-cta {
+            background: #667eea;
+            color: white;
+            border: 1px solid #667eea;
+        }
+        
+        .expert-cta:hover {
+            background: #5a67d8;
+            border-color: #5a67d8;
+        }
+        
+        /* Loading States */
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-state {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 2px dashed #d1d5db;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        
+        /* Pagination */
+        .pagination-section {
+            text-align: center;
+            padding: 40px 0;
+        }
+        
+        .pagination-info {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 24px;
+            padding: 12px 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        
+        .load-more-btn {
+            background: #667eea;
+            color: white;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            min-width: 200px;
+        }
+        
+        .load-more-btn:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .load-more-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .load-more-btn.loading {
+            color: transparent;
+        }
+        
+        .load-more-btn.error {
+            background: #dc2626;
+        }
+        
+        .load-more-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 20px;
+            color: #6b7280;
+        }
+        
+        .load-more-loading .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* HubSpot Form Section */
+        .hubspot-section {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: white;
+            padding: 80px 0;
+            margin-top: 60px;
+        }
+        
+        .hubspot-content {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .hubspot-content h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        
+        .hubspot-content p {
+            font-size: 1.125rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .hubspot-form-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            
+            .expert-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .expert-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .projects-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .expert-actions {
+                justify-content: center;
+            }
+            
+            .hubspot-content h2 {
+                font-size: 2rem;
+            }
+            
+            .hubspot-form-container {
+                margin: 0 20px;
+                padding: 30px 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .expert-card {
+                padding: 20px;
+            }
+            
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .expert-stats {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+        
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+        
+        .mt-4 {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Configuration Script (Required) -->
+    <!-- 🚨 REPLACE THESE VALUES WITH YOUR ACTUAL CREDENTIALS 🚨 -->
+    <script id="contra-config" type="application/json">
+    {
+        "program": "kajabi_expert",
+        "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
+        "debug": true,
+        "autoReload": true,
+        "debounceDelay": 300,
+        "maxRetries": 3,
+        "loadMoreText": "Load More Experts",
+        "paginationMode": "infinite",
+        "maxCachedPages": 5,
+        "videoAutoplay": false,
+        "videoHoverPlay": false,
+        "videoMuted": true,
+        "videoLoop": false,
+        "videoControls": false
+    }
+    </script>
+
+    <!-- Troubleshooting Panel (Remove in production) -->
+    <div id="debug-panel" style="background: #fee2e2; border: 2px solid #dc2626; padding: 20px; margin: 20px; border-radius: 8px; font-family: monospace; font-size: 14px;">
+        <h3 style="color: #dc2626; margin: 0 0 16px 0;">🚨 Configuration Required</h3>
+        <div id="config-status">
+            <p><strong>Status:</strong> <span id="status-text">Checking configuration...</span></p>
+            <p><strong>API Key:</strong> <span id="api-key-status">Not set</span></p>
+            <p><strong>Program ID:</strong> <span id="program-id-status">Not set</span></p>
+            <p><strong>SDK Loaded:</strong> <span id="sdk-status">Loading...</span></p>
+        </div>
+        <div style="margin-top: 16px; padding: 12px; background: #fef3c7; border-radius: 4px;">
+            <strong>Configuration Format:</strong><br>
+            1. Set "program": "your_program_name" in the config<br>
+            2. Set "apiKey": "your_api_key" in the config<br>
+            3. Check browser console for detailed error messages<br>
+            4. Make sure the CDN script is loading properly
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <header class="header">
+        <div class="container">
+            <h1>Expert Directory</h1>
+            <p>Discover talented professionals ready to bring your projects to life. Filter by skills, availability, and more to find the perfect match.</p>
+        </div>
+    </header>
+
+    <!-- Filter Section -->
+    <section class="filter-section">
+        <div class="container">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="sort-filter">Sort By</label>
+                    <select id="sort-filter" data-contra-filter="sortBy" class="filter-input">
+                        <option value="relevance">Most Relevant</option>
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="location-filter">Location</label>
+                    <input type="text" id="location-filter" data-contra-filter="location" 
+                           placeholder="e.g. San Francisco, Remote" class="filter-input">
+                </div>
+                
+                <div class="filter-group">
+                    <label>Rate Range (USD/hour)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" data-contra-filter="minRate" placeholder="Min" 
+                               class="filter-input" style="flex: 1;">
+                        <input type="number" data-contra-filter="maxRate" placeholder="Max" 
+                               class="filter-input" style="flex: 1;">
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Availability</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="available-filter" data-contra-filter="available" value="true">
+                        <label for="available-filter">Available Now Only</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button data-contra-action="clear-filters" class="btn btn-secondary">
+                    Clear All Filters
+                </button>
+                <button data-contra-action="reload" class="btn btn-secondary">
+                    Refresh Results
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="content-header">
+                <h2 class="content-title">Available Experts</h2>
+            </div>
+            
+            <!-- Filter Summary -->
+            <div data-contra-filter-summary class="filter-summary hidden">
+                <!-- Active filters will be displayed here -->
+            </div>
+
+            <!-- Expert Directory Container -->
+            <div data-contra-limit="12" data-contra-pagination-mode="infinite">
+                
+                <!-- Expert Card Template -->
+                <article data-contra-template class="expert-card" style="display: none;">
+                    <header class="expert-header">
+                        <img data-contra-field="avatarUrl" class="expert-avatar" alt="Expert Profile" loading="lazy">
+                        <div class="expert-info">
+                            <h3 data-contra-field="name" class="expert-name">Expert Name</h3>
+                            <p data-contra-field="location" class="expert-location">Location</p>
+                            <div data-contra-show-when="available:true" class="availability-badge">
+                                <div class="availability-dot"></div>
+                                Available Now
+                            </div>
+                        </div>
+                    </header>
+                    
+                    <div class="expert-bio">
+                        <p data-contra-field="oneLiner">Expert bio and description will appear here...</p>
+                    </div>
+                    
+                    <div class="expert-stats">
+                        <div class="stat">
+                            <span data-contra-field="earningsUSD" data-contra-format="earnings" class="stat-value">$0</span>
+                            <span class="stat-label">Earned</span>
+                        </div>
+                        <div class="stat">
+                            <span data-contra-field="projectsCompletedCount" class="stat-value">0</span>
+                            <span class="stat-label">Projects</span>
+                        </div>
+                        <div class="stat">
+                            <div data-contra-stars class="star-rating"></div>
+                            <span data-contra-field="averageReviewScore" data-contra-format="rating" class="stat-value">0.0</span>
+                            <span class="stat-label">Rating</span>
+                        </div>
+                        <div class="stat">
+                            <span data-contra-field="followersCount" data-contra-format="number" class="stat-value">0</span>
+                            <span class="stat-label">Followers</span>
+                        </div>
+                        <div class="stat">
+                            <span data-contra-field="hourlyRateUSD" data-contra-format="rate" class="stat-value">Rate</span>
+                            <span class="stat-label">Hourly Rate</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Skills -->
+                    <div data-contra-repeat="skillTags" data-contra-max="6" class="skill-tags">
+                        <span data-contra-field="name" class="skill-tag">Skill</span>
+                    </div>
+                    
+                    <!-- Projects -->
+                    <div data-contra-repeat="projects" data-contra-max="4" class="projects-grid">
+                        <div class="project-overlay">
+                            <img data-contra-field="coverUrl" class="project-thumbnail" loading="lazy" alt="Project">
+                        </div>
+                    </div>
+                    
+                    <footer class="expert-actions">
+                        <a data-contra-field="profileUrl" class="expert-link" target="_blank" rel="noopener">
+                            View Profile
+                        </a>
+                        <a data-contra-field="inquiryUrl" class="expert-link expert-cta" target="_blank" rel="noopener">
+                            Contact Expert
+                        </a>
+                    </footer>
+                </article>
+                
+                <!-- Loading State -->
+                <div data-contra-loading class="loading-state" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>Loading experts...</p>
+                </div>
+                
+                <!-- Error State -->
+                <div data-contra-error class="error-state" style="display: none;">
+                    <h3>Oops! Something went wrong</h3>
+                    <p>We couldn't load the expert directory. Please try again.</p>
+                    <button data-contra-action="reload" class="btn btn-primary mt-4">
+                        Try Again
+                    </button>
+                </div>
+                
+                <!-- Empty State -->
+                <div data-contra-empty class="empty-state" style="display: none;">
+                    <h3>No experts found</h3>
+                    <p>Try adjusting your filters to see more results.</p>
+                    <button data-contra-action="clear-filters" class="btn btn-primary mt-4">
+                        Clear Filters
+                    </button>
+                </div>
+                
+                <!-- Pagination Section -->
+                <div class="pagination-section">
+                    <!-- Pagination Info -->
+                    <div data-contra-pagination-info class="pagination-info">
+                        <!-- Will show: "Showing 12 of 150 experts" -->
+                    </div>
+                    
+                    <!-- Load More Button -->
+                    <button data-contra-action="load-more" class="load-more-btn">
+                        Load More Experts
+                    </button>
+                    
+                    <!-- Load More Loading Indicator -->
+                    <div data-contra-infinite-loading class="load-more-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <span>Loading more experts...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- HubSpot Form Section -->
+    <section class="hubspot-section">
+        <div class="container">
+            <div class="hubspot-content">
+                <h2>Ready to Get Started?</h2>
+                <p>Connect with our team to learn more about accessing our expert directory and finding the perfect talent for your projects.</p>
+            </div>
+            
+            <div class="hubspot-form-container">
+                <div id="hubspot-form">
+                    <!-- HubSpot form will be embedded here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    
+    <!-- HubSpot Forms Script -->
+    <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
+    <script>
+        // Initialize HubSpot form
+        hbspt.forms.create({
+            portalId: "44165444",
+            formId: "54f02db7-95d0-4c14-ba2f-d5e2dd8537f5",
+            region: "na1",
+            target: '#hubspot-form'
+        });
+    </script>
+    
+    <!-- Contra SDK Runtime (Required) -->
+    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js"></script>
+    
+    <!-- Custom JavaScript for Enhanced UX -->
+    <script>
+        // Configuration debugging
+        function checkConfiguration() {
+            const configElement = document.getElementById('contra-config');
+            const statusText = document.getElementById('status-text');
+            const apiKeyStatus = document.getElementById('api-key-status');
+            const programIdStatus = document.getElementById('program-id-status');
+            const sdkStatus = document.getElementById('sdk-status');
+            
+            try {
+                const config = JSON.parse(configElement.textContent || '{}');
+                
+                // Check API Key
+                if (!config.apiKey || config.apiKey === 'your_api_key') {
+                    apiKeyStatus.textContent = '❌ Not configured (using placeholder)';
+                    apiKeyStatus.style.color = '#dc2626';
+                } else {
+                    apiKeyStatus.textContent = '✅ Configured: ' + config.apiKey.substring(0, 20) + '...';
+                    apiKeyStatus.style.color = '#059669';
+                }
+                
+                // Check Program ID (now in config)
+                if (!config.program || config.program === 'your_program_id_here') {
+                    programIdStatus.textContent = '❌ Not configured (using placeholder)';
+                    programIdStatus.style.color = '#dc2626';
+                } else {
+                    programIdStatus.textContent = '✅ Configured: ' + config.program;
+                    programIdStatus.style.color = '#059669';
+                }
+                
+                // Check SDK
+                if (typeof window.contraRuntime !== 'undefined') {
+                    sdkStatus.textContent = '✅ Loaded successfully';
+                    sdkStatus.style.color = '#059669';
+                } else {
+                    sdkStatus.textContent = '⏳ Loading...';
+                    sdkStatus.style.color = '#d97706';
+                }
+                
+                // Overall status
+                if (config.apiKey && config.apiKey !== 'your_api_key' && 
+                    config.program && config.program !== 'your_program_id_here') {
+                    statusText.textContent = '✅ Configuration looks good!';
+                    statusText.style.color = '#059669';
+                    
+                    // Hide debug panel after 5 seconds if everything is configured
+                    setTimeout(() => {
+                        const debugPanel = document.getElementById('debug-panel');
+                        if (debugPanel) {
+                            debugPanel.style.display = 'none';
+                        }
+                    }, 5000);
+                } else {
+                    statusText.textContent = '❌ Configuration incomplete';
+                    statusText.style.color = '#dc2626';
+                }
+                
+            } catch (error) {
+                statusText.textContent = '❌ Configuration error: ' + error.message;
+                statusText.style.color = '#dc2626';
+            }
+        }
+        
+        // Check configuration on load
+        document.addEventListener('DOMContentLoaded', checkConfiguration);
+        
+        // Check again after SDK loads
+        setTimeout(checkConfiguration, 2000);
+        
+        // Enhanced filter summary display
+        document.addEventListener('contra:filterChange', (event) => {
+            const { filters } = event.detail;
+            const summaryElement = document.querySelector('[data-contra-filter-summary]');
+            
+            if (summaryElement) {
+                const activeFilters = Object.entries(filters)
+                    .filter(([key, value]) => value != null && value !== '')
+                    .map(([key, value]) => {
+                        switch(key) {
+                            case 'sortBy': return `Sorted by: ${value}`;
+                            case 'location': return `Location: ${value}`;
+                            case 'minRate': return `Min rate: $${value}/hr`;
+                            case 'maxRate': return `Max rate: $${value}/hr`;
+                            case 'available': return value === 'true' ? 'Available only' : '';
+                            default: return `${key}: ${value}`;
+                        }
+                    })
+                    .filter(Boolean);
+                
+                if (activeFilters.length > 0) {
+                    summaryElement.textContent = `Active filters: ${activeFilters.join(', ')}`;
+                    summaryElement.classList.remove('hidden');
+                } else {
+                    summaryElement.classList.add('hidden');
+                }
+            }
+        });
+        
+        // Enhanced load more button feedback
+        document.addEventListener('contra:expertsLoaded', (event) => {
+            const { experts, totalExperts, isLoadMore } = event.detail;
+            
+            console.log('✅ Experts loaded successfully:', {
+                expertsCount: experts.length,
+                totalExperts: totalExperts ? totalExperts.length : 'unknown',
+                isLoadMore: isLoadMore
+            });
+            
+            if (isLoadMore) {
+                // Show success feedback
+                const button = document.querySelector('[data-contra-action="load-more"]');
+                if (button) {
+                    const originalText = button.textContent;
+                    button.textContent = `Loaded ${experts.length} more experts!`;
+                    button.style.background = '#10b981';
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                    }, 2000);
+                }
+            }
+        });
+        
+        // Enhanced error logging
+        document.addEventListener('contra:expertsError', (event) => {
+            console.error('❌ Expert loading error:', event.detail);
+            
+            // Show user-friendly error message
+            const errorElement = document.querySelector('[data-contra-error]');
+            if (errorElement && event.detail.error) {
+                const errorMessage = event.detail.error.message || 'Unknown error occurred';
+                errorElement.innerHTML = `
+                    <h3>Oops! Something went wrong</h3>
+                    <p>We couldn't load the expert directory. ${errorMessage}</p>
+                    <button data-contra-action="reload" class="btn btn-primary mt-4">
+                        Try Again
+                    </button>
+                `;
+            }
+            
+            // Update debug panel with error info
+            const statusText = document.getElementById('status-text');
+            if (statusText) {
+                statusText.textContent = '❌ API Error: ' + (event.detail.error.message || 'Unknown error');
+                statusText.style.color = '#dc2626';
+            }
+        });
+        
+        // Smooth scroll to new content after load more
+        let lastExpertCount = 0;
+        document.addEventListener('contra:expertsLoaded', (event) => {
+            const { totalExperts, isLoadMore } = event.detail;
+            
+            if (isLoadMore && totalExperts && totalExperts.length > lastExpertCount) {
+                setTimeout(() => {
+                    const expertCards = document.querySelectorAll('.expert-card:not([data-contra-template])');
+                    const newCardIndex = lastExpertCount;
+                    
+                    if (expertCards[newCardIndex]) {
+                        expertCards[newCardIndex].scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }, 500);
+            }
+            
+            if (totalExperts) {
+                lastExpertCount = totalExperts.length;
+            }
+        });
+        
+        // Add loading animation to load more button
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadMoreBtn = document.querySelector('[data-contra-action="load-more"]');
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', () => {
+                    if (!loadMoreBtn.disabled) {
+                        loadMoreBtn.innerHTML = `
+                            <div style="display: inline-block; width: 16px; height: 16px; border: 2px solid transparent; border-top: 2px solid currentColor; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></div>
+                            Loading...
+                        `;
+                    }
+                });
+            }
+        });
+        
+        // Analytics tracking (optional)
+        document.addEventListener('contra:expertsLoaded', (event) => {
+            // Track expert views
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'experts_loaded', {
+                    'event_category': 'Expert Directory',
+                    'event_label': 'Experts Loaded',
+                    'value': event.detail.experts.length
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

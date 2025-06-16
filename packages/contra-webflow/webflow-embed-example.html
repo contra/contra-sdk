@@ -1,0 +1,585 @@
+<!-- Configuration Script (Required) -->
+<script id="contra-config" type="application/json">
+{
+    "program": "kajabi_expert",
+    "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
+    "debug": true,
+    "autoReload": true,
+    "debounceDelay": 300,
+    "maxRetries": 3,
+    "loadMoreText": "Load More Experts",
+    "paginationMode": "infinite",
+    "maxCachedPages": 5,
+    "videoAutoplay": false,
+    "videoHoverPlay": false,
+    "videoMuted": true,
+    "videoLoop": false,
+    "videoControls": false
+}
+</script>
+
+<style>
+    /* Contra Expert Directory Styles */
+    .contra-expert-directory {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Expert Card Styles */
+    .expert-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .expert-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: #d1d5db;
+    }
+
+    /* Expert Header */
+    .expert-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .expert-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #f3f4f6;
+    }
+
+    .expert-info h3 {
+        margin: 0 0 4px 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .expert-location {
+        color: #6b7280;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .expert-bio {
+        color: #4b5563;
+        line-height: 1.6;
+        margin-bottom: 16px;
+    }
+
+    /* Expert Stats */
+    .expert-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 16px;
+        padding: 16px 0;
+        border-top: 1px solid #f3f4f6;
+        border-bottom: 1px solid #f3f4f6;
+        margin-bottom: 16px;
+    }
+
+    .stat {
+        text-align: center;
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Availability Badge */
+    .availability-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ecfdf5;
+        color: #059669;
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid #d1fae5;
+        margin-bottom: 8px;
+    }
+
+    .availability-dot {
+        width: 6px;
+        height: 6px;
+        background: #10b981;
+        border-radius: 50%;
+    }
+
+    /* Star Rating */
+    .star-rating {
+        display: inline-flex;
+        gap: 2px;
+        margin-bottom: 4px;
+    }
+
+    .contra-star {
+        font-size: 14px;
+    }
+
+    .contra-star-full {
+        color: #fbbf24;
+    }
+
+    .contra-star-empty {
+        color: #e5e7eb;
+    }
+
+    /* Skills */
+    .skill-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .skill-tag {
+        background: #f3f4f6;
+        color: #374151;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    /* Projects Grid */
+    .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .project-thumbnail {
+        width: 100%;
+        aspect-ratio: 4/3;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        transition: transform 0.2s ease;
+    }
+
+    .project-thumbnail:hover {
+        transform: scale(1.02);
+    }
+
+    /* Expert Actions */
+    .expert-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .expert-link {
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        border: 1px solid #d1d5db;
+        color: #374151;
+        background: white;
+    }
+
+    .expert-link:hover {
+        background: #f9fafb;
+        transform: translateY(-1px);
+    }
+
+    .expert-cta {
+        background: #111827;
+        color: white;
+        border-color: #111827;
+    }
+
+    .expert-cta:hover {
+        background: #374151;
+        border-color: #374151;
+    }
+
+    /* Pagination Styles */
+    .pagination-section {
+        text-align: center;
+        padding: 40px 0;
+    }
+
+    .pagination-info {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 24px;
+        padding: 12px 20px;
+        background: #f9fafb;
+        border-radius: 8px;
+        display: inline-block;
+    }
+
+    .load-more-btn {
+        background: #111827;
+        color: white;
+        padding: 16px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        min-width: 200px;
+    }
+
+    .load-more-btn:hover:not(:disabled) {
+        background: #374151;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(17, 24, 39, 0.3);
+    }
+
+    .load-more-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .load-more-btn.loading {
+        color: transparent;
+    }
+
+    .load-more-btn.error {
+        background: #dc2626;
+    }
+
+    .load-more-btn.disabled {
+        background: #9ca3af;
+    }
+
+    /* Loading States */
+    .loading-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #111827;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    .load-more-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 20px;
+        color: #6b7280;
+    }
+
+    .load-more-loading .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f4f6;
+        border-top: 2px solid #111827;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Error State */
+    .error-state {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        text-align: center;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 2px dashed #d1d5db;
+    }
+
+    .empty-state h3 {
+        font-size: 1.25rem;
+        margin-bottom: 8px;
+        color: #374151;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .expert-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .expert-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .projects-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .expert-actions {
+            justify-content: center;
+        }
+
+        .contra-expert-directory {
+            padding: 0 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .expert-card {
+            padding: 16px;
+        }
+
+        .projects-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .expert-stats {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+    }
+
+    /* Hidden utility */
+    .hidden {
+        display: none !important;
+    }
+</style>
+
+<!-- Expert Directory Container -->
+<div class="contra-expert-directory">
+    <!-- Expert Container -->
+    <div data-contra-limit="2" data-contra-pagination-mode="infinite">
+        
+        <!-- Expert Card Template -->
+        <article data-contra-template class="expert-card" style="display: none;">
+            <header class="expert-header">
+                <img data-contra-field="avatarUrl" class="expert-avatar" alt="Expert Profile" loading="lazy">
+                <div class="expert-info">
+                    <h3 data-contra-field="name">Expert Name</h3>
+                    <p data-contra-field="location" class="expert-location">Location</p>
+                    <div data-contra-show-when="available:true" class="availability-badge">
+                        <div class="availability-dot"></div>
+                        Available Now
+                    </div>
+                </div>
+            </header>
+            
+            <div class="expert-bio">
+                <p data-contra-field="oneLiner">Expert bio and description will appear here...</p>
+            </div>
+            
+            <div class="expert-stats">
+                <div class="stat">
+                    <span data-contra-field="earningsUSD" data-contra-format="earnings" class="stat-value">$0</span>
+                    <span class="stat-label">Earned</span>
+                </div>
+                <div class="stat">
+                    <span data-contra-field="projectsCompletedCount" class="stat-value">0</span>
+                    <span class="stat-label">Projects</span>
+                </div>
+                <div class="stat">
+                    <div data-contra-stars class="star-rating"></div>
+                    <span data-contra-field="averageReviewScore" data-contra-format="rating" class="stat-value">0.0</span>
+                    <span class="stat-label">Rating</span>
+                </div>
+                <div class="stat">
+                    <span data-contra-field="followersCount" data-contra-format="number" class="stat-value">0</span>
+                    <span class="stat-label">Followers</span>
+                </div>
+                <div class="stat">
+                    <span data-contra-field="hourlyRateUSD" data-contra-format="rate" class="stat-value">Rate</span>
+                    <span class="stat-label">Hourly Rate</span>
+                </div>
+            </div>
+            
+            <!-- Skills -->
+            <div data-contra-repeat="skillTags" data-contra-max="6" class="skill-tags">
+                <span data-contra-field="name" class="skill-tag">Skill</span>
+            </div>
+            
+            <!-- Projects -->
+            <div data-contra-repeat="projects" data-contra-max="4" class="projects-grid">
+                <div>
+                    <img data-contra-field="coverUrl" class="project-thumbnail" loading="lazy" alt="Project">
+                </div>
+            </div>
+            
+            <footer class="expert-actions">
+                <a data-contra-field="profileUrl" class="expert-link" target="_blank" rel="noopener">
+                    View Profile
+                </a>
+                <a data-contra-field="inquiryUrl" class="expert-link expert-cta" target="_blank" rel="noopener">
+                    Contact Expert
+                </a>
+            </footer>
+        </article>
+        
+        <!-- Loading State -->
+        <div data-contra-loading class="loading-state" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Loading experts...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div data-contra-error class="error-state" style="display: none;">
+            <h3>Oops! Something went wrong</h3>
+            <p>We couldn't load the expert directory. Please try again.</p>
+            <button data-contra-action="reload" class="load-more-btn" style="margin-top: 16px;">
+                Try Again
+            </button>
+        </div>
+        
+        <!-- Empty State -->
+        <div data-contra-empty class="empty-state" style="display: none;">
+            <h3>No experts found</h3>
+            <p>Try adjusting your filters to see more results.</p>
+        </div>
+    </div>
+    
+    <!-- Pagination Section -->
+    <div class="pagination-section">
+        <!-- Pagination Info -->
+        <div data-contra-pagination-info class="pagination-info">
+            <!-- Will show: "Showing 2 of 30 experts" -->
+        </div>
+        
+        <!-- Load More Button -->
+        <button data-contra-action="load-more" class="load-more-btn">
+            Load More Experts
+        </button>
+        
+        <!-- Load More Loading Indicator -->
+        <div data-contra-infinite-loading class="load-more-loading" style="display: none;">
+            <div class="spinner"></div>
+            <span>Loading more experts...</span>
+        </div>
+    </div>
+</div>
+
+<!-- Contra SDK Runtime (Required) -->
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js"></script>
+
+<!-- Enhanced JavaScript for Better UX -->
+<script>
+    // Enhanced load more button feedback
+    document.addEventListener('contra:expertsLoaded', (event) => {
+        const { experts, totalExperts, isLoadMore } = event.detail;
+        
+        if (isLoadMore) {
+            // Show success feedback
+            const button = document.querySelector('[data-contra-action="load-more"]');
+            if (button) {
+                const originalText = button.textContent;
+                button.textContent = `Loaded ${experts.length} more experts!`;
+                button.style.background = '#10b981';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                }, 2000);
+            }
+        }
+    });
+    
+    // Smooth scroll to new content after load more
+    let lastExpertCount = 0;
+    document.addEventListener('contra:expertsLoaded', (event) => {
+        const { totalExperts, isLoadMore } = event.detail;
+        
+        if (isLoadMore && totalExperts && totalExperts.length > lastExpertCount) {
+            setTimeout(() => {
+                const expertCards = document.querySelectorAll('.expert-card:not([data-contra-template])');
+                const newCardIndex = lastExpertCount;
+                
+                if (expertCards[newCardIndex]) {
+                    expertCards[newCardIndex].scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }, 500);
+        }
+        
+        if (totalExperts) {
+            lastExpertCount = totalExperts.length;
+        }
+    });
+    
+    // Add loading animation to load more button
+    document.addEventListener('DOMContentLoaded', () => {
+        const loadMoreBtn = document.querySelector('[data-contra-action="load-more"]');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                if (!loadMoreBtn.disabled) {
+                    loadMoreBtn.innerHTML = `
+                        <div style="display: inline-block; width: 16px; height: 16px; border: 2px solid transparent; border-top: 2px solid currentColor; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></div>
+                        Loading...
+                    `;
+                }
+            });
+        }
+    });
+    
+    // Error handling with user feedback
+    document.addEventListener('contra:expertsError', (event) => {
+        console.error('Expert loading error:', event.detail);
+        
+        // Show user-friendly error message
+        const errorElement = document.querySelector('[data-contra-error]');
+        if (errorElement && event.detail.error) {
+            const errorMessage = event.detail.error.message || 'Unknown error occurred';
+            errorElement.innerHTML = `
+                <h3>Oops! Something went wrong</h3>
+                <p>We couldn't load the expert directory. ${errorMessage}</p>
+                <button data-contra-action="reload" class="load-more-btn" style="margin-top: 16px;">
+                    Try Again
+                </button>
+            `;
+        }
+    });
+</script> 

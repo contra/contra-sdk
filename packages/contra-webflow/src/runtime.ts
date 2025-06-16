@@ -1200,29 +1200,37 @@ export class ContraWebflowRuntime {
   private async loadMoreExperts(container: Element, programId: string): Promise<void> {
     const state = this.state.getState(programId);
     const limit = state.filters.limit || 20;
-    const currentOffset = state.experts.length; // Use actual loaded count as offset
+    const currentOffset = state.filters.offset || 0;
+    const nextOffset = currentOffset + limit;
     
-    this.log(`Loading more experts: current loaded=${state.experts.length}, fetching ${limit} more`);
+    this.log(`Loading more experts: current offset=${currentOffset}, next offset=${nextOffset}, limit=${limit}`);
 
     try {
       this.state.updateState(programId, { isInfiniteLoading: true });
       this.updateLoadMoreButtonState(container, programId, true);
 
-      // Fetch next batch with current offset
+      // Fetch next batch with calculated offset
       const response = await this.client.listExperts(programId, {
         ...state.filters,
-        offset: currentOffset,
+        offset: nextOffset,
         limit: limit
       });
 
-      this.log(`Loaded ${response.data.length} more experts (total now: ${state.experts.length + response.data.length})`);
+      this.log(`Loaded ${response.data.length} more experts from offset ${nextOffset}`);
+
+      // Update filters with new offset for next load
+      const updatedFilters = {
+        ...state.filters,
+        offset: nextOffset
+      };
 
       // Append new experts to existing ones
       const allExperts = [...state.experts, ...response.data];
-      const newPage = Math.floor(currentOffset / limit) + 2; // +2 because we're loading the next page
+      const newPage = Math.floor(nextOffset / limit) + 1;
       
       this.state.updateState(programId, {
         experts: allExperts,
+        filters: updatedFilters,
         currentPage: newPage,
         totalCount: response.totalCount,
         hasNextPage: allExperts.length < response.totalCount,
@@ -1456,6 +1464,11 @@ export class ContraWebflowRuntime {
       }
     });
 
+    // Ensure offset defaults to 0 if not specified
+    if (filters.offset === undefined) {
+      filters.offset = 0;
+    }
+
     return filters;
   }
 
@@ -1511,6 +1524,12 @@ export class ContraWebflowRuntime {
       newFilters[filterKey as keyof ExpertFilters] = [...currentArray, processedValue] as any;
     } else {
       (newFilters as any)[filterKey] = processedValue;
+    }
+
+    // Reset offset to 0 when any filter changes (except offset itself)
+    // This ensures we start from the beginning when filters change
+    if (filterKey !== 'offset') {
+      newFilters.offset = 0;
     }
 
     this.state.updateState(programId, { filters: newFilters });
