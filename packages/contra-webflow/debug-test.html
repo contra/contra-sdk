@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contra SDK Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .debug-info {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #e5e7eb;
+        }
+        .expert-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+        .load-more-btn {
+            background: #111827;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .load-more-btn:hover {
+            background: #374151;
+        }
+        .load-more-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-info">
+        <h1>🔍 Contra SDK Debug Test</h1>
+        <p>This page tests the basic container detection and expert loading functionality.</p>
+        <div id="debug-output"></div>
+    </div>
+
+    <!-- Configuration Script (Required) -->
+    <script id="contra-config" type="application/json">
+    {
+        "program": "kajabi_expert",
+        "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
+        "debug": true,
+        "autoReload": true,
+        "debounceDelay": 300,
+        "maxRetries": 3,
+        "loadMoreText": "Load More Experts",
+        "paginationMode": "infinite",
+        "maxCachedPages": 5
+    }
+    </script>
+
+    <!-- Expert Directory Container -->
+    <div class="contra-expert-directory">
+        <h2>Expert Directory</h2>
+        
+        <!-- Main Expert Container with Runtime Attributes -->
+        <div data-contra-limit="2" data-contra-offset="0" data-contra-pagination-mode="infinite">
+            
+            <!-- Expert Card Template (Hidden by default) -->
+            <article data-contra-template class="expert-card" style="display: none;">
+                <h3 data-contra-field="name">Expert Name</h3>
+                <p data-contra-field="location">Location</p>
+                <p data-contra-field="oneLiner">Expert bio...</p>
+                
+                <div>
+                    <strong>Rate:</strong> <span data-contra-field="hourlyRateUSD" data-contra-format="rate">$0/hr</span>
+                </div>
+                <div>
+                    <strong>Projects:</strong> <span data-contra-field="projectsCompletedCount">0</span>
+                </div>
+                <div>
+                    <strong>Rating:</strong> <span data-contra-field="averageReviewScore" data-contra-format="rating">0.0</span>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <a data-contra-field="profileUrl" target="_blank" style="margin-right: 10px;">View Profile</a>
+                    <a data-contra-field="inquiryUrl" target="_blank">Contact Expert</a>
+                </div>
+            </article>
+            
+            <!-- Loading State -->
+            <div data-contra-loading style="display: none;">
+                <p>Loading experts...</p>
+            </div>
+            
+            <!-- Error State -->
+            <div data-contra-error style="display: none;">
+                <p style="color: red;">Error loading experts</p>
+            </div>
+            
+            <!-- Empty State -->
+            <div data-contra-empty style="display: none;">
+                <p>No experts found</p>
+            </div>
+        </div>
+        
+        <!-- Pagination Section -->
+        <div style="text-align: center; margin-top: 20px;">
+            <div data-contra-pagination-info style="margin-bottom: 15px; color: #666;">
+                <!-- Runtime will populate pagination info -->
+            </div>
+            
+            <button data-contra-action="load-more" class="load-more-btn">
+                Load More Experts
+            </button>
+        </div>
+    </div>
+
+    <!-- Contra SDK Runtime (Required) -->
+    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js?v=1.1.0"></script>
+
+    <!-- Debug JavaScript -->
+    <script>
+        const debugOutput = document.getElementById('debug-output');
+        
+        function addDebugLog(message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.style.cssText = 'margin: 5px 0; padding: 8px; background: #f8f9fa; border-left: 3px solid #007bff; font-family: monospace; font-size: 12px;';
+            logEntry.innerHTML = `<strong>${timestamp}:</strong> ${message}`;
+            
+            if (data) {
+                const dataDiv = document.createElement('div');
+                dataDiv.style.cssText = 'margin-top: 5px; padding: 5px; background: #e9ecef; border-radius: 3px; white-space: pre-wrap;';
+                dataDiv.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+                logEntry.appendChild(dataDiv);
+            }
+            
+            debugOutput.appendChild(logEntry);
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+        }
+
+        // Log initial state
+        document.addEventListener('DOMContentLoaded', function() {
+            addDebugLog('🚀 DOM Content Loaded');
+            addDebugLog('Document ready state', document.readyState);
+            addDebugLog('Config element found', !!document.getElementById('contra-config'));
+            addDebugLog('Container elements found', document.querySelectorAll('[data-contra-limit]').length);
+            addDebugLog('Template elements found', document.querySelectorAll('[data-contra-template]').length);
+            
+            // Check if runtime is available
+            setTimeout(() => {
+                addDebugLog('Runtime available', !!window.contraRuntime);
+                if (window.contraRuntime) {
+                    addDebugLog('Runtime config', window.contraRuntime.config);
+                }
+            }, 200);
+        });
+
+        // Listen for runtime events
+        document.addEventListener('contra:expertsLoaded', (event) => {
+            addDebugLog('✅ Experts loaded event', {
+                expertsCount: event.detail.experts?.length,
+                totalCount: event.detail.totalCount,
+                isLoadMore: event.detail.isLoadMore
+            });
+        });
+
+        document.addEventListener('contra:expertsError', (event) => {
+            addDebugLog('❌ Experts error event', {
+                error: event.detail.error?.message,
+                context: event.detail.context
+            });
+        });
+
+        document.addEventListener('contra:filterChange', (event) => {
+            addDebugLog('🔄 Filter change event', event.detail.filters);
+        });
+
+        // Override console.log to capture runtime logs
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            
+            // Capture ContraWebflow logs
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('[ContraWebflow]')) {
+                addDebugLog(args[0], args.slice(1));
+            }
+        };
+
+        // Override console.error to capture errors
+        const originalError = console.error;
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('[ContraWebflow]')) {
+                addDebugLog('🚨 ' + args[0], args.slice(1));
+            }
+        };
+    </script>
+</body>
+</html> 

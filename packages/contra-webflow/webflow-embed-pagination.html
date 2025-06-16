@@ -1,4 +1,4 @@
-<!-- Contra Expert Directory - Webflow Embed -->
+<!-- Contra Expert Directory - Webflow Embed with Traditional Pagination -->
 <!-- Configuration Script (Required) -->
 <script id="contra-config" type="application/json">
 {
@@ -8,9 +8,8 @@
     "autoReload": true,
     "debounceDelay": 300,
     "maxRetries": 3,
-    "loadMoreText": "Load More Experts",
-    "paginationMode": "infinite",
-    "maxCachedPages": 5,
+    "paginationMode": "traditional",
+    "maxCachedPages": 10,
     "videoAutoplay": false,
     "videoHoverPlay": true,
     "videoMuted": true,
@@ -20,7 +19,7 @@
 </script>
 
 <style>
-    /* Contra Expert Directory Styles - Production Ready */
+    /* Contra Expert Directory Styles - Traditional Pagination */
     .contra-expert-directory {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         width: 100%;
@@ -318,7 +317,7 @@
         box-shadow: 0 8px 20px rgba(17, 24, 39, 0.3);
     }
 
-    /* Pagination Styles */
+    /* Traditional Pagination Styles */
     .pagination-section {
         text-align: center;
         padding: 40px 0;
@@ -338,61 +337,84 @@
         font-weight: 500;
     }
 
-    .load-more-btn {
-        background: linear-gradient(135deg, #111827 0%, #374151 100%);
-        color: #ffffff;
-        padding: 16px 32px;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 16px;
-        border: none;
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .pagination-btn {
+        background: #ffffff;
+        color: #374151;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        border: 2px solid #e5e7eb;
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        min-width: 200px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        overflow: hidden;
+        transition: all 0.2s ease;
+        min-width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
     }
 
-    .load-more-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        transition: left 0.5s;
+    .pagination-btn:hover:not(:disabled) {
+        background: #f9fafb;
+        border-color: #d1d5db;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .load-more-btn:hover::before {
-        left: 100%;
-    }
-
-    .load-more-btn:hover:not(:disabled) {
-        background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(17, 24, 39, 0.4);
-    }
-
-    .load-more-btn:disabled {
-        opacity: 0.6;
+    .pagination-btn:disabled {
+        opacity: 0.5;
         cursor: not-allowed;
         transform: none;
-        background: #9ca3af;
+        background: #f9fafb;
+        color: #9ca3af;
     }
 
-    .load-more-btn.loading {
-        color: transparent;
+    .pagination-btn.active {
+        background: linear-gradient(135deg, #111827 0%, #374151 100%);
+        color: #ffffff;
+        border-color: #111827;
     }
 
-    .load-more-btn.error {
-        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    .pagination-btn.active:hover {
+        background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+        border-color: #374151;
     }
 
-    .load-more-btn.disabled {
-        background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    .pagination-nav {
+        padding: 12px 20px;
+        font-weight: 700;
+        min-width: 120px;
+    }
+
+    .pagination-nav:disabled {
+        background: #f3f4f6;
+        color: #9ca3af;
+        border-color: #e5e7eb;
+    }
+
+    .pagination-nav:not(:disabled):hover {
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        border-color: #d1d5db;
+    }
+
+    .pagination-pages {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .pagination-ellipsis {
+        padding: 12px 8px;
+        color: #9ca3af;
+        font-weight: 600;
     }
 
     /* Loading States */
@@ -411,25 +433,6 @@
         border-radius: 50%;
         animation: spin 1s linear infinite;
         margin-bottom: 20px;
-    }
-
-    .load-more-loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        padding: 24px;
-        color: #6b7280;
-        font-weight: 500;
-    }
-
-    .load-more-loading .spinner {
-        width: 24px;
-        height: 24px;
-        border: 3px solid #f3f4f6;
-        border-top: 3px solid #111827;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
     }
 
     @keyframes spin {
@@ -509,9 +512,20 @@
             font-size: 1.25rem;
         }
 
-        .load-more-btn {
-            width: 100%;
-            max-width: 300px;
+        .pagination-controls {
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            padding: 10px 12px;
+            font-size: 13px;
+            min-width: 40px;
+        }
+
+        .pagination-nav {
+            padding: 10px 16px;
+            min-width: 100px;
+            font-size: 13px;
         }
     }
 
@@ -537,6 +551,20 @@
         .expert-name {
             font-size: 1.125rem;
         }
+
+        .pagination-controls {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .pagination-pages {
+            order: 2;
+        }
+
+        .pagination-nav {
+            width: 100%;
+            max-width: 200px;
+        }
     }
 
     /* Hidden utility */
@@ -559,12 +587,19 @@
             transform: translateY(0);
         }
     }
+
+    /* Page transition animation */
+    .page-transition {
+        opacity: 0.6;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
 </style>
 
 <!-- Expert Directory Container -->
 <div class="contra-expert-directory">
     <!-- Main Expert Container with Runtime Attributes -->
-    <div data-contra-limit="2" data-contra-offset="0" data-contra-pagination-mode="infinite">
+    <div data-contra-limit="4" data-contra-offset="0" data-contra-pagination-mode="traditional">
         
         <!-- Expert Card Template (Hidden by default) -->
         <article data-contra-template class="expert-card" style="display: none;">
@@ -645,7 +680,7 @@
         <div data-contra-error class="error-state" style="display: none;">
             <h3>Oops! Something went wrong</h3>
             <p>We couldn't load the expert directory. Please try again.</p>
-            <button data-contra-action="reload" class="load-more-btn" style="margin-top: 16px;">
+            <button data-contra-action="reload" class="pagination-btn" style="margin-top: 16px;">
                 Try Again
             </button>
         </div>
@@ -657,22 +692,39 @@
         </div>
     </div>
     
-    <!-- Pagination Section -->
+    <!-- Traditional Pagination Section -->
     <div class="pagination-section">
         <!-- Pagination Info -->
         <div data-contra-pagination-info class="pagination-info">
-            <!-- Runtime will populate: "Showing 2 of 30 experts" -->
+            <!-- Runtime will populate: "Page 1 of 5 (20 total)" -->
         </div>
         
-        <!-- Load More Button -->
-        <button data-contra-action="load-more" class="load-more-btn">
-            Load More Experts
-        </button>
-        
-        <!-- Load More Loading Indicator -->
-        <div data-contra-infinite-loading class="load-more-loading" style="display: none;">
-            <div class="spinner"></div>
-            <span>Loading more experts...</span>
+        <!-- Pagination Controls -->
+        <div class="pagination-controls">
+            <!-- Previous Button -->
+            <button data-contra-action="prev-page" class="pagination-btn pagination-nav">
+                ← Previous
+            </button>
+            
+            <!-- Page Numbers -->
+            <div class="pagination-pages">
+                <button data-contra-action="first-page" class="pagination-btn">
+                    1
+                </button>
+                <span class="pagination-ellipsis" style="display: none;">...</span>
+                <button class="pagination-btn active">
+                    1
+                </button>
+                <span class="pagination-ellipsis" style="display: none;">...</span>
+                <button data-contra-action="last-page" class="pagination-btn" style="display: none;">
+                    1
+                </button>
+            </div>
+            
+            <!-- Next Button -->
+            <button data-contra-action="next-page" class="pagination-btn pagination-nav">
+                Next →
+            </button>
         </div>
     </div>
 </div>
@@ -680,76 +732,82 @@
 <!-- Contra SDK Runtime (Required) -->
 <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js?v=1.1.0"></script>
 
-<!-- Enhanced JavaScript for Better UX -->
+<!-- Enhanced JavaScript for Traditional Pagination -->
 <script>
     // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Contra Expert Directory initialized');
+        console.log('🚀 Contra Expert Directory (Traditional Pagination) initialized');
         
-        // Enhanced load more button feedback
-        document.addEventListener('contra:expertsLoaded', (event) => {
-            const { experts, totalExperts, isLoadMore } = event.detail;
-            console.log('📦 Experts loaded:', { experts: experts?.length, totalExperts: totalExperts?.length, isLoadMore });
-            
-            if (isLoadMore && experts && experts.length > 0) {
-                // Show success feedback
-                const button = document.querySelector('[data-contra-action="load-more"]');
-                if (button) {
-                    const originalText = button.textContent;
-                    button.textContent = `✅ Loaded ${experts.length} more experts!`;
-                    button.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-                    
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                        button.style.background = '';
-                    }, 2500);
-                }
-            }
-        });
-        
-        // Smooth scroll to new content after load more
-        let lastExpertCount = 0;
-        document.addEventListener('contra:expertsLoaded', (event) => {
-            const { totalExperts, isLoadMore } = event.detail;
-            
-            if (isLoadMore && totalExperts && totalExperts.length > lastExpertCount) {
-                setTimeout(() => {
-                    const expertCards = document.querySelectorAll('.expert-card:not([data-contra-template])');
-                    const newCardIndex = lastExpertCount;
-                    
-                    if (expertCards[newCardIndex]) {
-                        expertCards[newCardIndex].scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start',
-                            inline: 'nearest'
-                        });
-                    }
-                }, 600);
-            }
-            
-            if (totalExperts && totalExperts.length) {
-                lastExpertCount = totalExperts.length;
-            }
-        });
-        
-        // Enhanced loading animation for load more button
-        const loadMoreBtn = document.querySelector('[data-contra-action="load-more"]');
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', () => {
-                if (!loadMoreBtn.disabled) {
-                    loadMoreBtn.innerHTML = `
-                        <div style="display: inline-flex; align-items: center; gap: 8px;">
-                            <div style="width: 18px; height: 18px; border: 2px solid transparent; border-top: 2px solid currentColor; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                            Loading more experts...
-                        </div>
-                    `;
-                }
-            });
+        // Initialize pagination UI (hide until we know the page count)
+        const paginationSection = document.querySelector('.pagination-section');
+        if (paginationSection) {
+            paginationSection.style.display = 'none';
         }
         
-        // Enhanced error handling with user feedback
+        // Enhanced pagination feedback
+        document.addEventListener('contra:expertsLoaded', (event) => {
+            const { experts, totalCount, page, totalPages, hasNextPage, hasPreviousPage } = event.detail;
+            console.log('📦 Experts loaded:', { 
+                expertsCount: experts?.length, 
+                totalCount, 
+                page, 
+                totalPages, 
+                hasNextPage, 
+                hasPreviousPage 
+            });
+            
+            // Update pagination controls
+            updatePaginationUI(page, totalPages, hasNextPage, hasPreviousPage);
+            
+            // Add page transition effect
+            const container = document.querySelector('[data-contra-limit]');
+            if (container) {
+                container.classList.remove('page-transition');
+            }
+        });
+        
+        // Add page transition effect on navigation
+        document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target && target.hasAttribute('data-contra-action')) {
+                const action = target.getAttribute('data-contra-action');
+                if (['prev-page', 'next-page', 'first-page', 'last-page'].includes(action)) {
+                    const container = document.querySelector('[data-contra-limit]');
+                    if (container) {
+                        container.classList.add('page-transition');
+                    }
+                    
+                    // Update button states immediately for better UX
+                    const button = target;
+                    const originalText = button.textContent;
+                    button.disabled = true;
+                    
+                    if (action === 'prev-page') {
+                        button.textContent = '← Loading...';
+                    } else if (action === 'next-page') {
+                        button.textContent = 'Loading... →';
+                    } else {
+                        button.textContent = 'Loading...';
+                    }
+                    
+                    // Reset button after a delay
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = originalText;
+                    }, 1000);
+                }
+            }
+        });
+        
+        // Enhanced error handling
         document.addEventListener('contra:expertsError', (event) => {
             console.error('❌ Expert loading error:', event.detail);
+            
+            // Remove page transition effect on error
+            const container = document.querySelector('[data-contra-limit]');
+            if (container) {
+                container.classList.remove('page-transition');
+            }
             
             // Show user-friendly error message
             const errorElement = document.querySelector('[data-contra-error]');
@@ -758,7 +816,7 @@
                 errorElement.innerHTML = `
                     <h3>🚨 Oops! Something went wrong</h3>
                     <p>We couldn't load the expert directory: ${errorMessage}</p>
-                    <button data-contra-action="reload" class="load-more-btn" style="margin-top: 16px;">
+                    <button data-contra-action="reload" class="pagination-btn" style="margin-top: 16px;">
                         🔄 Try Again
                     </button>
                 `;
@@ -772,32 +830,135 @@
             }
         });
         
-        // Add intersection observer for performance
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.animationDelay = '0s';
+        // Function to update pagination UI
+        function updatePaginationUI(currentPage, totalPages, hasNext, hasPrev) {
+            // Update pagination info
+            const paginationInfo = document.querySelector('[data-contra-pagination-info]');
+            if (paginationInfo) {
+                paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            }
+            
+            // Update navigation buttons
+            const prevBtn = document.querySelector('[data-contra-action="prev-page"]');
+            const nextBtn = document.querySelector('[data-contra-action="next-page"]');
+            const firstBtn = document.querySelector('[data-contra-action="first-page"]');
+            const lastBtn = document.querySelector('[data-contra-action="last-page"]');
+            const activeBtn = document.querySelector('.pagination-btn.active');
+            const ellipses = document.querySelectorAll('.pagination-ellipsis');
+            
+            if (prevBtn) {
+                prevBtn.disabled = !hasPrev;
+                prevBtn.classList.toggle('disabled', !hasPrev);
+            }
+            
+            if (nextBtn) {
+                nextBtn.disabled = !hasNext;
+                nextBtn.classList.toggle('disabled', !hasNext);
+            }
+            
+            // Handle pagination display based on total pages
+            if (totalPages <= 1) {
+                // Hide all pagination if only 1 page or less
+                const paginationSection = document.querySelector('.pagination-section');
+                if (paginationSection) {
+                    paginationSection.style.display = 'none';
+                }
+                
+            } else {
+                // Show pagination section for multiple pages
+                const paginationSection = document.querySelector('.pagination-section');
+                if (paginationSection) {
+                    paginationSection.style.display = 'block';
+                }
+                
+                if (totalPages <= 3) {
+                    // Simple pagination for 2-3 pages
+                    if (firstBtn) {
+                        firstBtn.style.display = currentPage === 1 ? 'none' : 'inline-flex';
+                        firstBtn.textContent = '1';
                     }
-                });
-            }, { threshold: 0.1 });
+                    
+                    if (lastBtn) {
+                        lastBtn.style.display = currentPage === totalPages ? 'none' : 'inline-flex';
+                        lastBtn.textContent = totalPages.toString();
+                    }
+                    
+                    if (activeBtn) {
+                        activeBtn.style.display = 'inline-flex';
+                        activeBtn.textContent = currentPage.toString();
+                    }
+                    
+                    // Hide ellipses for simple pagination
+                    ellipses.forEach(el => el.style.display = 'none');
+                    
+                } else {
+                    // Complex pagination for 4+ pages
+                    if (firstBtn) {
+                        firstBtn.style.display = currentPage === 1 ? 'none' : 'inline-flex';
+                        firstBtn.textContent = '1';
+                    }
+                    
+                    if (lastBtn) {
+                        lastBtn.style.display = currentPage === totalPages ? 'none' : 'inline-flex';
+                        lastBtn.textContent = totalPages.toString();
+                    }
+                    
+                    if (activeBtn) {
+                        activeBtn.style.display = 'inline-flex';
+                        activeBtn.textContent = currentPage.toString();
+                    }
+                    
+                    // Show ellipses based on current page position
+                    ellipses.forEach((el, index) => {
+                        if (index === 0) {
+                            // Left ellipsis: show if current page > 2
+                            el.style.display = currentPage > 2 ? 'inline-block' : 'none';
+                        } else {
+                            // Right ellipsis: show if current page < totalPages - 1
+                            el.style.display = currentPage < totalPages - 1 ? 'inline-block' : 'none';
+                        }
+                    });
+                }
+            }
             
-            // Observe expert cards as they're added
-            const observeNewCards = () => {
-                const cards = document.querySelectorAll('.expert-card:not([data-contra-template]):not([data-observed])');
-                cards.forEach(card => {
-                    card.setAttribute('data-observed', 'true');
-                    observer.observe(card);
-                });
-            };
-            
-            // Initial observation
-            setTimeout(observeNewCards, 1000);
-            
-            // Observe new cards after load more
-            document.addEventListener('contra:expertsLoaded', () => {
-                setTimeout(observeNewCards, 500);
-            });
+            console.log('📄 Pagination UI updated:', { currentPage, totalPages, hasNext, hasPrev });
         }
+        
+        // Smooth scroll to top on page change
+        document.addEventListener('contra:expertsLoaded', (event) => {
+            if (event.detail.page && event.detail.page > 1) {
+                setTimeout(() => {
+                    const container = document.querySelector('.contra-expert-directory');
+                    if (container) {
+                        container.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                            inline: 'nearest'
+                        });
+                    }
+                }, 300);
+            }
+        });
+        
+        // Keyboard navigation support
+        document.addEventListener('keydown', (event) => {
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return; // Don't interfere with form inputs
+            }
+            
+            if (event.key === 'ArrowLeft') {
+                const prevBtn = document.querySelector('[data-contra-action="prev-page"]:not(:disabled)');
+                if (prevBtn) {
+                    prevBtn.click();
+                    event.preventDefault();
+                }
+            } else if (event.key === 'ArrowRight') {
+                const nextBtn = document.querySelector('[data-contra-action="next-page"]:not(:disabled)');
+                if (nextBtn) {
+                    nextBtn.click();
+                    event.preventDefault();
+                }
+            }
+        });
     });
 </script> 
