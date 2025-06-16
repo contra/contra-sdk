@@ -16,6 +16,7 @@ import type {
 // Configuration interface
 interface RuntimeConfig {
   apiKey: string;
+  program?: string;  // Program ID from config
   debug?: boolean;
   loadingClass?: string;
   errorClass?: string;
@@ -175,6 +176,7 @@ export class ContraWebflowRuntime {
   constructor(config: RuntimeConfig) {
     this.config = {
       debug: false,
+      program: '',  // Default empty program
       loadingClass: 'loading',
       errorClass: 'error',
       emptyClass: 'empty',
@@ -213,8 +215,13 @@ export class ContraWebflowRuntime {
 
     try {
       // Find all expert containers
-      const containers = this.findExpertContainers();
-      this.log(`Found ${containers.length} expert containers`);
+      const allContainers = this.findExpertContainers();
+      // Filter out already initialized containers
+      const containers = allContainers.filter(container => 
+        !container.hasAttribute('data-contra-initialized')
+      );
+      
+      this.log(`Found ${containers.length} uninitialised expert containers (${allContainers.length} total)`);
 
       // Initialize each container
       for (const container of containers) {
@@ -232,9 +239,10 @@ export class ContraWebflowRuntime {
    * Initialize a single expert container
    */
   private async initContainer(container: Element): Promise<void> {
-    const programId = this.getAttr(container, ATTRS.program);
+    // Get program ID from config instead of element attribute
+    const programId = this.config.program;
     if (!programId) {
-      this.log('Container missing program ID', container);
+      this.log('No program ID found in config', container);
       return;
     }
 
@@ -265,9 +273,10 @@ export class ContraWebflowRuntime {
   private setupContainer(container: Element, programId: string): void {
     const element = container as HTMLElement;
     
-    // Add runtime classes
+    // Add runtime classes and unique identifier
     element.classList.add('contra-runtime');
-    element.setAttribute('data-program-id', programId);
+    element.setAttribute('data-contra-initialized', 'true');
+    element.setAttribute('data-program-id', programId); // Still set this for internal use
     
     // Parse initial filters from attributes
     const initialFilters = this.parseFiltersFromElement(container);
@@ -472,7 +481,7 @@ export class ContraWebflowRuntime {
       const offset = state.filters.offset || 0;
       const page = Math.floor(offset / limit) + 1;
       const totalPages = Math.ceil(response.totalCount / limit);
-      const hasNextPage = page < totalPages;
+      const hasNextPage = (offset + response.data.length) < response.totalCount;
       const hasPreviousPage = page > 1;
 
       // Update state with pagination info
@@ -1399,7 +1408,22 @@ export class ContraWebflowRuntime {
   }
 
   private findExpertContainers(): Element[] {
-    return Array.from(document.querySelectorAll(`[${ATTR_PREFIX}${ATTRS.program}]`));
+    // With the new config format, we look for any element that could contain experts
+    // Since program is now in config, we look for elements with contra attributes
+    const containers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}template], [${ATTR_PREFIX}limit], [${ATTR_PREFIX}pagination-mode]`))
+      .map(el => el.closest('div, section, article') || el.parentElement)
+      .filter((el, index, arr) => el && arr.indexOf(el) === index) // Remove duplicates
+      .filter(el => el) as Element[];
+    
+    // If no containers found with attributes, look for any container with a template
+    if (containers.length === 0) {
+      const templateContainers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}template]`))
+        .map(template => template.parentElement)
+        .filter(el => el) as Element[];
+      return templateContainers;
+    }
+    
+    return containers;
   }
 
   private parseFiltersFromElement(element: Element): ExpertFilters {
@@ -1546,6 +1570,18 @@ function autoInit(): void {
 
   try {
     const config = JSON.parse(configElement.textContent || '{}');
+    
+    // Validate required config
+    if (!config.apiKey) {
+      console.error('[ContraWebflow] API key is required in config.');
+      return;
+    }
+    
+    if (!config.program) {
+      console.error('[ContraWebflow] Program ID is required in config.');
+      return;
+    }
+    
     const runtime = new ContraWebflowRuntime(config);
     
     // Expose runtime globally for debugging
