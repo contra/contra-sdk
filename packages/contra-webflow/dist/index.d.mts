@@ -4,6 +4,7 @@
  */
 interface RuntimeConfig {
     apiKey: string;
+    program?: string;
     debug?: boolean;
     loadingClass?: string;
     errorClass?: string;
