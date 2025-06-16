@@ -730,7 +730,7 @@
 </div>
 
 <!-- Contra SDK Runtime (Required) -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js?v=1.1.0"></script>
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js?v=1.2.0"></script>
 
 <!-- Enhanced JavaScript for Traditional Pagination -->
 <script>
@@ -738,10 +738,10 @@
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Contra Expert Directory (Traditional Pagination) initialized');
         
-        // Initialize pagination UI (hide until we know the page count)
+        // Initialize pagination UI (show by default, let runtime control visibility)
         const paginationSection = document.querySelector('.pagination-section');
         if (paginationSection) {
-            paginationSection.style.display = 'none';
+            paginationSection.style.display = 'block';
         }
         
         // Enhanced pagination feedback
@@ -856,19 +856,27 @@
                 nextBtn.classList.toggle('disabled', !hasNext);
             }
             
+            // Show pagination section - let the runtime decide visibility
+            const paginationSection = document.querySelector('.pagination-section');
+            if (paginationSection) {
+                // Only show pagination if there are multiple pages OR if hasNext/hasPrev indicate navigation is possible
+                const shouldShowPagination = totalPages > 1 || hasNext || hasPrev;
+                paginationSection.style.display = shouldShowPagination ? 'block' : 'none';
+            }
+            
             // Handle pagination display based on total pages
             if (totalPages <= 1) {
-                // Hide all pagination if only 1 page or less
-                const paginationSection = document.querySelector('.pagination-section');
-                if (paginationSection) {
-                    paginationSection.style.display = 'none';
+                // Hide pagination controls for single page, but keep the section visible for info
+                const paginationControls = document.querySelector('.pagination-controls');
+                if (paginationControls) {
+                    paginationControls.style.display = 'none';
                 }
                 
             } else {
-                // Show pagination section for multiple pages
-                const paginationSection = document.querySelector('.pagination-section');
-                if (paginationSection) {
-                    paginationSection.style.display = 'block';
+                // Show pagination controls for multiple pages
+                const paginationControls = document.querySelector('.pagination-controls');
+                if (paginationControls) {
+                    paginationControls.style.display = 'flex';
                 }
                 
                 if (totalPages <= 3) {

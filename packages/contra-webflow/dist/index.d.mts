@@ -74,9 +74,25 @@ declare class ContraWebflowRuntime {
      */
     private wireActionButtons;
     /**
-     * Load experts for a program
+     * Load experts for a program with proper pagination handling
      */
     private loadExperts;
+    /**
+     * Handle traditional pagination response (page-based navigation)
+     */
+    private handleTraditionalPaginationResponse;
+    /**
+     * Handle infinite pagination response (cumulative loading)
+     */
+    private handleInfinitePaginationResponse;
+    /**
+     * Calculate current page from filters
+     */
+    private calculateCurrentPage;
+    /**
+     * Update pagination state consistently
+     */
+    private updatePaginationState;
     /**
      * Render experts into the container
      */
@@ -146,11 +162,11 @@ declare class ContraWebflowRuntime {
      */
     private updateUIStates;
     /**
-     * Handle action buttons (pagination, sorting, etc.)
+     * Handle action buttons with proper pagination logic
      */
     private handleAction;
     /**
-     * Load more experts - unified method for all pagination modes
+     * Load more experts for infinite scroll mode
      */
     private loadMoreExperts;
     /**
@@ -162,9 +178,17 @@ declare class ContraWebflowRuntime {
      */
     private loadNextPageInfinite;
     /**
-     * Update pagination control states
+     * Update pagination control states based on current mode and state
      */
     private updatePaginationControls;
+    /**
+     * Update traditional pagination controls (Previous/Next buttons, page numbers)
+     */
+    private updateTraditionalPaginationControls;
+    /**
+     * Update infinite pagination controls (Load More button)
+     */
+    private updateInfinitePaginationControls;
     /**
      * Update infinite loading state
      */
