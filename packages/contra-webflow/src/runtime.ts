@@ -476,14 +476,14 @@ export class ContraWebflowRuntime {
       
       this.log(`Loaded ${response.data.length} experts`, response);
 
-      // Calculate pagination state - simplified to match React implementation
+      // Calculate pagination state - use proper totalCount from API
       const limit = state.filters.limit || 20;
       const offset = state.filters.offset || 0;
       const page = Math.floor(offset / limit) + 1;
       const totalPages = Math.ceil(response.totalCount / limit);
       
-      // Simple pagination logic like React: if we got a full page, there might be more
-      const hasNextPage = response.data.length === limit;
+      // Proper pagination logic: check if current page is less than total pages
+      const hasNextPage = page < totalPages;
       const hasPreviousPage = page > 1;
 
       // Update state with pagination info
