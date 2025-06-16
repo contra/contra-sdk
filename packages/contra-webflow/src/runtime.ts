@@ -476,12 +476,14 @@ export class ContraWebflowRuntime {
       
       this.log(`Loaded ${response.data.length} experts`, response);
 
-      // Calculate pagination state
+      // Calculate pagination state - simplified to match React implementation
       const limit = state.filters.limit || 20;
       const offset = state.filters.offset || 0;
       const page = Math.floor(offset / limit) + 1;
       const totalPages = Math.ceil(response.totalCount / limit);
-      const hasNextPage = (offset + response.data.length) < response.totalCount;
+      
+      // Simple pagination logic like React: if we got a full page, there might be more
+      const hasNextPage = response.data.length === limit;
       const hasPreviousPage = page > 1;
 
       // Update state with pagination info
@@ -1200,45 +1202,37 @@ export class ContraWebflowRuntime {
   private async loadMoreExperts(container: Element, programId: string): Promise<void> {
     const state = this.state.getState(programId);
     const limit = state.filters.limit || 20;
-    const currentOffset = state.filters.offset || 0;
-    const nextOffset = currentOffset + limit;
     
-    this.log(`Loading more experts: current offset=${currentOffset}, next offset=${nextOffset}, limit=${limit}`);
+    // Calculate next offset based on currently loaded experts
+    const currentOffset = state.experts.length;
+    
+    this.log(`Loading more experts: currentOffset=${currentOffset}, limit=${limit}`);
 
     try {
       this.state.updateState(programId, { isInfiniteLoading: true });
       this.updateLoadMoreButtonState(container, programId, true);
 
-      // Fetch next batch with calculated offset
+      // Fetch next batch - use current expert count as offset
       const response = await this.client.listExperts(programId, {
         ...state.filters,
-        offset: nextOffset,
+        offset: currentOffset,
         limit: limit
       });
 
-      this.log(`Loaded ${response.data.length} more experts from offset ${nextOffset}`);
+      this.log(`Loaded ${response.data.length} more experts from offset ${currentOffset}`);
 
-      // Update filters with new offset for next load
-      const updatedFilters = {
-        ...state.filters,
-        offset: nextOffset
-      };
-
-      // Append new experts to existing ones
+      // Append new experts to existing ones (like React implementation)
       const allExperts = [...state.experts, ...response.data];
-      const newPage = Math.floor(nextOffset / limit) + 1;
+      
+      // Simple pagination logic: if we got a full page, there might be more
+      const hasNextPage = response.data.length === limit;
       
       this.state.updateState(programId, {
         experts: allExperts,
-        filters: updatedFilters,
-        currentPage: newPage,
         totalCount: response.totalCount,
-        hasNextPage: allExperts.length < response.totalCount,
+        hasNextPage: hasNextPage,
         isInfiniteLoading: false
       });
-
-      // Cache the new page
-      this.state.cachePage(programId, newPage, response.data);
 
       // Render only the new experts (append mode)
       this.renderNewExperts(container, response.data);
@@ -1251,7 +1245,6 @@ export class ContraWebflowRuntime {
         experts: response.data,
         totalExperts: allExperts,
         totalCount: response.totalCount,
-        page: newPage,
         isLoadMore: true
       });
 
@@ -1418,47 +1411,42 @@ export class ContraWebflowRuntime {
   private findExpertContainers(): Element[] {
     this.log('Looking for expert containers...');
     
-    // Look for containers with contra attributes directly
-    const directContainers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}limit], [${ATTR_PREFIX}pagination-mode]`));
-    this.log(`Found ${directContainers.length} direct containers with limit/pagination-mode attributes`);
+    // Simple and reliable approach: look for any element with key contra attributes
+    const selectors = [
+      '[data-contra-limit]',
+      '[data-contra-pagination-mode]', 
+      '[data-contra-template]'
+    ];
     
-    // Also look for containers that contain templates
-    const templateElements = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}template]`));
-    this.log(`Found ${templateElements.length} template elements`);
+    const foundElements: Element[] = [];
     
-    const templateContainers = templateElements
-      .map(template => template.parentElement)
-      .filter(el => el) as Element[];
-    this.log(`Found ${templateContainers.length} template parent containers`);
-    
-    // Combine and deduplicate
-    const allContainers = [...directContainers, ...templateContainers];
-    const uniqueContainers = allContainers.filter((el, index, arr) => arr.indexOf(el) === index);
-    
-    this.log(`Total unique containers found: ${uniqueContainers.length}`, uniqueContainers);
-    
-    // If still no containers, try a broader search
-    if (uniqueContainers.length === 0) {
-      this.log('No containers found with standard method, trying broader search...');
-      const anyContraElements = Array.from(document.querySelectorAll('[data-contra-template], [data-contra-limit], [data-contra-pagination-mode], [data-contra-loading], [data-contra-error]'));
-      this.log(`Found ${anyContraElements.length} elements with any contra attributes`, anyContraElements);
-      
-      // Find their containers
-      const broadContainers = anyContraElements
-        .map(el => {
-          // If the element itself has limit or pagination-mode, it's a container
-          if (el.hasAttribute('data-contra-limit') || el.hasAttribute('data-contra-pagination-mode')) {
-            return el;
-          }
-          // Otherwise, find the parent container
-          return el.closest('div, section, article') || el.parentElement;
-        })
-        .filter(el => el)
-        .filter((el, index, arr) => arr.indexOf(el) === index) as Element[];
-      
-      this.log(`Broad search found ${broadContainers.length} containers`, broadContainers);
-      return broadContainers;
+    for (const selector of selectors) {
+      const elements = Array.from(document.querySelectorAll(selector));
+      this.log(`Found ${elements.length} elements with selector: ${selector}`, elements);
+      foundElements.push(...elements);
     }
+    
+    // Get unique containers
+    const containers = new Set<Element>();
+    
+    for (const element of foundElements) {
+      // If element has limit or pagination-mode, it's a container
+      if (element.hasAttribute('data-contra-limit') || element.hasAttribute('data-contra-pagination-mode')) {
+        containers.add(element);
+        this.log('Found container (has limit/pagination):', element);
+      } 
+      // If element is a template, its parent is the container
+      else if (element.hasAttribute('data-contra-template')) {
+        const parent = element.parentElement;
+        if (parent) {
+          containers.add(parent);
+          this.log('Found container (template parent):', parent);
+        }
+      }
+    }
+    
+    const uniqueContainers = Array.from(containers);
+    this.log(`Total unique containers found: ${uniqueContainers.length}`, uniqueContainers);
     
     return uniqueContainers;
   }
