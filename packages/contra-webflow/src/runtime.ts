@@ -1391,14 +1391,21 @@ export class ContraWebflowRuntime {
     // Update pagination info elements
     const paginationInfoElements = this.querySelectorAll(container, '[data-contra-pagination-info]');
     paginationInfoElements.forEach(element => {
-      element.textContent = `Page ${state.currentPage} of ${totalPages} (${state.totalCount} total)`;
+      if (state.totalCount > 0) {
+        element.textContent = `Page ${state.currentPage} of ${totalPages} (${state.totalCount} total experts)`;
+      } else {
+        element.textContent = 'No experts found.';
+      }
     });
 
-    // Show/hide pagination section based on whether there are multiple pages
-    const paginationSection = container.querySelector('.pagination-section');
-    if (paginationSection) {
-      (paginationSection as HTMLElement).style.display = totalPages > 1 ? 'block' : 'none';
-    }
+    // --- FIX: Show pagination controls if there are ANY results, not just if there's more than one page.
+    const paginationSections = this.querySelectorAll(container, '.pagination-section');
+    this.log(`Updating pagination visibility. Total Pages: ${totalPages}, Total Count: ${state.totalCount}`);
+    paginationSections.forEach(section => {
+      // The old logic `totalPages > 1` was hiding the controls undesirably.
+      // The new logic shows the controls as long as there's something to show.
+      (section as HTMLElement).style.display = state.totalCount > 0 ? '' : 'none';
+    });
   }
 
   /**
@@ -1561,32 +1568,22 @@ export class ContraWebflowRuntime {
     const state = this.state.getState(programId);
     const newFilters = { ...state.filters };
 
-    // Handle special cases for filter value conversion
-    let processedValue = value;
+    // Handle special cases for filter value conversion to match OpenAPI spec (expects strings)
+    let processedValue: string | number | undefined = value;
     
-    if (filterKey === 'available') {
-      // Convert string values to boolean for availability filter
-      if (typeof value === 'string') {
-        if (value === 'true') {
-          processedValue = true;
-        } else if (value === 'false') {
-          processedValue = false;
-        } else if (value === '' || value === null) {
-          processedValue = undefined; // No filter
-        }
-      }
-    } else if (filterKey === 'minRate' || filterKey === 'maxRate') {
-      // Convert empty strings to undefined for rate filters
-      if (value === '' || value === null) {
-        processedValue = undefined;
-      } else {
-        processedValue = Number(value);
-      }
+    // Convert all values to strings, unless they are numbers for limit/offset.
+    // Handle empty/null values by setting them to undefined so they are omitted from the request.
+    if (value === null || value === '') {
+      processedValue = undefined;
+    } else if (typeof value === 'boolean') {
+      processedValue = String(value); // "true" or "false"
+    } else if (typeof value === 'number' && !['limit', 'offset', 'minRate', 'maxRate'].includes(filterKey)) {
+      processedValue = String(value);
     }
 
     if (type === 'append' && Array.isArray(newFilters[filterKey as keyof ExpertFilters])) {
       const currentArray = newFilters[filterKey as keyof ExpertFilters] as any[];
-      newFilters[filterKey as keyof ExpertFilters] = [...currentArray, processedValue] as any;
+      (newFilters[filterKey as keyof ExpertFilters] as any) = [...currentArray, processedValue];
     } else {
       (newFilters as any)[filterKey] = processedValue;
     }
@@ -1597,9 +1594,16 @@ export class ContraWebflowRuntime {
       newFilters.offset = 0;
     }
 
+    // Remove keys with undefined values
+    Object.keys(newFilters).forEach(key => {
+      if ((newFilters as any)[key] === undefined) {
+        delete (newFilters as any)[key];
+      }
+    });
+
     this.state.updateState(programId, { filters: newFilters });
     
-    this.log(`Filter updated: ${filterKey} = ${processedValue} (original: ${value})`);
+    this.log(`Filter updated: ${filterKey} = ${processedValue} (final filters: `, newFilters, ')');
     
     // Dispatch filter change event
     const event: FilterChangeEvent = {
