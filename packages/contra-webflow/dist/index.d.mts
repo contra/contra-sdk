@@ -38,21 +38,33 @@ declare class ContraWebflowRuntime {
      */
     init(): Promise<void>;
     /**
-     * Find the specific element within the container that holds the expert list and configuration.
-     */
-    private findExpertListElement;
-    /**
      * Initialize a single expert container
      */
     private initContainer;
     /**
-     * Setup debounced reload for a container
-     */
-    private setupDebouncedReload;
-    /**
      * Setup container with initial state and classes
      */
     private setupContainer;
+    /**
+     * Determine pagination mode from container attributes or config
+     */
+    private determinePaginationMode;
+    /**
+     * Setup pagination system based on mode
+     */
+    private setupPagination;
+    /**
+     * Setup infinite scroll functionality
+     */
+    private setupInfiniteScroll;
+    /**
+     * Setup traditional pagination button states
+     */
+    private setupTraditionalPagination;
+    /**
+     * Setup load more button for infinite scroll
+     */
+    private setupLoadMoreButton;
     /**
      * Wire up filter controls to auto-update
      */
@@ -62,25 +74,9 @@ declare class ContraWebflowRuntime {
      */
     private wireActionButtons;
     /**
-     * Load experts for a container with proper pagination handling
+     * Load experts for a program
      */
     private loadExperts;
-    /**
-     * Handle traditional pagination response (page-based navigation)
-     */
-    private handleTraditionalPaginationResponse;
-    /**
-     * Handle infinite pagination response (cumulative loading)
-     */
-    private handleInfinitePaginationResponse;
-    /**
-     * Calculate current page from filters
-     */
-    private calculateCurrentPage;
-    /**
-     * Update pagination state consistently
-     */
-    private updatePaginationState;
     /**
      * Render experts into the container
      */
@@ -150,11 +146,11 @@ declare class ContraWebflowRuntime {
      */
     private updateUIStates;
     /**
-     * Handle action buttons with proper pagination logic
+     * Handle action buttons (pagination, sorting, etc.)
      */
     private handleAction;
     /**
-     * Load more experts for infinite scroll mode
+     * Load more experts - unified method for all pagination modes
      */
     private loadMoreExperts;
     /**
@@ -166,17 +162,9 @@ declare class ContraWebflowRuntime {
      */
     private loadNextPageInfinite;
     /**
-     * Update pagination control states based on current mode and state
+     * Update pagination control states
      */
     private updatePaginationControls;
-    /**
-     * Update traditional pagination controls (Previous/Next buttons, page numbers)
-     */
-    private updateTraditionalPaginationControls;
-    /**
-     * Update infinite pagination controls (Load More button)
-     */
-    private updateInfinitePaginationControls;
     /**
      * Update infinite loading state
      */
