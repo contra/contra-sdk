@@ -95,10 +95,12 @@
     <!-- Hero List: Fetches 5 experts, displays only their avatars -->
     <div data-contra-list-id="hero-avatars" data-contra-program="kajabi_expert" data-contra-limit="5" class="hero-avatars-list">
         
-        <!-- Template for a single avatar (now the 'a' tag itself for simplicity) -->
-        <a data-contra-template data-contra-field="profileUrl" target="_blank" style="display: none;">
-            <img data-contra-field="avatarUrl" class="hero-avatar" alt="Expert Avatar">
-        </a>
+        <!-- Template for a single avatar -->
+        <div data-contra-template style="display: none;">
+            <a data-contra-field="profileUrl" target="_blank">
+                <img data-contra-field="avatarUrl" class="hero-avatar" alt="Expert Avatar">
+            </a>
+        </div>
 
     </div>
 </div>

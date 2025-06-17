@@ -252,7 +252,7 @@ export class ContraWebflowRuntime {
         experts: allExperts,
         totalCount: response.totalCount,
         offset: state.offset + newExperts.length,
-        hasNextPage: newExperts.length === state.limit,
+        hasNextPage: allExperts.length < response.totalCount,
         loading: false
       });
 
@@ -367,7 +367,7 @@ export class ContraWebflowRuntime {
 
     if (element instanceof HTMLAnchorElement) {
       element.href = String(value);
-      if (!element.textContent?.trim()) {
+      if (element.children.length === 0 && !element.textContent?.trim()) {
         element.textContent = String(value);
       }
     } else if (element instanceof HTMLInputElement) {
