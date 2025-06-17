@@ -201,7 +201,7 @@ export class ContraWebflowRuntime {
       
       // Update state with these initial settings
       this.state.updateState(listId, { 
-        filters: initialFilters,
+      filters: initialFilters,
         limit: limit,
         offset: initialFilters.offset || 0,
       });
@@ -848,7 +848,7 @@ export class ContraWebflowRuntime {
     }
     
     // Update and control visibility of the load more button
-    const loadMoreButton = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.listTarget}="${listId}"]`);
+    const loadMoreButton = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.action}="load-more"][${ATTR_PREFIX}${ATTRS.listTarget}="${listId}"]`);
     if (loadMoreButton) {
       const btn = loadMoreButton as HTMLButtonElement;
       const hasMore = state.hasNextPage;
