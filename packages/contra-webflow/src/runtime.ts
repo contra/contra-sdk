@@ -198,6 +198,13 @@ export class ContraWebflowRuntime {
       // Mark as initialized
       (listElement as HTMLElement).setAttribute('data-contra-initialized', 'true');
       
+      // Find and hide the template immediately to prevent flash of un-rendered content.
+      const template = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.template}]`);
+      if (template) {
+          (template as HTMLElement).style.display = 'none';
+          this.log(`Template found and hidden for list: ${listId}`);
+      }
+
       // Parse initial filters from the list element itself
       const initialFilters = this.parseFiltersFromElement(listElement);
       const limit = parseInt(this.getAttr(listElement, ATTRS.limit) || '20', 10);
@@ -315,7 +322,7 @@ export class ContraWebflowRuntime {
     if (!append) {
       // Clear only previously rendered expert cards
       const existingCards = this.querySelectorAll(listElement, '.contra-rendered-item');
-    existingCards.forEach(card => card.remove());
+      existingCards.forEach(card => card.remove());
     }
 
     const fragment = document.createDocumentFragment();

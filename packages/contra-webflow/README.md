@@ -1,1480 +1,583 @@
 # Contra Webflow SDK
 
-JavaScript runtime for embedding Contra expert directories in Webflow projects.
+A lightweight, flexible JavaScript runtime for embedding Contra expert directories and lists into any web project, with a special focus on simplifying Webflow integration.
 
-Version: 1.0.0 | License: MIT
+Version: 2.0.0 (List-based Architecture) | License: MIT
 
 ---
 
 ## 📋 Table of Contents
 
-1. [Quick Start](#quick-start)
-2. [Configuration](#configuration)
-3. [Attributes Reference](#attributes-reference)
-4. [Advanced Features](#advanced-features)
-5. [Media Handling](#media-handling)
-6. [Filtering & Search](#filtering--search)
-7. [Styling & Customization](#styling--customization)
-8. [Events & JavaScript API](#events--javascript-api)
-9. [Performance & Caching](#performance--caching)
-10. [Troubleshooting](#troubleshooting)
-11. [Best Practices](#best-practices)
-12. [Support](#support)
+1.  [Quick Start](#-quick-start)
+2.  [How It Works](#-how-it-works)
+3.  [Configuration](#-configuration)
+4.  [Core Attributes](#-core-attributes)
+5.  [Data Binding](#-data-binding)
+6.  [Filtering](#-filtering)
+7.  [Styling Guide](#-styling-guide)
+8.  [Full Example](#-full-example)
+9.  [Troubleshooting](#-troubleshooting)
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Basic Implementation
+Get a directory of experts running in minutes. Just add the following code to an HTML embed element in your Webflow project.
 
-Add this HTML structure to your Webflow page:
+#### 1. Add the Configuration
+Create a `<script>` tag with the ID `contra-config`. This is where you'll put your API key.
 
 ```html
-<!-- Configuration Script (Required) -->
+<!-- 1. Configuration Script (Required once per page) -->
 <script id="contra-config" type="application/json">
 {
-  "apiKey": "your_api_key",           // Required: Your API key
-  "debug": false,                     // Optional: Enable debug logging
-  "autoReload": true,                 // Optional: Auto-reload on filter changes
-  "debounceDelay": 300,              // Optional: Filter debounce delay (ms)
-  "maxRetries": 3,                   // Optional: API retry attempts
-  
-  // Video Configuration
-  "videoAutoplay": false,            // Optional: Auto-play videos
-  "videoHoverPlay": true,            // Optional: Play on hover
-  "videoMuted": true,               // Optional: Mute videos
-  "videoLoop": true,                // Optional: Loop videos
-  "videoControls": false            // Optional: Show video controls
+    "apiKey": "YOUR_API_KEY_HERE",
+    "debug": true
 }
 </script>
+```
 
-<!-- Program ID is specified on the container element -->
-<div data-contra-program="your_program_id">
-  <!-- Expert Directory Container -->
-  <div data-contra-program="your_program_id" data-contra-limit="20">
-    <!-- Expert Card Template -->
-    <article data-contra-template class="expert-card" style="display: none;">
-      <header class="expert-header">
-        <img data-contra-field="avatarUrl" class="expert-avatar" alt="Expert Profile" loading="lazy">
-        <div class="expert-info">
-          <h3 data-contra-field="name" class="expert-name">Expert Name</h3>
-          <p data-contra-field="location" class="expert-location">Location</p>
-          <p data-contra-field="oneLiner" class="expert-bio">Expert Bio</p>
-        </div>
-        <span data-contra-show-when="available:true" class="availability-badge">
-          Available
-        </span>
-      </header>
-      
-      <div class="expert-stats">
-        <div class="stat">
-          <span data-contra-field="earningsUSD" data-contra-format="earnings" class="stat-value">$0</span>
-          <span class="stat-label">Earned</span>
-        </div>
-        <div class="stat">
-          <div data-contra-stars class="star-rating"></div>
-          <span data-contra-field="averageReviewScore" class="rating-value">0</span>
-        </div>
-      </div>
-      
-      <footer class="expert-actions">
-        <a data-contra-field="profileUrl" class="profile-link" target="_blank" rel="noopener">
-          View Profile
-        </a>
-        <a data-contra-field="inquiryUrl" class="contact-btn" target="_blank" rel="noopener">
-          Contact Expert
-        </a>
-      </footer>
-    </article>
-    
-    <!-- Loading State -->
-    <div data-contra-loading class="loading-state" style="display: none;">
-      <div class="loading-spinner"></div>
-      <p>Loading experts...</p>
-    </div>
-    
-    <!-- Error State -->
-    <div data-contra-error class="error-state" style="display: none;"></div>
-    
-    <!-- Empty State -->
-    <div data-contra-empty class="empty-state" style="display: none;">
-      <p>No experts found matching your criteria.</p>
-    </div>
+#### 2. Add the Runtime Script
+This script contains all the logic. Paste this below your configuration. For production, you can replace the versioned link with one pointing to `@latest`.
+
+```html
+<!-- 2. Runtime Script (Required once per page) -->
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js"></script>
+```
+
+#### 3. Create Your List
+Design your expert list in Webflow. The structure consists of a **List Container**, which will hold the experts, and a **Template Element** inside it, which defines the layout for a single expert.
+
+```html
+<!-- 3. HTML Structure -->
+<div data-contra-list-id="expert-directory" data-contra-program="YOUR_PROGRAM_ID" data-contra-limit="10">
+
+    <!-- Template for a single expert card -->
+    <!-- The runtime will clone this element for each expert -->
+    <div data-contra-template class="expert-card" style="display: none;">
+        <img data-contra-field="avatarUrl" alt="Expert Avatar">
+        <h3 data-contra-field="name"></h3>
+        <p data-contra-field="location"></p>
   </div>
 
-<!-- SDK Runtime (Required) -->
-<script src="https://unpkg.com/@contra/webflow@latest/dist/runtime.min.js"></script>
+    <!-- Optional: Loading, Empty, and Error states -->
+    <div data-contra-loading style="display: none;">Loading experts...</div>
+    <div data-contra-empty style="display: none;">No experts found.</div>
+    <div data-contra-error style="display: none;">An error occurred.</div>
+</div>
 ```
-
-### 2. Get Your Credentials
-
-Contact Contra to obtain:
-- **Program ID**: Your unique program identifier
-- **API Key**: Authentication key for API access
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ How It Works
 
-### Global Configuration
+The SDK operates on a simple "list-based" architecture. You can have multiple independent lists on the same page.
 
-Configure the SDK via a JSON script tag with ID `contra-config`:
+1.  **List (`data-contra-list-id`)**: Any element with this attribute becomes a container for experts from a specific `data-contra-program`.
+2.  **Template (`data-contra-template`)**: An element inside a list that serves as the blueprint for each item. It's hidden by default and cloned for each expert fetched from the API.
+3.  **Data Binding (`data-contra-field`)**: Attributes placed on elements inside the template tell the SDK where to put the expert's data (e.g., name, avatar, location).
+4.  **Actions (`data-contra-action`)**: Buttons, like a "Load More" button, can target a specific list using `data-contra-list-target` to perform actions.
+5.  **Filters (`data-contra-filter`)**: Form inputs, like dropdowns or checkboxes, can also target a list to dynamically filter the results.
+
+---
+
+## 🔧 Configuration
+
+The SDK is configured through a single JSON object inside a `<script>` tag with the ID `contra-config`.
 
 ```html
 <script id="contra-config" type="application/json">
 {
-  "apiKey": "your_api_key",           // Required: Your API key
-  "debug": false,                     // Optional: Enable debug logging
-  "autoReload": true,                 // Optional: Auto-reload on filter changes
-  "debounceDelay": 300,              // Optional: Filter debounce delay (ms)
-  "maxRetries": 3,                   // Optional: API retry attempts
+  "apiKey": "YOUR_API_KEY",    // Required
+  "debug": true,               // Optional: Show detailed logs in the console
   
   // Video Configuration
-  "videoAutoplay": false,            // Optional: Auto-play videos
-  "videoHoverPlay": true,            // Optional: Play on hover
-  "videoMuted": true,               // Optional: Mute videos
-  "videoLoop": true,                // Optional: Loop videos
-  "videoControls": false            // Optional: Show video controls
+  "videoAutoplay": false,      // Optional: Auto-play videos in project covers
+  "videoHoverPlay": true,      // Optional: Play videos on hover
+  "videoMuted": true,          // Optional: Mute videos
+  "videoLoop": true,           // Optional: Loop videos
+  "videoControls": false       // Optional: Show native video controls
 }
 </script>
 ```
 
-### Configuration Options Reference
-
 | Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `apiKey` | `string` | **Required** | Your API authentication key |
-| `debug` | `boolean` | `false` | Enable console debugging |
-| `autoReload` | `boolean` | `true` | Auto-refresh when filters change |
-| `debounceDelay` | `number` | `300` | Delay before applying filter changes (ms) |
-| `maxRetries` | `number` | `3` | Number of API retry attempts |
-| `videoAutoplay` | `boolean` | `false` | Auto-play video content |
-| `videoHoverPlay` | `boolean` | `true` | Play videos on hover |
-| `videoMuted` | `boolean` | `true` | Mute video playback |
-| `videoLoop` | `boolean` | `true` | Loop video content |
-| `videoControls` | `boolean` | `false` | Show video player controls |
+|---|---|---|---|
+| `apiKey` | `string` | **Required** | Your API authentication key. |
+| `debug` | `boolean`| `false` | Enables detailed logging in the browser console. |
+| `videoAutoplay`|`boolean`| `false` | Autoplays videos found in `coverUrl` fields. |
+| `videoHoverPlay`|`boolean`| `true` | Plays videos on mouse hover. |
+| `videoMuted`| `boolean`| `true` | Mutes video playback (required for autoplay). |
+| `videoLoop`| `boolean`| `true` | Loops video content. |
+| `videoControls`|`boolean`| `false` | Shows the browser's native video player controls. |
 
 ---
 
-## 📖 Attributes Reference
+## 🏷️ Core Attributes
 
-### Container Attributes
+### List Container Attributes
 
-#### `data-contra-program`
-**Required on container element**
-```html
-<div data-contra-program="your_program_id">
-  <!-- Expert cards will be populated here -->
-</div>
-```
+These are placed on the element that will contain your list of experts.
 
-#### `data-contra-limit`
-**Optional pagination control**
-```html
-<div data-contra-program="your_program_id" data-contra-limit="10">
-```
+| Attribute | Description | Example |
+|---|---|---|
+| `data-contra-list-id` | **Required.** A unique name for your list. This is used by actions and filters to target this specific list. | `data-contra-list-id="featured-experts"` |
+| `data-contra-program` | **Required.** The ID of the expert program to fetch data from. | `data-contra-program="kajabi_expert"` |
+| `data-contra-limit` | Optional. The number of experts to fetch per page or for the initial load. Defaults to `20`. | `data-contra-limit="5"` |
+| `data-contra-available`| Optional. Set to `true` to only show available experts by default. | `data-contra-available="true"`|
+| `data-contra-location`| Optional. Set a default location filter using the full location string. | `data-contra-location="San Francisco..."`|
+| `data-contra-languages`| Optional. Set a default language filter (comma-separated). | `data-contra-languages="English,French"`|
+| `data-contra-min-rate`| Optional. Set a default minimum hourly rate. | `data-contra-min-rate="50"`|
+| `data-contra-max-rate`| Optional. Set a default maximum hourly rate. | `data-contra-max-rate="150"`|
+| `data-contra-sort`| Optional. Set a default sort order. | `data-contra-sort="rate_desc"`|
 
-### Template & Display Attributes
+### Template and State Attributes
 
-#### `data-contra-template`
-**Required on template element**
-```html
-<div data-contra-template class="expert-card" style="display: none;">
-  <!-- This element will be cloned for each expert -->
-</div>
-```
+These are placed on elements *inside* your List Container.
 
-#### `data-contra-loading`
-**Loading state element**
-```html
-<div data-contra-loading class="loading-spinner">
-  Loading experts...
-</div>
-```
+| Attribute | Description | Example |
+|---|---|---|
+| `data-contra-template` | **Required.** Marks the element to be used as a template for each expert. It should be hidden by default (`style="display: none;"`). | `<div data-contra-template style="display: none;">...</div>` |
+| `data-contra-loading` | Optional. This element will be shown while the initial data for the list is loading. | `<div data-contra-loading>Loading...</div>` |
+| `data-contra-empty` | Optional. This element will be shown if the API returns no experts. | `<div data-contra-empty>No experts found.</div>` |
+| `data-contra-error` | Optional. This element will be shown if there is an API error. The error message will be placed inside it. | `<div data-contra-error></div>` |
 
-#### `data-contra-error`
-**Error state element**
-```html
-<div data-contra-error class="error-message">
-  <!-- Error messages will appear here -->
-</div>
-```
+---
 
-#### `data-contra-empty`
-**Empty state element**
-```html
-<div data-contra-empty class="empty-state">
-  No experts match your criteria.
-</div>
-```
+## 🔗 Data Binding
 
-### Field Binding Attributes
+Use these attributes on elements *inside* your `data-contra-template` to bind data.
 
-#### `data-contra-field`
-**Bind data fields to elements**
+### `data-contra-field`
+
+Binds an expert data field to an HTML element.
+- If used on an `<a>` tag, it sets the `href`.
+- If used on an `<img>` tag, it sets the `src`.
+- On all other elements, it sets the `textContent`.
 
 **Available Fields:**
-- `name` - Expert name
-- `profileUrl` - Link to expert profile
-- `inquiryUrl` - Link to send inquiry
-- `avatarUrl` - Profile image
-- `tagline` - Professional tagline
-- `location` - Geographic location
-- `hourlyRateUSD` - Hourly rate in USD
-- `earningsUSD` - Total earnings
-- `projectsCompletedCount` - Number of completed projects
-- `averageReviewScore` - Star rating (1-5)
-- `followersCount` - Number of followers
-- `available` - Availability status (boolean)
+- `name`
+- `avatarUrl`
+- `location`
+- `oneLiner`
+- `profileUrl`
+- `inquiryUrl`
+- `hourlyRateUSD`
+- `available` (boolean)
+- `projects` (collection)
+- `skillTags` (collection)
+- `socialLinks` (collection)
+- And many more based on the `ExpertProfile` type.
 
-**Project Fields:**
-- `title` - Project name/title
-- `projectUrl` - Link to project
-- `coverUrl` - Project image/video
+### `data-contra-format`
 
-**Social Link Fields:**
-- `url` - Social platform URL
-- `label` - Platform name
+Formats the output of a field.
 
-```html
-<!-- Text content -->
-<h3 data-contra-field="name">Expert Name</h3>
-<p data-contra-field="oneLiner">Expert Bio</p>
-<span data-contra-field="location">Location</span>
+| Format | Description | Example Input | Example Output |
+|---|---|---|---|
+| `rate` | Formats a number as an hourly rate. | `150` | `$150/hr` |
+| `earnings`| Formats a number into a compact string. | `25000` | `$25k+` |
+| `rating` | Formats a number to one decimal place. | `4.912` | `4.9` |
+| `currency`| Adds a dollar sign prefix. | `100` | `$100` |
+| `number` | Adds thousand separators to a number. | `10000` | `10,000` |
+| `truncate`| Truncates a string to 100 characters. | `long text...` | `long text...`|
+| `availability`| Converts a boolean to text. | `true` | `Available` |
 
-<!-- Links -->
-<a data-contra-field="profileUrl" target="_blank">View Profile</a>
-<a data-contra-field="inquiryUrl" target="_blank">Contact Expert</a>
+### `data-contra-repeat`
 
-<!-- Images -->
-<img data-contra-field="avatarUrl" alt="Expert Avatar">
-
-<!-- Numbers -->
-<span data-contra-field="hourlyRateUSD">$0</span>
-<span data-contra-field="followersCount">0</span>
-```
-
-#### `data-contra-format`
-**Format field values**
-
-**Available Formats:**
-- `rate` - Format hourly rate (`$150/hr` or `Rate on request`)
-- `earnings` - Format earnings (`$25k+`, `$1M+`)
-- `rating` - Format rating to one decimal place (`5.0`, `4.9`)
-- `currency` - Add dollar sign prefix
-- `number` - Add thousand separators
-- `boolean` - Convert to Yes/No
-- `availability` - Convert to Available/Not Available
-- `truncate` - Limit to 100 characters
-
-```html
-<span data-contra-field="hourlyRateUSD" data-contra-format="rate">$0/hr</span>
-<span data-contra-field="earningsUSD" data-contra-format="earnings">$0</span>
-<span data-contra-field="averageReviewScore" data-contra-format="rating">0.0</span>
-<span data-contra-field="followersCount" data-contra-format="number">0</span>
-<span data-contra-field="available" data-contra-format="availability">Available</span>
-```
-
-### Repeating Elements
-
-#### `data-contra-repeat`
-**Display arrays of data**
+Repeats an element for each item in a collection (like projects or skill tags).
 
 **Available Collections:**
-- `projects` - Expert's project portfolio
-- `skillTags` - Skill/technology tags
-- `socialLinks` - Social media links
+- `projects`
+- `skillTags`
+- `socialLinks`
+
+**Usage:** Place this on a container element. The runtime will clone its *first child* for each item in the collection.
 
 ```html
-<!-- Projects Grid -->
-<div data-contra-repeat="projects" data-contra-max="4" class="projects-grid">
-  <a data-contra-field="projectUrl" class="project-link" target="_blank" rel="noopener">
-    <img data-contra-field="coverUrl" class="project-image" alt="Project">
-    <h4 data-contra-field="title" class="project-title">Project Title</h4>
-  </a>
-</div>
-
-<!-- Skill Tags -->
-<div data-contra-repeat="skillTags" data-contra-max="6" class="skill-tags">
-  <span data-contra-field="name" class="skill-tag">Skill</span>
-</div>
-
-<!-- Social Links -->
-<div data-contra-repeat="socialLinks" class="social-links">
-  <a data-contra-field="url" target="_blank">
-    <span data-contra-field="label">Social Platform</span>
-  </a>
+<div data-contra-repeat="skillTags" data-contra-max="5" class="tag-container">
+    <!-- This div will be cloned for each skill tag -->
+    <div data-contra-field="name" class="tag"></div>
 </div>
 ```
-
-#### `data-contra-max`
-**Limit number of repeated items**
-```html
-<div data-contra-repeat="projects" data-contra-max="4">
-  <!-- Shows maximum 4 projects -->
-</div>
-```
+The `data-contra-max` attribute is optional and limits the number of items shown.
 
 ### Conditional Display
 
-#### `data-contra-show-when`
-**Show element when condition is met**
+Show or hide elements based on data.
+
+- `data-contra-show-when="field:value"`: Shows the element if the condition is true.
+- `data-contra-hide-when="field:value"`: Hides the element if the condition is true.
+
+**Supported Operators:** `( : , > , < , >= , <= )`
+
 ```html
-<!-- Show availability indicator when expert is available -->
-<span data-contra-show-when="available:true" class="available-badge">
-  🟢 Available Now
-</span>
+<!-- Show a badge only if the expert is available -->
+<span data-contra-show-when="available:true">● Available</span>
 
-<!-- Show premium badge for high earners -->
-<span data-contra-show-when="earningsUSD:>100000" class="premium-badge">
-  Top Earner
-</span>
+<!-- Show a "Top Rated" badge for experts with high ratings -->
+<span data-contra-show-when="averageReviewScore:>=4.9">Top Rated</span>
 ```
 
-**Availability Examples:**
-```html
-<!-- Simple availability text (recommended) -->
-<span data-contra-show-when="available:true" class="availability-text">
-  Available
-</span>
+### Media Handling (`coverUrl`)
 
-<!-- With styling -->
-<span data-contra-show-when="available:true" class="availability-badge">
-  🟢 Available Now
-</span>
-
-<!-- Custom availability message -->
-<div data-contra-show-when="available:true" class="availability-card">
-  <p>This expert is currently available for new projects!</p>
-</div>
-```
-
-**Debug Availability:**
-To troubleshoot availability display, enable debug mode:
-```json
-{
-  "debug": true
-}
-```
-This will log condition evaluations in the browser console.
-
-#### `data-contra-hide-when`
-**Hide element when condition is met**
-```html
-<!-- Hide rate if not specified -->
-<div data-contra-hide-when="hourlyRateUSD:null" class="rate-section">
-  <span data-contra-field="hourlyRateUSD" data-contra-format="rate"></span>
-</div>
-```
-
-**Condition Operators:**
-- `field:value` - Exact match (case-insensitive)
-- `field:>value` - Greater than (numeric)
-- `field:<value` - Less than (numeric)
-- `field:>=value` - Greater than or equal (numeric)
-- `field:<=value` - Less than or equal (numeric)
-
-**Examples:**
-```html
-<!-- Show for available experts -->
-<span data-contra-show-when="available:true">Available Now</span>
-
-<!-- Show for high earners -->
-<span data-contra-show-when="earningsUSD:>100000">Top Earner</span>
-
-<!-- Hide if no rate specified -->
-<div data-contra-hide-when="hourlyRateUSD:null">Rate info</div>
-```
-
-### Special Features
-
-#### `data-contra-stars`
-**Display star rating**
-```html
-<div data-contra-stars class="star-rating">
-  <!-- Automatically filled with star rating based on averageReviewScore -->
-</div>
-```
-
-#### `data-contra-rating-text`
-**Display rating as formatted text**
-```html
-<!-- Displays "5.0", "4.9", etc. with one decimal place -->
-<span data-contra-rating-text class="rating-text">0.0</span>
-
-<!-- Combined star and text rating -->
-<div class="rating-display">
-  <div data-contra-stars class="star-rating"></div>
-  <span data-contra-rating-text class="rating-score">0.0</span>
-</div>
-```
-
-#### `data-contra-pagination-info`
-**Display pagination information**
-```html
-<div data-contra-pagination-info class="pagination-info">
-  <!-- Automatically shows "Page X of Y (Z total)" -->
-</div>
-```
-
-#### `data-contra-filter-summary`
-**Display active filters summary**
-```html
-<div data-contra-filter-summary class="filter-summary">
-  <!-- Shows currently applied filters -->
-</div>
-```
-
-### Action Buttons
-
-#### `data-contra-action`
-**Interactive action buttons**
-```html
-<!-- Pagination Actions -->
-<button data-contra-action="next-page">Next Page</button>
-<button data-contra-action="prev-page">Previous Page</button>
-
-<!-- Filter Actions -->
-<button data-contra-action="clear-filters">Clear All Filters</button>
-<button data-contra-action="reload">Reload Data</button>
-```
-
-**Available Actions:**
-- `next-page` - Load next page of results
-- `prev-page` - Load previous page of results
-- `clear-filters` - Remove all applied filters
-- `reload` - Clear cache and reload data
+When you bind a field to `coverUrl` (typically for projects), the SDK automatically creates the correct media element:
+- If the URL ends in `.mp4`, `.webm`, etc., it creates a `<video>` element.
+- Otherwise, it creates an `<img>` element.
+This allows for rich media in your project showcases. Configure video behavior in the global config.
 
 ---
 
-## 🎯 Advanced Features
+## 🔍 Filtering
 
-### Project Layouts
+The SDK has a powerful, dynamic filtering system.
 
-#### Standard 4-Column Grid
-```html
-<div data-contra-repeat="projects" data-contra-max="4" class="projects-grid">
-  <a data-contra-field="projectUrl" class="project-link" target="_blank" rel="noopener">
-    <img data-contra-field="coverUrl" class="project-thumbnail" loading="lazy" alt="Project">
-  </a>
-</div>
-```
+### How to Add Filters
 
-#### Detailed Project Cards
-```html
-<div data-contra-repeat="projects" data-contra-max="3" class="detailed-projects">
-  <div class="project-card">
-    <a data-contra-field="projectUrl" target="_blank" rel="noopener">
-      <img data-contra-field="coverUrl" class="project-image" loading="lazy" alt="Project">
-    </a>
-    <div class="project-info">
-      <h4 data-contra-field="title" class="project-title">Project Title</h4>
-      <a data-contra-field="projectUrl" class="project-link" target="_blank" rel="noopener">
-        View Project
-      </a>
-    </div>
-  </div>
-</div>
-```
+1.  Add a form element (like `<select>` or `<input>`) to your page.
+2.  Give it the `data-contra-filter` attribute, specifying which API field to filter (e.g., `sortBy`, `locations`, `languages`).
+3.  Give it the `data-contra-list-target` attribute, specifying the `list-id` of the list you want to filter.
 
-### Stats Layout
+The runtime handles the rest! For dropdowns, it will automatically fetch the available options from the API and populate them.
+
+### Example Filter Bar
 
 ```html
-<div class="expert-stats">
-  <div class="stat">
-    <span data-contra-field="earningsUSD" data-contra-format="earnings" class="stat-value">$0</span>
-    <span class="stat-label">Earned</span>
-  </div>
-  <div class="stat">
-    <span data-contra-field="projectsCompletedCount" class="stat-value">0</span>
-    <span class="stat-label">Projects</span>
-  </div>
-  <div class="stat">
-    <div data-contra-stars class="star-rating"></div>
-    <span data-contra-field="averageReviewScore" class="stat-value">0</span>
-    <span class="stat-label">Rating</span>
-  </div>
-  <div class="stat">
-    <span data-contra-field="followersCount" data-contra-format="number" class="stat-value">0</span>
-    <span class="stat-label">Followers</span>
-  </div>
-</div>
-```
-
-### Load More Pagination
-
-The Contra Webflow SDK supports a "Load More" button that allows users to progressively load additional experts without replacing the existing ones. This is perfect for creating smooth, user-friendly pagination experiences.
-
-#### Setting Up Load More Button
-
-##### 1. Basic Load More Button
-Add a button element with the `data-contra-action="load-more"` attribute:
-
-```html
-<button data-contra-action="load-more">Load More Experts</button>
-```
-
-##### 2. Load More with Custom Text
-You can customize the button text in your runtime configuration:
-
-```javascript
-const runtime = new ContraWebflowRuntime({
-  apiKey: 'your-api-key',
-  programId: 'your-program-id',
-  loadMoreText: 'Show More Experts', // Custom text
-});
-```
-
-##### 3. Pagination Info Display
-Show current loading status with pagination info elements:
-
-```html
-<div data-contra-pagination-info></div>
-<!-- Will display: "Showing 20 of 150 experts" -->
-```
-
-##### 4. Loading State Indicators
-Add loading indicators that show during load more operations:
-
-```html
-<div data-contra-infinite-loading style="display: none;">
-  <div class="loading-spinner">Loading more experts...</div>
-</div>
-```
-
-#### Complete Load More Setup Example
-
-```html
-<div data-contra-program="your-program-id" data-contra-limit="10">
-  <!-- Expert Template -->
-  <div data-contra-template style="display: none;">
-    <div class="expert-card">
-      <img data-contra-field="avatarUrl" alt="Expert Avatar">
-      <h3 data-contra-field="name"></h3>
-      <p data-contra-field="location"></p>
-      <p data-contra-field="oneLiner"></p>
-      <!-- Add more fields as needed -->
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  <div data-contra-loading style="display: none;">
-    <p>Loading experts...</p>
-  </div>
-
-  <!-- Error State -->
-  <div data-contra-error style="display: none;">
-    <p>Error loading experts</p>
-  </div>
-
-  <!-- Empty State -->
-  <div data-contra-empty style="display: none;">
-    <p>No experts found</p>
-  </div>
-
-  <!-- Pagination Info -->
-  <div data-contra-pagination-info class="pagination-info"></div>
-
-  <!-- Load More Button -->
-  <button data-contra-action="load-more" class="load-more-btn">
-    Load More Experts
-  </button>
-
-  <!-- Load More Loading Indicator -->
-  <div data-contra-infinite-loading style="display: none;" class="load-more-loading">
-    <div class="spinner"></div>
-    <span>Loading more experts...</span>
-  </div>
-</div>
-```
-
-#### Load More Button States
-
-The load more button automatically handles different states:
-
-1. **Normal State**: Shows your custom text (default: "Load More")
-2. **Loading State**: Shows "Loading..." and is disabled
-3. **Error State**: Shows "Error loading more" temporarily
-4. **End State**: Shows "All experts loaded" and is disabled
-5. **Disabled State**: When no more experts are available
-
-#### CSS Classes for Styling
-
-The runtime automatically adds CSS classes to help with styling:
-
-```css
-/* Load More Button States */
-.load-more-btn.loading {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.load-more-btn.error {
-  background-color: #ef4444;
-  color: white;
-}
-
-.load-more-btn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Pagination Info Styling */
-.pagination-info {
-  text-align: center;
-  margin: 20px 0;
-  color: #666;
-  font-size: 14px;
-}
-
-/* Loading Indicator */
-.load-more-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 20px;
-}
-
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #333;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-```
-
-#### Configuration Options
-
-Configure load more behavior in your runtime setup:
-
-```javascript
-const runtime = new ContraWebflowRuntime({
-  apiKey: 'your-api-key',
-  programId: 'your-program-id',
-  
-  // Pagination Configuration
-  paginationMode: 'infinite',        // 'traditional', 'infinite', or 'hybrid'
-  loadMoreText: 'Load More Experts', // Custom button text
-  maxCachedPages: 5,                 // How many pages to keep in memory
-  
-  // Performance
-  debounceDelay: 300,                // Delay before processing filter changes
-  maxRetries: 3,                     // Max retries for failed requests
-});
-```
-
-#### How Load More Works
-
-1. **Initial Load**: Loads the first batch of experts (based on `data-contra-limit`)
-2. **User Clicks Load More**: Fetches the next batch using the current offset
-3. **Append Results**: New experts are added to the existing list (not replaced)
-4. **Update State**: Button state and pagination info are updated
-5. **Caching**: Each page is cached for better performance
-6. **End Detection**: When fewer results than requested are returned, we've reached the end
-
-#### Advanced Features
-
-##### Infinite Scroll + Load More (Hybrid Mode)
-```javascript
-const runtime = new ContraWebflowRuntime({
-  // ... other config
-  paginationMode: 'hybrid',
-  infiniteScrollThreshold: 500, // Pixels from bottom to trigger auto-load
-});
-```
-
-##### Preloading Next Page
-```javascript
-const runtime = new ContraWebflowRuntime({
-  // ... other config
-  preloadNextPage: true, // Preload next page for instant loading
-});
-```
-
-##### Custom Event Handling
-```javascript
-// Listen for load more events
-window.addEventListener('contra:expertsLoaded', (event) => {
-  const { experts, totalExperts, isLoadMore } = event.detail;
-  
-  if (isLoadMore) {
-    console.log(`Loaded ${experts.length} more experts`);
-    console.log(`Total experts now: ${totalExperts.length}`);
-  }
-});
-```
-
-#### Troubleshooting
-
-##### Load More Button Not Working
-1. Check that `data-contra-action="load-more"` is correctly set
-2. Ensure the button is inside the expert container
-3. Verify your API key and program ID are correct
-4. Check browser console for error messages
-
-##### Button Shows "All experts loaded" Too Early
-1. Check your API's `totalCount` response
-2. Verify the `limit` parameter is being sent correctly
-3. Ensure your API supports pagination with `offset` and `limit`
-
-##### Performance Issues with Many Experts
-1. Reduce the `limit` per page (try 10-20 instead of 50+)
-2. Enable caching with `maxCachedPages`
-3. Consider using `paginationMode: 'hybrid'` for infinite scroll
-
-#### Best Practices
-
-1. **Start Small**: Begin with 10-20 experts per page
-2. **Show Progress**: Always include pagination info
-3. **Handle Errors**: Provide clear error messages
-4. **Mobile Friendly**: Test on mobile devices
-5. **Performance**: Monitor memory usage with large lists
-6. **Accessibility**: Ensure keyboard navigation works
-7. **Loading States**: Always show loading indicators
-
----
-
-## 🎬 Media Handling
-
-The SDK automatically detects and handles different media types with fallbacks.
-
-### Automatic Video Detection
-
-The SDK automatically converts video URLs to proper `<video>` elements for project cover images:
-
-```html
-<!-- This will become a video element if coverUrl is a video -->
-<img data-contra-field="coverUrl" class="project-media" alt="Project Media">
-
-<!-- Avatar images remain as regular images -->
-<img data-contra-field="avatarUrl" class="avatar" alt="Expert Avatar">
-```
-
-**Video Detection:**
-- **Applies to**: `coverUrl` fields only (project media)
-- **Image fields**: `avatarUrl` and other image fields remain as standard images
-- **Supported formats**: `.mp4`, `.webm`, `.mov`, `.avi`, `.mkv`, `.ogg`
-- **Cloudinary**: Special handling for Cloudinary video URLs
-
-### Video Configuration
-
-Configure video behavior globally:
-
-```json
-{
-  "videoAutoplay": false,     // Recommended: false for better UX
-  "videoHoverPlay": true,     // Play videos on hover
-  "videoMuted": true,         // Required for autoplay in browsers
-  "videoLoop": true,          // Loop video content
-  "videoControls": false      // Hide/show video controls
-}
-```
-
-### Video Features
-
-- **Hover-to-Play**: Videos play on mouse hover (default behavior)
-- **Autoplay Support**: Configurable autoplay with mute
-- **Fallback Handling**: Automatic thumbnail extraction for failed videos
-- **Cloudinary Integration**: Special handling for Cloudinary video URLs
-- **Performance Optimized**: Lazy loading and metadata preloading
-
-### Media Best Practices
-
-```html
-<!-- Recommended: Use aspect-ratio containers -->
-<div class="media-container" style="aspect-ratio: 16/9;">
-  <img data-contra-field="coverUrl" class="media-fill" loading="lazy" alt="Project Media">
-</div>
-
-<!-- CSS for responsive media -->
-<style>
-.media-container {
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-}
-
-.media-fill {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-</style>
-```
-
----
-
-## 🔍 Filtering & Search
-
-### Filter Controls
-
-Add filter controls that automatically update the expert list:
-
-```html
-<!-- Dropdown Filters -->
-<select data-contra-filter="sortBy">
-  <option value="relevance">Most Relevant</option>
-  <option value="newest">Newest</option>
-  <option value="oldest">Oldest</option>
-</select>
-
-<!-- Checkbox Filters -->
-<label>
-  <input type="checkbox" data-contra-filter="available" value="true">
-  Available Only
-</label>
-
-<!-- Range Filters -->
-<div class="rate-filter">
-  <input type="number" data-contra-filter="minRate" placeholder="Min Rate">
-  <input type="number" data-contra-filter="maxRate" placeholder="Max Rate">
-</div>
-
-<!-- Text Filters -->
-<input type="text" data-contra-filter="location" placeholder="Location">
-
-<!-- Multi-Select Filters -->
-<select data-contra-filter="languages" multiple>
-  <option value="English">English</option>
-  <option value="Spanish">Spanish</option>
-  <option value="French">French</option>
-</select>
-```
-
-### Available Filters
-
-**Supported Filters:**
-
-| Filter | Input Type | Description | Values |
-|--------|------------|-------------|---------|
-| `available` | checkbox | Availability status | `true`, `false` |
-| `location` | text | Geographic location | Any string |
-| `languages` | select/checkbox | Spoken languages | Language codes |
-| `minRate` | number | Minimum hourly rate | Number in USD |
-| `maxRate` | number | Maximum hourly rate | Number in USD |
-
-### Filter Attributes
-
-You can also set default filters directly on the container:
-
-```html
-<!-- Show only available experts by default -->
-<div data-contra-program="spline_expert" data-contra-available="true" data-contra-limit="20">
-  <!-- Expert cards -->
-</div>
-
-<!-- Set default location filter -->
-<div data-contra-program="spline_expert" data-contra-location="New York" data-contra-limit="20">
-  <!-- Expert cards -->
-</div>
-```
-
-### Filter Types
-
-#### `data-contra-filter-type`
-**Control filter behavior**
-
-```html
-<!-- Replace filter value (default) -->
-<input data-contra-filter="skillTags" data-contra-filter-type="replace">
-
-<!-- Append to filter array -->
-<input data-contra-filter="skillTags" data-contra-filter-type="append">
-```
-
-### Advanced Filter Modal
-
-```html
-<!-- Filter Modal -->
-<div id="filter-modal" class="modal">
-  <div class="modal-content">
-    <h3>Filter Experts</h3>
-    
+<div class="filter-bar">
+    <!-- Sort By Dropdown -->
     <div class="filter-group">
-      <label>Sort by</label>
-      <select data-contra-filter="sortBy">
-        <option value="relevance">Relevance</option>
-        <option value="newest">Newest</option>
-        <option value="oldest">Oldest</option>
-      </select>
+        <label for="sort-filter">Sort by:</label>
+        <select id="sort-filter" data-contra-filter="sortBy" data-contra-list-target="expert-cards">
+            <!-- Options dynamically populated by runtime -->
+</select>
+</div>
+
+    <!-- Location Dropdown -->
+    <div class="filter-group">
+        <label for="location-filter">Location:</label>
+        <select id="location-filter" data-contra-filter="locations" data-contra-list-target="expert-cards">
+            <option value="">All Locations</option>
+            <!-- Options dynamically populated by runtime -->
+</select>
+</div>
+
+    <!-- Min Rate Input -->
+    <div class="filter-group">
+        <label for="min-rate-filter">Min Rate:</label>
+        <input type="number" id="min-rate-filter" placeholder="50" data-contra-filter="minRate" data-contra-list-target="expert-cards">
     </div>
     
+    <!-- Available Now Checkbox -->
     <div class="filter-group">
-      <label>Hourly Rate Range</label>
-      <div class="rate-inputs">
-        <input type="number" data-contra-filter="minRate" placeholder="Min $">
-        <input type="number" data-contra-filter="maxRate" placeholder="Max $">
+        <input type="checkbox" id="available-filter" data-contra-filter="available" data-contra-list-target="expert-cards" value="true">
+        <label for="available-filter">Available Now</label>
       </div>
     </div>
-    
-    <div class="filter-group">
-      <label>
-        <input type="checkbox" data-contra-filter="available" value="true">
-        Available Only
-      </label>
-    </div>
-    
-    <div class="filter-group">
-      <label>Location</label>
-      <input data-contra-filter="location" placeholder="e.g. San Francisco">
-    </div>
-    
-    <div class="filter-group">
-      <label>Languages</label>
-      <select data-contra-filter="languages" multiple size="4">
-        <option value="English">English</option>
-        <option value="Spanish">Spanish</option>
-        <option value="French">French</option>
-        <option value="German">German</option>
-      </select>
-    </div>
-    
-    <div class="modal-actions">
-      <button id="clear-filters">Clear All</button>
-      <button id="apply-filters">Apply Filters</button>
-    </div>
-  </div>
-</div>
 ```
 
 ---
 
-## 🎨 Styling & Customization
+## 🎨 Styling Guide
 
-### CSS Classes
+The SDK adds very few classes to give you full control.
 
-The SDK adds these classes automatically:
+-   `.contra-rendered-item`: Added to every element cloned from a template.
+-   `.loading`, `.error`: Added to the list container element during these states (if you also provide `data-contra-loading`/`data-contra-error` elements).
+-   Use your own classes for styling. The SDK will preserve them.
 
-| Class | Applied To | Purpose |
-|-------|------------|---------|
-| `.contra-runtime` | Container | Indicates SDK is active |
-| `.loading` | Container | During data loading |
-| `.error` | Container | When errors occur |
-| `.empty` | Container | When no results found |
+---
 
-### Responsive Design Example
+## ✨ Full Example
 
-```css
-/* Expert Cards */
-.expert-card {
-  border: 1px solid #e4e7ec;
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  background: white;
-  transition: all 0.2s ease;
+This example demonstrates all major features, including two independent lists, dynamic filters, and rich data binding.
+
+```html
+<!--
+  Contra SDK Webflow Embed Example
+  Demonstrates the new, simplified list-based runtime.
+-->
+
+<!-- 1. Configuration Script (Required once per page) -->
+<script id="contra-config" type="application/json">
+{
+    "apiKey": "YOUR_API_KEY_HERE",
+    "debug": true
 }
+</script>
 
-.expert-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  transform: translateY(-2px);
-}
+<!-- 2. Runtime Script (Required once per page) -->
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js"></script>
 
-/* Avatar */
-.expert-avatar {
-  width: 64px;
-  height: 64px;
+<!-- 3. Styles (Recommended) -->
+<style>
+    /* General Styles */
+    .contra-container {
+        font-family: sans-serif;
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    .contra-container h2 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    /* Hero Avatar Styles */
+    .hero-avatars-list {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 40px;
+    }
+    .hero-avatar {
+        width: 80px;
+        height: 80px;
   border-radius: 50%;
   object-fit: cover;
-}
+        border: 3px solid white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .hero-avatar:not(:first-child) {
+        margin-left: -20px;
+    }
 
-/* Stats Grid */
-.expert-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
-  padding: 1rem 0;
-  border-top: 1px solid #f3f4f6;
-  border-bottom: 1px solid #f3f4f6;
-}
+    /* Expert Card Styles */
+    .expert-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .expert-header { display: flex; align-items: center; gap: 16px; }
+    .expert-avatar-main { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+    .expert-name { font-size: 1.25rem; font-weight: 600; }
+    .expert-location { color: #6b7280; }
+    .expert-details { display: flex; gap: 16px; color: #6b7280; align-items: center; }
+    .expert-oneliner { margin-top: 16px; color: #374151; }
+    .skill-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .skill-tag { background: #f3f4f6; color: #374151; padding: 4px 12px; border-radius: 9999px; font-size: 12px; }
 
-.stat {
-  text-align: center;
-}
-
-.stat-value {
-  display: block;
-  font-weight: 600;
-  font-size: 1.25rem;
-  color: #111827;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-/* Projects Grid */
+    /* Project Styles */
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.project-thumbnail {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+    .project-card {
+        border: 1px solid #e5e7eb;
   border-radius: 8px;
-  transition: transform 0.2s ease;
-}
-
-.project-thumbnail:hover {
-  transform: scale(1.02);
-}
-
-/* Star Rating */
-.star-rating {
-  display: inline-flex;
-  gap: 2px;
-}
-
-.contra-star {
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .project-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .project-cover {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+    }
+    .project-title {
+        padding: 12px;
+        font-weight: 600;
   font-size: 14px;
 }
 
-.contra-star-full {
-  color: #fbbf24;
-}
+    /* Social Links */
+    .social-links {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+    .social-link {
+        color: #6b7280;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .social-link:hover {
+        color: #111827;
+    }
 
-.contra-star-half {
-  color: #fbbf24;
-}
+    /* Load More Button Styles */
+    .load-more-section { text-align: center; padding: 20px; }
+    .load-more-btn {
+        background: #111827;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: background-color 0.2s;
+    }
+    .load-more-btn:hover { background: #374151; }
+    .load-more-btn:disabled { background: #9ca3af; cursor: not-allowed; }
 
-.contra-star-empty {
-  color: #e5e7eb;
-}
-
-/* Responsive Breakpoints */
-@media (max-width: 768px) {
-  .projects-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .expert-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .expert-card {
-    padding: 1rem;
-  }
-  
-  .projects-grid {
-    grid-template-columns: 1fr;
-  }
-}
-```
-
-### Loading States
-
-```css
-/* Loading Animation */
-.loading-state {
-  text-align: center;
-  padding: 3rem;
-  color: #6b7280;
-}
-
-.loading-spinner {
-  display: inline-block;
-  width: 32px;
-  height: 32px;
-  border: 3px solid #f3f4f6;
-  border-top: 3px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Error States */
-.error-state {
-  background: #fee2e2;
-  color: #dc2626;
-  padding: 1rem;
+    /* Filter Styles */
+    .filter-bar {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 16px;
+        background-color: #f9fafb;
+        border-radius: 12px;
+    }
+    .filter-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .filter-bar input, .filter-bar select {
+        padding: 10px;
+        border: 1px solid #e5e7eb;
   border-radius: 8px;
-  margin: 1rem 0;
-}
+        font-size: 1rem;
+    }
+    .filter-bar label {
+        font-weight: 600;
+    }
 
-/* Empty States */
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: #6b7280;
-  background: #f9fafb;
-  border-radius: 8px;
-}
+</style>
+
+<!-- 4. HTML Structure -->
+
+<!-- Section 1: Hero with 5 Avatars -->
+<div class="contra-container">
+    <h2>Featured Experts</h2>
+    
+    <!-- Hero List: Fetches 5 experts, displays only their avatars -->
+    <div data-contra-list-id="hero-avatars" data-contra-program="YOUR_PROGRAM_ID" data-contra-limit="5" class="hero-avatars-list">
+        
+        <!-- Template for a single avatar -->
+<div data-contra-template style="display: none;">
+            <a data-contra-field="profileUrl" target="_blank">
+                <img data-contra-field="avatarUrl" class="hero-avatar" alt="Expert Avatar">
+            </a>
+</div>
+
+    </div>
+</div>
+
+
+<!-- Section 2: Paginated Expert Cards -->
+<div class="contra-container">
+    <h2>All Experts</h2>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label for="sort-filter">Sort by:</label>
+            <select id="sort-filter" data-contra-filter="sortBy" data-contra-list-target="expert-cards">
+                <!-- Options dynamically populated by runtime -->
+</select>
+        </div>
+        <div class="filter-group">
+            <label for="location-filter">Location:</label>
+            <select id="location-filter" data-contra-filter="locations" data-contra-list-target="expert-cards">
+                <option value="">All Locations</option>
+                <!-- Options dynamically populated by runtime -->
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="languages-filter">Languages:</label>
+            <select id="languages-filter" data-contra-filter="languages" data-contra-list-target="expert-cards">
+                <option value="">All Languages</option>
+                <!-- Options dynamically populated by runtime -->
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="min-rate-filter">Min Rate:</label>
+            <input type="number" id="min-rate-filter" placeholder="50" data-contra-filter="minRate" data-contra-list-target="expert-cards" style="width: 80px;">
+        </div>
+        <div class="filter-group">
+            <label for="max-rate-filter">Max Rate:</label>
+            <input type="number" id="max-rate-filter" placeholder="150" data-contra-filter="maxRate" data-contra-list-target="expert-cards" style="width: 80px;">
+        </div>
+        <div class="filter-group">
+            <input type="checkbox" id="available-filter" data-contra-filter="available" data-contra-list-target="expert-cards" value="true">
+            <label for="available-filter">Available Now</label>
+        </div>
+    </div>
+
+    <!-- Expert Card List: Fetches 2 experts initially -->
+    <div data-contra-list-id="expert-cards" data-contra-program="YOUR_PROGRAM_ID" data-contra-limit="2">
+        
+        <!-- Template for a full expert card -->
+        <div data-contra-template class="expert-card" style="display: none;">
+            <div class="expert-header">
+                <img data-contra-field="avatarUrl" class="expert-avatar-main" alt="Expert Avatar">
+                <div>
+                    <h3 data-contra-field="name" class="expert-name"></h3>
+                    <p data-contra-field="location" class="expert-location"></p>
+                    <div class="expert-details">
+                        <span data-contra-field="hourlyRateUSD" data-contra-format="rate"></span>
+                        <span data-contra-show-when="available:true" style="color: #10b981;">● Available Now</span>
+    </div>
+  </div>
+    </div>
+            <p data-contra-field="oneLiner" class="expert-oneliner"></p>
+            <div data-contra-repeat="skillTags" data-contra-max="8" class="skill-tags">
+                <div data-contra-field="name" class="skill-tag"></div>
+    </div>
+            <div data-contra-repeat="projects" data-contra-max="3" class="projects-grid">
+                <a data-contra-field="projectUrl" target="_blank" class="project-card">
+                    <img data-contra-field="coverUrl" class="project-cover" alt="Project Cover">
+                    <div data-contra-field="title" class="project-title"></div>
+                </a>
+  </div>
+            <div data-contra-repeat="socialLinks" class="social-links">
+                 <a data-contra-field="url" target="_blank" class="social-link">
+                    <span data-contra-field="label"></span>
+                </a>
+            </div>
+            <a data-contra-field="profileUrl" target="_blank" class="load-more-btn" style="align-self: flex-start; margin-top: 16px;">View Profile</a>
+        </div>
+
+        <!-- Loading state for this list -->
+        <div data-contra-loading style="display: none; text-align: center; padding: 40px;">
+            <p>Loading...</p>
+        </div>
+
+        <!-- Empty state for this list -->
+        <div data-contra-empty style="display: none; text-align: center; padding: 40px;">
+            <p>No experts found.</p>
+        </div>
+
+    </div>
+
+    <!-- Load More Section: This button targets the "expert-cards" list -->
+    <div class="load-more-section">
+        <button data-contra-action="load-more" data-contra-list-target="expert-cards" class="load-more-btn">
+            Load More
+        </button>
+    </div>
+
+</div>
 ```
-
----
-
-## 🔌 Events & JavaScript API
-
-### Custom Events
-
-The SDK dispatches custom events for integration:
-
-```javascript
-// Expert data loaded successfully
-document.addEventListener('contra:expertsLoaded', (event) => {
-  console.log('Experts loaded:', event.detail);
-  // event.detail.experts - Array of expert data
-  // event.detail.totalCount - Total number of experts
-  // event.detail.filters - Applied filters
-});
-
-// Error occurred
-document.addEventListener('contra:expertsError', (event) => {
-  console.error('SDK Error:', event.detail);
-  // event.detail.error - Error object
-  // event.detail.context - Error context
-});
-
-// Filter changed
-document.addEventListener('contra:filterChange', (event) => {
-  console.log('Filters changed:', event.detail);
-  // event.detail.filters - New filter values
-  // event.detail.element - Container element
-});
-```
-
-### JavaScript API
-
-Access the runtime programmatically:
-
-```javascript
-// Access the global runtime instance (available after auto-initialization)
-const runtime = window.contraRuntime;
-
-// Clear cache for a specific program
-runtime.client.clearCache('experts:your_program_id');
-
-// Clear all cache
-runtime.client.clearCache();
-
-// Manual initialization (if needed)
-const customRuntime = new ContraWebflowRuntime({
-  apiKey: 'your-api-key',
-  debug: true,
-  videoAutoplay: false
-});
-
-// Initialize manually
-customRuntime.init();
-```
-
-**Available Methods:**
-- `runtime.client.clearCache(key?)` - Clear cached data
-- `runtime.init()` - Initialize the runtime
-- `runtime.log(message, ...args)` - Debug logging (when debug enabled)
-
-**Configuration:**
-The runtime is automatically initialized from the `#contra-config` script tag and exposed as `window.contraRuntime`.
-
-### Debugging
-
-Enable debug mode for detailed logging:
-
-```json
-{
-  "debug": true
-}
-```
-
-Debug output includes:
-- API requests and responses
-- Cache hits and misses
-- Filter changes
-- Media type detection
-- Error details
-
----
-
-## ⚡ Performance & Caching
-
-### Intelligent Caching
-
-The SDK implements caching via the underlying Contra client:
-
-- **Request Deduplication**: Prevents duplicate API calls during the same session
-- **Cache Management**: Programmatic cache clearing for fresh data
-- **Performance**: Reduces API calls for repeated requests
-
-### Cache Management
-
-```javascript
-// Clear specific cache
-runtime.client.clearCache('experts:program_id');
-
-// Clear all cache
-runtime.client.clearCache();
-```
-
-### Performance Features
-
-- **Request Deduplication**: Prevents duplicate API calls
-- **Debounced Filters**: Prevents excessive API calls during filtering (configurable delay)
-- **Lazy Loading**: Images and videos load on demand
-- **Error Handling**: Graceful fallbacks for failed media
-- **Auto-retry Logic**: Configurable retry attempts for failed requests
-
-### Best Practices
-
-1. **Limit Results**: Use `data-contra-limit` to control page size
-2. **Optimize Images**: Project images are automatically optimized
-3. **Lazy Loading**: Always include `loading="lazy"` on images
-4. **Cache Strategy**: Configure appropriate TTL for your use case
 
 ---
 
 ## 🛠️ Troubleshooting
 
-### Common Issues
-
-#### 1. No Experts Loading
-
-**Problem**: Container shows loading state indefinitely
-
-**Solutions**:
-```html
-<!-- Check configuration -->
-<script id="contra-config" type="application/json">
-{
-  "apiKey": "valid_api_key",
-  "debug": true
-}
-</script>
-
-<!-- Verify container has program attribute -->
-<div data-contra-program="correct_program_id">
-```
-
-#### 2. Template Not Rendering
-
-**Problem**: Template doesn't clone for experts
-
-**Solutions**:
-```html
-<!-- Ensure template has required attributes -->
-<div data-contra-template style="display: none;">
-  <!-- Template content -->
-</div>
-
-<!-- Check for JavaScript errors in console -->
-```
-
-#### 3. Filters Not Working
-
-**Problem**: Filter controls don't update results
-
-**Solutions**:
-```html
-<!-- Verify filter attributes -->
-<select data-contra-filter="sortBy">
-  <option value="relevance">Relevance</option>
-</select>
-
-<!-- Check autoReload setting -->
-<script id="contra-config" type="application/json">
-{
-  "autoReload": true
-}
-</script>
-```
-
-#### 4. Media Not Loading
-
-**Problem**: Images or videos don't display
-
-**Solutions**:
-```html
-<!-- Add proper alt attributes -->
-<img data-contra-field="avatarUrl" alt="Expert Avatar">
-
-<!-- Check network tab for failed requests -->
-<!-- Verify image URLs are accessible -->
-```
-
-### Debug Mode
-
-Enable detailed logging:
-
-```json
-{
-  "debug": true
-}
-```
-
-Check browser console for:
-- API request/response details
-- Cache status
-- Configuration validation
-- Error messages
-
-### Browser Support
-
-- **Modern Browsers**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
-- **Features**: ES2020, Fetch API, Custom Elements
-- **Fallbacks**: Automatic error handling and graceful degradation
-
----
-
-## 📝 Best Practices
-
-### Implementation
-
-1. **Configuration First**: Always set up configuration before loading the SDK
-2. **Semantic HTML**: Use proper HTML structure and accessibility attributes
-3. **Progressive Enhancement**: Design works without JavaScript, enhanced with SDK
-4. **Error Handling**: Include loading, error, and empty states
-5. **Performance**: Optimize images and limit results per page
-
-### Template Design
-
-```html
-<!-- ✅ Good: Semantic, accessible template -->
-<article data-contra-template class="expert-card" style="display: none;">
-  <header class="expert-header">
-    <img data-contra-field="avatarUrl" class="expert-avatar" alt="Expert Profile" loading="lazy">
-    <div class="expert-info">
-      <h3 data-contra-field="name" class="expert-name">Expert Name</h3>
-      <p data-contra-field="location" class="expert-location">Location</p>
-      <span data-contra-show-when="available:true" class="availability-badge" aria-label="Available">
-        🟢 Available
-      </span>
-    </div>
-  </header>
-  
-  <div class="expert-bio">
-    <p data-contra-field="oneLiner" class="bio-text">Expert bio</p>
-  </div>
-  
-  <div class="expert-stats" role="group" aria-label="Expert Statistics">
-    <div class="stat">
-      <span data-contra-field="earningsUSD" data-contra-format="earnings" class="stat-value">$0</span>
-      <span class="stat-label">Earned</span>
-    </div>
-    <div class="stat">
-      <div data-contra-stars class="star-rating" role="img" aria-label="Star rating"></div>
-      <span data-contra-field="averageReviewScore" class="stat-value">0</span>
-    </div>
-  </div>
-  
-  <footer class="expert-actions">
-    <a data-contra-field="profileUrl" class="profile-link" target="_blank" rel="noopener">
-      View Profile
-    </a>
-    <a data-contra-field="inquiryUrl" class="cta-button" target="_blank" rel="noopener">
-      Contact Expert
-    </a>
-  </footer>
-</article>
-```
-
-### CSS Architecture
-
-```css
-/* Use BEM methodology for consistent naming */
-.expert-card { }
-.expert-card__header { }
-.expert-card__info { }
-.expert-card__stats { }
-.expert-card--featured { }
-
-/* Responsive design with mobile-first approach */
-.expert-card {
-  /* Mobile styles */
-}
-
-@media (min-width: 768px) {
-  .expert-card {
-    /* Tablet styles */
-  }
-}
-
-@media (min-width: 1024px) {
-  .expert-card {
-    /* Desktop styles */
-  }
-}
-```
-
-### Security
-
-1. **Content Security Policy**: Configure CSP to allow SDK domain
-2. **HTTPS Only**: Always use HTTPS in production
-3. **API Key Security**: Never expose API keys in client-side code for public APIs
-4. **Link Security**: Use `rel="noopener"` on external links
-
-### Accessibility
-
-```html
-<!-- Proper ARIA labels -->
-<div data-contra-stars role="img" aria-label="5 star rating"></div>
-
-<!-- Semantic HTML -->
-<main role="main">
-  <section aria-label="Expert Directory">
-    <h2>Find Experts</h2>
-    <div data-contra-program="your_program">
-      <!-- Expert cards -->
-    </div>
-  </section>
-</main>
-
-<!-- Keyboard navigation -->
-<a data-contra-field="profileUrl" class="expert-link" tabindex="0">
-  View Expert Profile
-</a>
-```
-
----
-
-## 📞 Support
-
-### Getting Help
-
-1. **Documentation**: Review this complete guide
-2. **Debug Mode**: Enable debug logging for detailed information
-3. **Browser Console**: Check for error messages and warnings
-4. **Network Tab**: Verify API requests are successful
-
-### Contact Information
-
-- **Technical Support**: Contact your Contra integration manager
-- **API Issues**: Verify API key and program ID with Contra
-- **Implementation Help**: Share your HTML structure and configuration
-
-### Reporting Issues
-
-When reporting issues, include:
-
-1. **Configuration**: Your `contra-config` JSON
-2. **HTML Structure**: Relevant template and container HTML
-3. **Browser Console**: Any error messages
-4. **Network Tab**: Failed API requests
-5. **Expected vs Actual**: What should happen vs what's happening
-
-### Version Information
-
-- **SDK Version**: 1.0.0
-- **API Version**: 1.0.0
-- **Last Updated**: 2024
-- **Compatibility**: Webflow, HTML, modern browsers
+-   **Nothing is showing up?**
+    1.  Check that your `apiKey` in `contra-config` is correct.
+    2.  Check that your `data-contra-program` ID is correct.
+    3.  Open the browser console. If `debug: true` is set, you will see detailed logs about what the SDK is doing. Look for any errors in red.
+-   **Filters not working?**
+    1.  Make sure the `data-contra-list-target` on your filter control exactly matches the `data-contra-list-id` of your list.
+    2.  Check the `data-contra-filter` attribute name against the API documentation.
+-   **Still stuck?** The debug logs are your best friend. They will tell you which lists are being initialized, what filters are being fetched, and what data is being loaded.
 
 ---
 
@@ -1484,169 +587,4 @@ MIT License - See LICENSE file for details.
 
 ---
 
-*This documentation covers the complete Contra Expert Directory SDK for Webflow. For the latest updates and support, contact your Contra integration manager.*
-
-## Pagination Attributes Reference
-
-### Action Attributes
-Use these attributes on buttons and interactive elements:
-
-| Attribute | Description | Example |
-|-----------|-------------|---------|
-| `data-contra-action="load-more"` | Load more experts (append to existing) | `<button data-contra-action="load-more">Load More</button>` |
-| `data-contra-action="next-page"` | Go to next page (replace current) | `<button data-contra-action="next-page">Next</button>` |
-| `data-contra-action="prev-page"` | Go to previous page (replace current) | `<button data-contra-action="prev-page">Previous</button>` |
-| `data-contra-action="first-page"` | Go to first page | `<button data-contra-action="first-page">First</button>` |
-| `data-contra-action="last-page"` | Go to last page | `<button data-contra-action="last-page">Last</button>` |
-| `data-contra-action="reload"` | Reload current data | `<button data-contra-action="reload">Refresh</button>` |
-| `data-contra-action="clear-filters"` | Clear all filters and reload | `<button data-contra-action="clear-filters">Clear</button>` |
-
-### Information Display Attributes
-Use these to show pagination status:
-
-| Attribute | Description | Example Output |
-|-----------|-------------|----------------|
-| `data-contra-pagination-info` | Shows current pagination status | "Showing 20 of 150 experts" or "Page 2 of 8 (150 total)" |
-| `data-contra-infinite-loading` | Loading indicator for load more | Hidden by default, shown during load more |
-
-### Configuration Attributes
-Set these on your main container:
-
-| Attribute | Description | Default | Example |
-|-----------|-------------|---------|---------|
-| `data-contra-limit` | Items per page/load | 20 | `data-contra-limit="10"` |
-| `data-contra-pagination-mode` | Pagination type | "traditional" | `data-contra-pagination-mode="infinite"` |
-
-### Pagination Modes
-
-#### Traditional Pagination
-- Uses Next/Previous buttons
-- Replaces current results with new page
-- Good for large datasets with specific page navigation
-
-```html
-<div data-contra-program="your-program" data-contra-pagination-mode="traditional">
-  <!-- Expert template and content -->
-  
-  <div class="pagination-controls">
-    <button data-contra-action="first-page">First</button>
-    <button data-contra-action="prev-page">Previous</button>
-    <div data-contra-pagination-info></div>
-    <button data-contra-action="next-page">Next</button>
-    <button data-contra-action="last-page">Last</button>
-  </div>
-</div>
-```
-
-#### Infinite Pagination (Load More)
-- Uses Load More button
-- Appends new results to existing ones
-- Great for social media style feeds
-
-```html
-<div data-contra-program="your-program" data-contra-pagination-mode="infinite">
-  <!-- Expert template and content -->
-  
-  <div data-contra-pagination-info></div>
-  <button data-contra-action="load-more">Load More Experts</button>
-  <div data-contra-infinite-loading style="display: none;">Loading...</div>
-</div>
-```
-
-#### Hybrid Pagination
-- Combines infinite scroll with Load More button
-- Auto-loads when scrolling near bottom
-- Provides manual Load More option
-
-```html
-<div data-contra-program="your-program" data-contra-pagination-mode="hybrid">
-  <!-- Expert template and content -->
-  
-  <div data-contra-pagination-info"></div>
-  <button data-contra-action="load-more">Load More Experts</button>
-  <div data-contra-infinite-loading style="display: none;">Loading...</div>
-</div>
-```
-
-### Complete Pagination Setup Examples
-
-#### Simple Load More Setup
-```html
-<div data-contra-program="your-program-id" data-contra-limit="12">
-  <!-- Template -->
-  <div data-contra-template style="display: none;">
-    <!-- Expert card content -->
-  </div>
-  
-  <!-- States -->
-  <div data-contra-loading style="display: none;">Loading experts...</div>
-  <div data-contra-error style="display: none;">Error loading experts</div>
-  <div data-contra-empty style="display: none;">No experts found</div>
-  
-  <!-- Pagination -->
-  <div data-contra-pagination-info class="text-center"></div>
-  <button data-contra-action="load-more" class="btn-load-more">
-    Load More Experts
-  </button>
-</div>
-```
-
-#### Advanced Pagination with All Controls
-```html
-<div data-contra-program="your-program-id" 
-     data-contra-limit="10" 
-     data-contra-pagination-mode="hybrid">
-  
-  <!-- Template -->
-  <div data-contra-template style="display: none;">
-    <!-- Expert card content -->
-  </div>
-  
-  <!-- States -->
-  <div data-contra-loading style="display: none;">
-    <div class="loading-spinner"></div>
-    <p>Loading experts...</p>
-  </div>
-  
-  <div data-contra-error style="display: none;">
-    <p>Error loading experts. Please try again.</p>
-    <button data-contra-action="reload">Retry</button>
-  </div>
-  
-  <div data-contra-empty style="display: none;">
-    <p>No experts found matching your criteria.</p>
-    <button data-contra-action="clear-filters">Clear Filters</button>
-  </div>
-  
-  <!-- Pagination Controls -->
-  <div class="pagination-section">
-    <!-- Info Display -->
-    <div data-contra-pagination-info class="pagination-info"></div>
-    
-    <!-- Traditional Controls (hidden in infinite mode) -->
-    <div class="traditional-pagination">
-      <button data-contra-action="first-page">First</button>
-      <button data-contra-action="prev-page">Previous</button>
-      <button data-contra-action="next-page">Next</button>
-      <button data-contra-action="last-page">Last</button>
-    </div>
-    
-    <!-- Load More Controls -->
-    <div class="infinite-pagination">
-      <button data-contra-action="load-more" class="load-more-btn">
-        Load More Experts
-      </button>
-      
-      <div data-contra-infinite-loading style="display: none;" class="load-more-loading">
-        <div class="spinner"></div>
-        <span>Loading more experts...</span>
-      </div>
-    </div>
-    
-    <!-- Utility Controls -->
-    <div class="utility-controls">
-      <button data-contra-action="reload">Refresh</button>
-      <button data-contra-action="clear-filters">Clear Filters</button>
-    </div>
-  </div>
-</div> 
+*This documentation covers the complete Contra Expert Directory SDK for Webflow. For the latest updates and support, contact your Contra integration manager.* 
