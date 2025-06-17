@@ -252,7 +252,7 @@ export class ContraWebflowRuntime {
         experts: allExperts,
         totalCount: response.totalCount,
         offset: state.offset + newExperts.length,
-        hasNextPage: newExperts.length === state.limit,
+        hasNextPage: allExperts.length < response.totalCount,
         loading: false
       });
 
