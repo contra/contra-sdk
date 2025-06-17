@@ -1175,40 +1175,76 @@ export class ContraWebflowRuntime {
         if (filterDef.minimum !== undefined) control.min = String(filterDef.minimum);
         if (filterDef.maximum !== undefined) control.max = String(filterDef.maximum);
       }
+      
+      // Handle populating controls with options (select, datalist)
+      if (filterDef.options) {
+          if (control instanceof HTMLSelectElement) {
+              this.populateSelectControl(control, filterKey!, filterDef.options);
+          } else if (control instanceof HTMLInputElement && control.getAttribute('list')) {
+              this.populateDatalistControl(control, filterKey!, filterDef.options);
+          }
+      }
+    });
+  }
 
-      // Handle populating select dropdowns
-      if (filterDef.options && control instanceof HTMLSelectElement) {
-        this.log(`Populating options for filter '${filterKey}' on control`, control);
-        
-        const placeholder = control.firstElementChild?.cloneNode(true) as Element | null;
-        control.innerHTML = '';
-        if (placeholder && placeholder.getAttribute('value') === '') {
-          control.appendChild(placeholder);
-        }
-        
-        filterDef.options.forEach((option: any) => {
+  private populateSelectControl(control: HTMLSelectElement, filterKey: string, options: any[]): void {
+    this.log(`Populating options for filter '${filterKey}' on control`, control);
+    
+    const placeholder = control.firstElementChild?.cloneNode(true) as Element | null;
+    control.innerHTML = '';
+    if (placeholder && placeholder.getAttribute('value') === '') {
+      control.appendChild(placeholder);
+    }
+
+    options.forEach((option: any) => {
+      const optionElement = document.createElement('option');
+      const value = typeof option === 'object' && option.value !== undefined ? option.value : String(option);
+      
+      optionElement.value = value;
+
+      let label: string;
+      if (filterKey === 'locations') {
+        const labelMatch = value.match(/^(.*?)\s*\(/);
+        label = labelMatch ? labelMatch[1].trim() : value;
+      } else {
+        label = this.getFilterOptionLabel(filterKey!, value);
+      }
+      optionElement.textContent = label;
+      
+      if (filterKey === 'sortBy' && value === 'relevance') {
+        optionElement.selected = true;
+      }
+      control.appendChild(optionElement);
+    });
+  }
+
+  private populateDatalistControl(control: HTMLInputElement, filterKey: string, options: any[]): void {
+      const datalistId = control.getAttribute('list');
+      if (!datalistId) return;
+
+      const datalist = document.getElementById(datalistId);
+      if (!datalist) {
+          this.log(`Datalist with id '${datalistId}' not found for input control.`, control);
+          return;
+      }
+
+      this.log(`Populating datalist '#${datalistId}' for filter '${filterKey}'`);
+      datalist.innerHTML = ''; // Clear existing options
+
+      options.forEach((option: any) => {
           const optionElement = document.createElement('option');
           const value = typeof option === 'object' && option.value !== undefined ? option.value : String(option);
           
-          optionElement.value = value;
-
-          // Determine the user-friendly label
-          let label: string;
+          let displayValue = value;
+          // For locations, we want a cleaner value for the user to select.
           if (filterKey === 'locations') {
-            const labelMatch = value.match(/^(.*?)\s*\(/);
-            label = labelMatch ? labelMatch[1].trim() : value;
-          } else {
-            label = this.getFilterOptionLabel(filterKey!, value);
+              const labelMatch = value.match(/^(.*?)\s*\(/);
+              displayValue = labelMatch ? labelMatch[1].trim() : value;
           }
-          optionElement.textContent = label;
-          
-          if (filterKey === 'sortBy' && value === 'relevance') {
-            optionElement.selected = true;
-          }
-          control.appendChild(optionElement);
-        });
-      }
-    });
+
+          optionElement.value = displayValue;
+          datalist.appendChild(optionElement);
+      });
   }
 }
 

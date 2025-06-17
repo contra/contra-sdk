@@ -133,6 +133,8 @@ declare class ContraWebflowRuntime {
     private getAvailableFilters;
     private getFilterOptionLabel;
     private populateAllFilterControls;
+    private populateSelectControl;
+    private populateDatalistControl;
 }
 
 export { ContraWebflowRuntime };
