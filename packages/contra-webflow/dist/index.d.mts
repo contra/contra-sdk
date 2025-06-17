@@ -36,7 +36,11 @@ declare class ContraWebflowRuntime {
     /**
      * Initialize the runtime and find all expert containers
      */
-    init(container: Element): Promise<void>;
+    init(): Promise<void>;
+    /**
+     * Initialize a single expert container
+     */
+    private initContainer;
     /**
      * Setup container with initial state and classes
      */

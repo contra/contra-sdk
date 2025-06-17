@@ -210,24 +210,59 @@ export class ContraWebflowRuntime {
   /**
    * Initialize the runtime and find all expert containers
    */
-  async init(container: Element): Promise<void> {
+  async init(): Promise<void> {
     this.log('Initializing runtime...');
 
     try {
+      // Find all expert containers
+      const allContainers = this.findExpertContainers();
+      // Filter out already initialized containers
+      const containers = allContainers.filter(container => 
+        !container.hasAttribute('data-contra-initialized')
+      );
+      
+      this.log(`Found ${containers.length} uninitialised expert containers (${allContainers.length} total)`);
+
+      // Initialize each container
+      for (const container of containers) {
+        await this.initContainer(container);
+      }
+
+      this.log('Runtime initialization complete');
+    } catch (error) {
+      this.log('Runtime initialization failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize a single expert container
+   */
+  private async initContainer(container: Element): Promise<void> {
+    // Get program ID from config instead of element attribute
+    const programId = this.config.program;
+    if (!programId) {
+      this.log('No program ID found in config', container);
+      return;
+    }
+
+    this.log(`Initializing container for program: ${programId}`);
+
+    try {
       // Setup container state
-      this.setupContainer(container, container.getAttribute('data-program-id') || '');
+      this.setupContainer(container, programId);
       
       // Wire up filter controls
-      this.wireFilterControls(container, container.getAttribute('data-program-id') || '');
+      this.wireFilterControls(container, programId);
       
       // Wire up action buttons
-      this.wireActionButtons(container, container.getAttribute('data-program-id') || '');
+      this.wireActionButtons(container, programId);
       
       // Load initial data
-      await this.loadExperts(container, container.getAttribute('data-program-id') || '');
+      await this.loadExperts(container, programId);
 
     } catch (error) {
-      this.log(`Failed to initialize container for program ${container.getAttribute('data-program-id') || ''}`, error);
+      this.log(`Failed to initialize container for program ${programId}`, error);
       this.showError(container, error as Error);
     }
   }
@@ -1378,84 +1413,20 @@ export class ContraWebflowRuntime {
 
   private findExpertContainers(): Element[] {
     this.log('Looking for expert containers...');
-    this.log('Document ready state:', document.readyState);
-    this.log('Total elements in document:', document.querySelectorAll('*').length);
     
-    // Simple and reliable approach: look for any element with key contra attributes
-    const selectors = [
-      '[data-contra-limit]',
-      '[data-contra-pagination-mode]', 
-      '[data-contra-template]'
-    ];
+    // A container is now STRICTLY defined as an element with a `data-contra-program` attribute.
+    // This provides a single, reliable source of truth and prevents accidental detection.
+    const containers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}${ATTRS.program}]`));
     
-    const foundElements: Element[] = [];
-    
-    for (const selector of selectors) {
-      const elements = Array.from(document.querySelectorAll(selector));
-      this.log(`Found ${elements.length} elements with selector: ${selector}`, elements);
-      foundElements.push(...elements);
-    }
-    
-    // If no elements found, try a broader search
-    if (foundElements.length === 0) {
-      this.log('No elements found with standard selectors, trying broader search...');
-      
-      // Look for any data-contra attributes
-      const allContraElements = Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination-mode], [class*="contra"], [id*="contra"]'));
-      this.log(`Found ${allContraElements.length} elements with any contra attributes:`, allContraElements);
-      
-      // Look for the specific container structure we expect
-      const containerCandidates = Array.from(document.querySelectorAll('div')).filter(div => {
-        const hasLimit = div.hasAttribute('data-contra-limit');
-        const hasTemplate = div.querySelector('[data-contra-template]');
-        const hasContraClass = div.className.includes('contra');
-        return hasLimit || hasTemplate || hasContraClass;
-      });
-      
-      this.log(`Found ${containerCandidates.length} potential container candidates:`, containerCandidates);
-      foundElements.push(...containerCandidates);
-    }
-    
-    // Get unique containers
-    const containers = new Set<Element>();
-    
-    for (const element of foundElements) {
-      // If element has limit or pagination-mode, it's a container
-      if (element.hasAttribute('data-contra-limit') || element.hasAttribute('data-contra-pagination-mode')) {
-        containers.add(element);
-        this.log('Found container (has limit/pagination):', element);
-      } 
-      // If element is a template, its parent is the container
-      else if (element.hasAttribute('data-contra-template')) {
-        const parent = element.parentElement;
-        if (parent) {
-          containers.add(parent);
-          this.log('Found container (template parent):', parent);
-        }
-      }
-      // If element has contra class, check if it's a container
-      else if (element.className.includes('contra')) {
-        // Check if this element or its children have the structure we need
-        const hasTemplate = element.querySelector('[data-contra-template]');
-        if (hasTemplate) {
-          containers.add(element);
-          this.log('Found container (has contra class and template):', element);
-        }
-      }
-    }
-    
-    const uniqueContainers = Array.from(containers);
-    this.log(`Total unique containers found: ${uniqueContainers.length}`, uniqueContainers);
+    this.log(`Found ${containers.length} containers with [${ATTR_PREFIX}${ATTRS.program}]`, containers);
     
     // If still no containers found, log detailed debugging info
-    if (uniqueContainers.length === 0) {
-      this.log('❌ No containers found! Debugging info:');
+    if (containers.length === 0) {
+      this.log('❌ No containers found! A container must have the "data-contra-program" attribute.');
       this.log('- Document body HTML:', document.body?.innerHTML?.substring(0, 500) + '...');
-      this.log('- All divs:', Array.from(document.querySelectorAll('div')).slice(0, 10));
-      this.log('- Elements with data attributes:', Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination-mode]')));
     }
     
-    return uniqueContainers;
+    return containers;
   }
 
   private parseFiltersFromElement(element: Element): ExpertFilters {
@@ -1612,39 +1583,34 @@ function autoInit(): void {
   }
 
   try {
-    const multiConfig = JSON.parse(configElement.textContent || '{}');
-    const baseConfig = (multiConfig.global || {});
-
-    console.log('[ContraWebflow] Initializing with multi-instance config:', multiConfig);
-
-    // Find all elements with a data-contra-instance attribute
-    const instances = document.querySelectorAll('[data-contra-instance]');
-
-    instances.forEach(instanceElement => {
-      const instanceId = instanceElement.getAttribute('data-contra-instance');
-      if (instanceId && multiConfig[instanceId]) {
-        // Combine global config with instance-specific config
-        const instanceConfig = {
-          ...baseConfig,
-          ...multiConfig[instanceId],
-          apiKey: baseConfig.apiKey, // Ensure API key is not overridden
-          debug: baseConfig.debug    // Ensure debug flag is not overridden
-        };
-        
-        console.log(`[ContraWebflow] Found instance "${instanceId}". Initializing...`, instanceConfig);
-
-        const runtime = new ContraWebflowRuntime(instanceConfig);
-        
-        // Pass the container element directly to the init method
-        runtime.init(instanceElement).catch(error => {
-          console.error(`[ContraWebflow] Runtime initialization failed for instance "${instanceId}":`, error);
-        });
-
-      } else {
-        console.warn(`[ContraWebflow] Found instance element but no config for ID: "${instanceId}"`);
-      }
-    });
-
+    const config = JSON.parse(configElement.textContent || '{}');
+    
+    // Validate required config
+    if (!config.apiKey) {
+      console.error('[ContraWebflow] API key is required in config.');
+      return;
+    }
+    
+    if (!config.program) {
+      console.error('[ContraWebflow] Program ID is required in config.');
+      return;
+    }
+    
+    // Add a small delay to ensure all DOM elements are ready
+    const initializeRuntime = () => {
+      const runtime = new ContraWebflowRuntime(config);
+      
+      // Expose runtime globally for debugging
+      (window as any).contraRuntime = runtime;
+      
+      runtime.init().catch(error => {
+        console.error('[ContraWebflow] Runtime initialization failed:', error);
+      });
+    };
+    
+    // Use setTimeout to ensure DOM is fully ready
+    setTimeout(initializeRuntime, 100);
+    
   } catch (error) {
     console.error('[ContraWebflow] Failed to parse config:', error);
   }
