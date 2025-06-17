@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Ultimate Contra SDK Showcase - All Features</title>
+    <style>
+        /* Modern Design System */
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #f1f5f9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --bg: #ffffff;
+            --bg-light: #f8fafc;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        .showcase-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .showcase-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .showcase-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .showcase-header p {
+            margin: 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Main Content */
+        .showcase-content {
+            padding: 40px;
+        }
+
+        /* Expert Grid Sections */
+        .grid-section {
+            margin-bottom: 50px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            background: var(--bg-light);
+        }
+
+        .grid-section h2 {
+            margin: 0 0 20px 0;
+            font-size: 1.8rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: var(--bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .filter-section h3 {
+            margin: 0 0 15px 0;
+            color: var(--text);
+            font-size: 1.2rem;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.85rem;
+        }
+
+        .filter-input, .filter-select {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 13px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e2e8f0;
+        }
+
+        /* Expert Cards */
+        .expert-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .expert-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: var(--shadow);
+        }
+
+        .expert-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        /* Expert Header */
+        .expert-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .expert-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--border);
+            transition: border-color 0.2s;
+        }
+
+        .expert-card:hover .expert-avatar {
+            border-color: var(--primary);
+        }
+
+        .expert-info {
+            flex: 1;
+        }
+
+        .expert-name {
+            margin: 0 0 5px 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .expert-oneliner {
+            margin: 0 0 10px 0;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .expert-location {
+            margin: 0;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Expert Stats */
+        .expert-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+
+        /* Star Rating */
+        .star-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .contra-star {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .contra-star-full { color: #fbbf24; }
+        .contra-star-half { color: #fbbf24; }
+        .contra-star-empty { color: #d1d5db; }
+
+        .rating-text {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-left: 5px;
+        }
+
+        /* Skills */
+        .skills-section {
+            margin: 20px 0;
+        }
+
+        .skills-label {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .skill-tag {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* Projects */
+        .projects-section {
+            margin: 20px 0;
+        }
+
+        .projects-label {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .project-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+        }
+
+        .project-media {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .project-item:hover .project-media {
+            transform: scale(1.05);
+        }
+
+        .project-title {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            color: white;
+            padding: 15px 8px 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* Social Links */
+        .social-links {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--text);
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .social-link:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Expert Actions */
+        .expert-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg);
+            color: var(--text);
+            text-decoration: none;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .action-btn.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .action-btn.primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .action-btn:not(.primary):hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Availability Badge */
+        .availability-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .availability-badge.available {
+            background: var(--success);
+            color: white;
+        }
+
+        .availability-badge.unavailable {
+            background: var(--warning);
+            color: white;
+        }
+
+        /* Pagination */
+        .pagination-section {
+            background: var(--bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .pagination-info {
+            text-align: center;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 15px;
+            padding: 10px;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn {
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: var(--bg-light);
+        }
+
+        .pagination-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .load-more-btn {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+
+        .load-more-btn:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        .load-more-btn.loading {
+            background: var(--text-light);
+            cursor: wait;
+        }
+
+        .load-more-btn.disabled {
+            background: var(--text-light);
+            opacity: 0.7;
+        }
+
+        /* States */
+        .loading-state, .error-state, .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            border-radius: var(--radius);
+            margin: 20px 0;
+        }
+
+        .loading-state {
+            background: var(--bg);
+            border: 1px solid var(--border);
+        }
+
+        .error-state {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: var(--error);
+        }
+
+        .empty-state {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+        }
+
+        .state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .state-message {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .state-description {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Conditional Display */
+        .premium-badge {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .showcase-header { padding: 30px 20px; }
+            .showcase-content { padding: 20px; }
+            .grid-section { padding: 20px; }
+            .expert-grid { grid-template-columns: 1fr; }
+            .filter-grid { grid-template-columns: 1fr; }
+            .pagination-controls { flex-direction: column; }
+        }
+
+        /* Hide templates */
+        [data-contra-template] { display: none !important; }
+
+        /* Loading animation */
+        .loading { opacity: 0.6; }
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+            animation: loading-shimmer 1.5s infinite;
+        }
+
+        @keyframes loading-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+    </style>
+</head>
+<body>
+    <div class="showcase-container">
+        <!-- Header -->
+        <div class="showcase-header">
+            <h1>🎯 Ultimate Contra SDK Showcase</h1>
+            <p>Complete demonstration of all runtime features: expert fields, filtering, pagination, media handling, and more</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="showcase-content">
+            
+            <!-- Traditional Pagination Section -->
+            <div class="grid-section">
+                <h2>📄 Traditional Pagination <span class="section-badge">Page-based Navigation</span></h2>
+                
+                <!-- Filters for Traditional Section -->
+                <div class="filter-section">
+                    <h3>🎛️ Filters & Controls</h3>
+                    <div class="filter-grid">
+                        <div class="filter-group">
+                            <label for="trad-availability">Availability</label>
+                            <select id="trad-availability" class="filter-select" data-contra-filter="available">
+                                <option value="">All Experts</option>
+                                <option value="true">Available Now</option>
+                                <option value="false">Not Available</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="trad-location">Location</label>
+                            <input type="text" id="trad-location" class="filter-input" placeholder="e.g. New York, Remote" data-contra-filter="location">
+                        </div>
+                        <div class="filter-group">
+                            <label for="trad-min-rate">Min Rate ($/hr)</label>
+                            <input type="number" id="trad-min-rate" class="filter-input" placeholder="0" data-contra-filter="minRate">
+                        </div>
+                        <div class="filter-group">
+                            <label for="trad-max-rate">Max Rate ($/hr)</label>
+                            <input type="number" id="trad-max-rate" class="filter-input" placeholder="500" data-contra-filter="maxRate">
+                        </div>
+                        <div class="filter-group">
+                            <label for="trad-sort">Sort By</label>
+                            <select id="trad-sort" class="filter-select" data-contra-filter="sortBy">
+                                <option value="relevance">Most Relevant</option>
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-secondary" data-contra-action="reload">🔄 Refresh</button>
+                    </div>
+                </div>
+                
+                <!-- Expert Container with Traditional Pagination -->
+                <div class="expert-container" data-contra-limit="4" data-contra-offset="0" data-contra-pagination-mode="traditional">
+                    
+                    <!-- Expert Grid -->
+                    <div class="expert-grid">
+                        <!-- Comprehensive Expert Template -->
+                        <div data-contra-template class="expert-card">
+                            <!-- Availability Badge -->
+                            <div class="availability-badge available" data-contra-show-when="available:true">✅ Available</div>
+                            <div class="availability-badge unavailable" data-contra-show-when="available:false">⏰ Busy</div>
+                            
+                            <!-- Expert Header -->
+                            <div class="expert-header">
+                                <img class="expert-avatar" data-contra-field="avatarUrl" alt="Expert Avatar">
+                                <div class="expert-info">
+                                    <h3 class="expert-name" data-contra-field="name">Expert Name</h3>
+                                    <p class="expert-oneliner" data-contra-field="oneLiner">Expert description</p>
+                                    <p class="expert-location">📍 <span data-contra-field="location">Location</span></p>
+                                </div>
+                            </div>
+
+                            <!-- Star Rating -->
+                            <div class="star-rating">
+                                <div data-contra-stars></div>
+                                <span class="rating-text">
+                                    <span data-contra-field="averageReviewScore" data-contra-format="rating">0.0</span>
+                                    (<span data-contra-field="reviewsCount">0</span> reviews)
+                                </span>
+                            </div>
+
+                            <!-- Expert Stats -->
+                            <div class="expert-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value" data-contra-field="hourlyRateUSD" data-contra-format="rate">$0/hr</span>
+                                    <span class="stat-label">Hourly Rate</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" data-contra-field="projectsCompletedCount" data-contra-format="number">0</span>
+                                    <span class="stat-label">Projects</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" data-contra-field="earningsUSD" data-contra-format="earnings">$0</span>
+                                    <span class="stat-label">Earnings</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" data-contra-field="followersCount" data-contra-format="number">0</span>
+                                    <span class="stat-label">Followers</span>
+                                </div>
+                            </div>
+
+                            <!-- Skills Section -->
+                            <div class="skills-section" data-contra-show-when="skillTags">
+                                <div class="skills-label">💡 Skills & Expertise</div>
+                                <div class="skills-container" data-contra-repeat="skillTags" data-contra-max="6">
+                                    <span class="skill-tag" data-contra-field="name">Skill</span>
+                                </div>
+                            </div>
+
+                            <!-- Projects Section -->
+                            <div class="projects-section" data-contra-show-when="projects">
+                                <div class="projects-label">🎨 Featured Projects</div>
+                                <div class="projects-grid" data-contra-repeat="projects" data-contra-max="4">
+                                    <div class="project-item">
+                                        <img class="project-media" data-contra-field="coverUrl" alt="Project">
+                                        <div class="project-title" data-contra-field="title">Project Title</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Social Links -->
+                            <div class="social-links" data-contra-repeat="socialLinks" data-contra-max="3">
+                                <a class="social-link" data-contra-field="url">
+                                    🔗 <span data-contra-field="label">Social</span>
+                                </a>
+                            </div>
+
+                            <!-- Premium Badge (Conditional) -->
+                            <div class="premium-badge" data-contra-show-when="earningsUSD:>50000">⭐ Top Earner</div>
+
+                            <!-- Expert Actions -->
+                            <div class="expert-actions">
+                                <a class="action-btn" data-contra-field="profileUrl">👤 View Profile</a>
+                                <a class="action-btn primary" data-contra-field="inquiryUrl">💬 Contact</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div data-contra-loading class="loading-state" style="display: none;">
+                        <span class="state-icon">⏳</span>
+                        <div class="state-message">Loading Amazing Experts...</div>
+                        <div class="state-description">Finding the perfect talent for your needs</div>
+                    </div>
+                    
+                    <!-- Error State -->
+                    <div data-contra-error class="error-state" style="display: none;">
+                        <span class="state-icon">⚠️</span>
+                        <div class="state-message">Oops! Something went wrong</div>
+                        <div class="state-description">Please try refreshing the page</div>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div data-contra-empty class="empty-state" style="display: none;">
+                        <span class="state-icon">🔍</span>
+                        <div class="state-message">No Experts Found</div>
+                        <div class="state-description">Try adjusting your filters to see more results</div>
+                    </div>
+                    
+                    <!-- Traditional Pagination Controls -->
+                    <div class="pagination-section">
+                        <div data-contra-pagination-info class="pagination-info">Loading pagination...</div>
+                        <div class="pagination-controls">
+                            <button data-contra-action="first-page" class="pagination-btn">⏮️ First</button>
+                            <button data-contra-action="prev-page" class="pagination-btn">← Previous</button>
+                            <button class="pagination-btn active">1</button>
+                            <span class="pagination-btn" style="border: none; background: none;">...</span>
+                            <button data-contra-action="next-page" class="pagination-btn">Next →</button>
+                            <button data-contra-action="last-page" class="pagination-btn">Last ⏭️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Infinite Loading Section -->
+            <div class="grid-section">
+                <h2>♾️ Infinite Loading <span class="section-badge">Cumulative Loading</span></h2>
+                
+                <!-- Filters for Infinite Section -->
+                <div class="filter-section">
+                    <h3>🎛️ Filters & Controls</h3>
+                    <div class="filter-grid">
+                        <div class="filter-group">
+                            <label for="inf-availability">Availability</label>
+                            <select id="inf-availability" class="filter-select" data-contra-filter="available">
+                                <option value="">All Experts</option>
+                                <option value="true">Available Now</option>
+                                <option value="false">Not Available</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="inf-location">Location</label>
+                            <input type="text" id="inf-location" class="filter-input" placeholder="e.g. New York, Remote" data-contra-filter="location">
+                        </div>
+                        <div class="filter-group">
+                            <label for="inf-sort">Sort By</label>
+                            <select id="inf-sort" class="filter-select" data-contra-filter="sortBy">
+                                <option value="relevance">Most Relevant</option>
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-secondary" data-contra-action="reload">🔄 Refresh</button>
+                    </div>
+                </div>
+                
+                <!-- Expert Container with Infinite Pagination -->
+                <div class="expert-container" data-contra-limit="3" data-contra-offset="0" data-contra-pagination-mode="infinite">
+                    
+                    <!-- Expert Grid -->
+                    <div class="expert-grid">
+                        <!-- Simplified Expert Template for Infinite -->
+                        <div data-contra-template class="expert-card">
+                            <!-- Availability Badge -->
+                            <div class="availability-badge available" data-contra-show-when="available:true">✅ Available</div>
+                            <div class="availability-badge unavailable" data-contra-show-when="available:false">⏰ Busy</div>
+                            
+                            <!-- Expert Header -->
+                            <div class="expert-header">
+                                <img class="expert-avatar" data-contra-field="avatarUrl" alt="Expert Avatar">
+                                <div class="expert-info">
+                                    <h3 class="expert-name" data-contra-field="name">Expert Name</h3>
+                                    <p class="expert-oneliner" data-contra-field="oneLiner" data-contra-format="truncate">Expert description</p>
+                                    <p class="expert-location">📍 <span data-contra-field="location">Location</span></p>
+                                </div>
+                            </div>
+
+                            <!-- Star Rating & Rate -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
+                                <div class="star-rating">
+                                    <div data-contra-stars></div>
+                                    <span class="rating-text" data-contra-field="averageReviewScore" data-contra-format="rating">0.0</span>
+                                </div>
+                                <div style="font-weight: 700; color: var(--primary);">
+                                    <span data-contra-field="hourlyRateUSD" data-contra-format="rate">$0/hr</span>
+                                </div>
+                            </div>
+
+                            <!-- Quick Stats -->
+                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-light); margin: 10px 0;">
+                                <span>🎯 <span data-contra-field="projectsCompletedCount">0</span> projects</span>
+                                <span>💰 <span data-contra-field="earningsUSD" data-contra-format="earnings">$0</span> earned</span>
+                                <span>👥 <span data-contra-field="followersCount">0</span> followers</span>
+                            </div>
+
+                            <!-- Top Skills (Limited) -->
+                            <div class="skills-container" data-contra-repeat="skillTags" data-contra-max="3" style="margin: 15px 0;">
+                                <span class="skill-tag" data-contra-field="name">Skill</span>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="expert-actions">
+                                <a class="action-btn" data-contra-field="profileUrl">👤 Profile</a>
+                                <a class="action-btn primary" data-contra-field="inquiryUrl">💬 Hire</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div data-contra-loading class="loading-state" style="display: none;">
+                        <span class="state-icon">⏳</span>
+                        <div class="state-message">Loading More Experts...</div>
+                    </div>
+                    
+                    <!-- Error State -->
+                    <div data-contra-error class="error-state" style="display: none;">
+                        <span class="state-icon">⚠️</span>
+                        <div class="state-message">Error Loading Experts</div>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div data-contra-empty class="empty-state" style="display: none;">
+                        <span class="state-icon">🔍</span>
+                        <div class="state-message">No More Experts</div>
+                    </div>
+                    
+                    <!-- Infinite Loading Controls -->
+                    <div class="pagination-section">
+                        <div data-contra-pagination-info class="pagination-info">Loading more experts...</div>
+                        <div class="pagination-controls">
+                            <button data-contra-action="load-more" class="pagination-btn load-more-btn">Load More Experts</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Script -->
+    <script id="contra-config" type="application/json">
+    {
+        "program": "kajabi_expert",
+        "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
+        "debug": true,
+        "autoReload": true,
+        "videoAutoplay": false,
+        "videoHoverPlay": true,
+        "videoMuted": true,
+        "videoLoop": true,
+        "videoControls": false,
+        "loadMoreText": "Load More Experts"
+    }
+    </script>
+
+    <!-- Load Runtime -->
+    <script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js?v=3.3.0"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎯 Ultimate Contra SDK Showcase loaded');
+            
+            // Track events for debugging
+            document.addEventListener('contra:expertsLoaded', (event) => {
+                const { experts, totalCount, paginationMode, page, hasNextPage, isLoadMore } = event.detail;
+                console.log(`📊 Experts loaded:`, {
+                    mode: paginationMode,
+                    experts: experts?.length,
+                    total: totalCount,
+                    page: page,
+                    hasNext: hasNextPage,
+                    isLoadMore: isLoadMore
+                });
+            });
+
+            document.addEventListener('contra:filterChange', (event) => {
+                console.log('🎛️ Filters changed:', event.detail.filters);
+            });
+
+            document.addEventListener('contra:expertsError', (event) => {
+                console.error('❌ Expert loading error:', event.detail.error);
+            });
+
+            // Initialize tooltips or other UI enhancements
+            initializeShowcase();
+        });
+
+        function initializeShowcase() {
+            // Add smooth scrolling
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+
+            // Add keyboard navigation for pagination
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') {
+                    const prevBtn = document.querySelector('[data-contra-action="prev-page"]:not(:disabled)');
+                    if (prevBtn) prevBtn.click();
+                } else if (e.key === 'ArrowRight') {
+                    const nextBtn = document.querySelector('[data-contra-action="next-page"]:not(:disabled)');
+                    if (nextBtn) nextBtn.click();
+                }
+            });
+
+            console.log('✨ Showcase initialized with enhanced features');
+        }
+
+        // Utility function to demonstrate runtime access
+        function getExpertData() {
+            if (window.contraRuntime) {
+                console.log('🔧 Runtime instance available:', window.contraRuntime);
+                return window.contraRuntime;
+            } else {
+                console.log('⚠️ Runtime not yet available');
+                return null;
+            }
+        }
+
+        // Add to global scope for debugging
+        window.getExpertData = getExpertData;
+    </script>
+</body>
+</html> 

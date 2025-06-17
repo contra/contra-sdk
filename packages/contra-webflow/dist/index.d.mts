@@ -42,6 +42,10 @@ declare class ContraWebflowRuntime {
      */
     private initContainer;
     /**
+     * Setup debounced reload for a container
+     */
+    private setupDebouncedReload;
+    /**
      * Setup container with initial state and classes
      */
     private setupContainer;

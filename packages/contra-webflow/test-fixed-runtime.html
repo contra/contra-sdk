@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Fixed Runtime Test</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 40px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .filters {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .filter-group label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .filter-group input, .filter-group select {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .expert-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .expert-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .expert-header {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .expert-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .expert-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0 0 5px 0;
+        }
+        .expert-oneliner {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        .pagination {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .pagination-info {
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .pagination-btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            background: #3b82f6;
+            color: white;
+        }
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .state {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+        [data-contra-template] { display: none !important; }
+        .loading { opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Fixed Runtime Test</h1>
+        <p>Testing the critical fixes: filter wiring, pagination, and container structure</p>
+
+        <!-- Traditional Pagination Test -->
+        <div class="section">
+            <h2>📄 Traditional Pagination Test</h2>
+            
+            <!-- Expert Container -->
+            <div data-contra-limit="3" data-contra-offset="0" data-contra-pagination="traditional">
+                
+                <!-- Filters -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Availability</label>
+                        <select data-contra-filter="available">
+                            <option value="">All</option>
+                            <option value="true">Available</option>
+                            <option value="false">Busy</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Location</label>
+                        <input type="text" data-contra-filter="location" placeholder="e.g. New York">
+                    </div>
+                    <div class="filter-group">
+                        <label>Sort</label>
+                        <select data-contra-filter="sortBy">
+                            <option value="relevance">Relevance</option>
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Actions</label>
+                        <button data-contra-action="reload" class="pagination-btn">🔄 Reload</button>
+                    </div>
+                </div>
+                
+                <!-- Expert Grid -->
+                <div class="expert-grid">
+                    <!-- Expert Template -->
+                    <div data-contra-template class="expert-card">
+                        <div class="expert-header">
+                            <img class="expert-avatar" data-contra-field="avatarUrl" alt="Avatar">
+                            <div>
+                                <h3 class="expert-name" data-contra-field="name">Expert Name</h3>
+                                <p class="expert-oneliner" data-contra-field="oneLiner">One liner</p>
+                                <p>📍 <span data-contra-field="location">Location</span></p>
+                                <p>💰 <span data-contra-field="hourlyRateUSD" data-contra-format="rate">$0/hr</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading State -->
+                <div data-contra-loading class="state" style="display: none;">
+                    ⏳ Loading experts...
+                </div>
+                
+                <!-- Error State -->
+                <div data-contra-error class="state" style="display: none;">
+                    ❌ Error loading experts
+                </div>
+                
+                <!-- Empty State -->
+                <div data-contra-empty class="state" style="display: none;">
+                    🔍 No experts found
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <div data-contra-pagination-info class="pagination-info">Loading...</div>
+                    <div>
+                        <button data-contra-action="prev-page" class="pagination-btn">← Previous</button>
+                        <span class="pagination-btn" style="border: none; background: none;">Page 1</span>
+                        <button data-contra-action="next-page" class="pagination-btn">Next →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Infinite Loading Test -->
+        <div class="section">
+            <h2>♾️ Infinite Loading Test</h2>
+            
+            <!-- Expert Container -->
+            <div data-contra-limit="2" data-contra-offset="0" data-contra-pagination="infinite">
+                
+                <!-- Filters -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Availability</label>
+                        <select data-contra-filter="available">
+                            <option value="">All</option>
+                            <option value="true">Available</option>
+                            <option value="false">Busy</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Min Rate</label>
+                        <input type="number" data-contra-filter="minRate" placeholder="0">
+                    </div>
+                    <div class="filter-group">
+                        <label>Actions</label>
+                        <button data-contra-action="reload" class="pagination-btn">🔄 Reload</button>
+                    </div>
+                </div>
+                
+                <!-- Expert Grid -->
+                <div class="expert-grid">
+                    <!-- Expert Template -->
+                    <div data-contra-template class="expert-card">
+                        <div class="expert-header">
+                            <img class="expert-avatar" data-contra-field="avatarUrl" alt="Avatar">
+                            <div>
+                                <h3 class="expert-name" data-contra-field="name">Expert Name</h3>
+                                <p class="expert-oneliner" data-contra-field="oneLiner" data-contra-format="truncate">One liner</p>
+                                <p>📍 <span data-contra-field="location">Location</span></p>
+                                <p>⭐ <span data-contra-field="averageReviewScore" data-contra-format="rating">0.0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading State -->
+                <div data-contra-loading class="state" style="display: none;">
+                    ⏳ Loading more experts...
+                </div>
+                
+                <!-- Error State -->
+                <div data-contra-error class="state" style="display: none;">
+                    ❌ Error loading experts
+                </div>
+                
+                <!-- Empty State -->
+                <div data-contra-empty class="state" style="display: none;">
+                    🔍 No more experts
+                </div>
+                
+                <!-- Load More -->
+                <div class="pagination">
+                    <div data-contra-pagination-info class="pagination-info">Loading...</div>
+                    <div>
+                        <button data-contra-action="load-more" class="pagination-btn">Load More Experts</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <script id="contra-config" type="application/json">
+    {
+        "program": "kajabi_expert",
+        "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
+        "debug": true,
+        "autoReload": true
+    }
+    </script>
+
+    <!-- Load Fixed Runtime -->
+    <script src="./dist/runtime.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Fixed Runtime Test loaded');
+            
+            // Track events
+            document.addEventListener('contra:expertsLoaded', (event) => {
+                const { experts, totalCount, paginationMode, page, hasNextPage } = event.detail;
+                console.log(`✅ ${paginationMode} loaded:`, {
+                    experts: experts?.length,
+                    total: totalCount,
+                    page: page,
+                    hasNext: hasNextPage
+                });
+            });
+
+            document.addEventListener('contra:filterChange', (event) => {
+                console.log('🎛️ Filter changed:', event.detail.filters);
+            });
+
+            document.addEventListener('contra:expertsError', (event) => {
+                console.error('❌ Error:', event.detail.error);
+            });
+        });
+    </script>
+</body>
+</html> 

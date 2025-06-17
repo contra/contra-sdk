@@ -259,8 +259,14 @@ export class ContraWebflowRuntime {
       // Setup container state
       this.setupContainer(container, containerId, programId);
       
+      // Wire up filter controls
+      this.wireFilterControls(container, containerId);
+      
       // Wire up action buttons
       this.wireActionButtons(container, containerId);
+      
+      // Setup debounced reload for this container
+      this.setupDebouncedReload(containerId);
       
       // Load initial data
       await this.loadExperts(container, containerId);
@@ -269,6 +275,22 @@ export class ContraWebflowRuntime {
       this.log(`Failed to initialize container ${containerId}`, error);
       this.showError(container, error as Error);
     }
+  }
+
+  /**
+   * Setup debounced reload for a container
+   */
+  private setupDebouncedReload(containerId: string): void {
+    let timeout: NodeJS.Timeout;
+    this.debouncedReload.set(containerId, () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        const container = document.querySelector(`[data-container-id="${containerId}"]`);
+        if (container) {
+          this.loadExperts(container as Element, containerId);
+        }
+      }, this.config.debounceDelay);
+    });
   }
 
   /**
@@ -310,10 +332,10 @@ export class ContraWebflowRuntime {
   /**
    * Wire up filter controls to auto-update
    */
-  private wireFilterControls(container: Element, programId: string): void {
+  private wireFilterControls(container: Element, containerId: string): void {
     const filterControls = this.querySelectorAll(container, `[${ATTR_PREFIX}${ATTRS.filter}]`);
     
-    this.log(`Found ${filterControls.length} filter controls for program: ${programId}`);
+    this.log(`Found ${filterControls.length} filter controls for container: ${containerId}`);
 
     filterControls.forEach(control => {
       const filterKey = this.getAttr(control, ATTRS.filter);
@@ -326,17 +348,17 @@ export class ContraWebflowRuntime {
         const eventType = control.type === 'range' || control.type === 'number' ? 'input' : 'change';
         
         control.addEventListener(eventType, () => {
-          this.updateFilter(programId, filterKey, this.getControlValue(control), filterType);
+          this.updateFilter(containerId, filterKey, this.getControlValue(control), filterType);
           if (this.config.autoReload) {
-            this.debouncedReload.get(programId)?.();
+            this.debouncedReload.get(containerId)?.();
           }
         });
         
       } else if (control instanceof HTMLSelectElement) {
         control.addEventListener('change', () => {
-          this.updateFilter(programId, filterKey, this.getControlValue(control), filterType);
+          this.updateFilter(containerId, filterKey, this.getControlValue(control), filterType);
           if (this.config.autoReload) {
-            this.debouncedReload.get(programId)?.();
+            this.debouncedReload.get(containerId)?.();
           }
         });
       }
@@ -550,23 +572,36 @@ export class ContraWebflowRuntime {
    * Render experts into the container
    */
   private renderExperts(container: Element, experts: ExpertProfile[]): void {
-    const template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
+    // Look for template in the container or its expert-grid child
+    let template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
+    let targetContainer = container;
+    
+    // If template not found directly, look in expert-grid child
     if (!template) {
-      this.log('No template found in container', container);
+      const expertGrid = this.querySelector(container, '.expert-grid');
+      if (expertGrid) {
+        template = this.querySelector(expertGrid, `[${ATTR_PREFIX}${ATTRS.template}]`);
+        targetContainer = expertGrid;
+      }
+    }
+    
+    if (!template) {
+      this.log('No template found in container or expert-grid', container);
       return;
     }
 
-    // Clear existing expert cards (keep template)
-    const existingCards = this.querySelectorAll(container, ':scope > *:not([data-contra-template]):not([data-contra-loading]):not([data-contra-error]):not([data-contra-empty])');
+    // Clear existing expert cards (only remove cards that were previously rendered)
+    // Keep template, state elements, filters, pagination, and other controls
+    const existingCards = this.querySelectorAll(targetContainer, '.expert-card:not([data-contra-template])');
     existingCards.forEach(card => card.remove());
 
     // Render expert cards
     experts.forEach(expert => {
       const expertCard = this.populateExpertCard(template, expert);
-      container.appendChild(expertCard);
+      targetContainer.appendChild(expertCard);
     });
 
-    this.log(`Rendered ${experts.length} expert cards`);
+    this.log(`Rendered ${experts.length} expert cards in`, targetContainer);
   }
 
   /**
@@ -1005,23 +1040,32 @@ export class ContraWebflowRuntime {
       return false;
     }
     
-    // Parse condition: "field:value" or "field:>value" etc.
     const parts = condition.split(':');
-    if (parts.length < 2) {
-      this.log('Invalid condition format:', condition);
-      return false;
+    const field = parts[0] as keyof ExpertProfile;
+    const expertValue = expert[field];
+
+    // Handle existence check (e.g., "skillTags" or "projects")
+    if (parts.length === 1) {
+      if (expertValue == null) return false;
+      
+      if (Array.isArray(expertValue)) {
+        const result = expertValue.length > 0;
+        this.log(`Existence check on array '${field}': length is ${expertValue.length}, result: ${result}`);
+        return result;
+      }
+      
+      const result = !!expertValue;
+      this.log(`Existence check on field '${field}': value is ${expertValue}, result: ${result}`);
+      return result;
     }
-    
-    const field = parts[0];
-    const restOfCondition = parts.slice(1).join(':'); // Handle colons in values
-    const expertValue = (expert as any)[field];
-    
-    this.log(`Evaluating condition: ${field} (${expertValue}, type: ${typeof expertValue}) against ${restOfCondition}`);
     
     if (expertValue == null) {
       this.log(`Field '${field}' is null/undefined, condition fails`);
       return false;
     }
+    
+    const restOfCondition = parts.slice(1).join(':'); // Handle colons in values
+    this.log(`Evaluating condition: ${field} (${expertValue}, type: ${typeof expertValue}) against ${restOfCondition}`);
     
     // Check for comparison operators
     if (restOfCondition.startsWith('>=')) {
@@ -1394,7 +1438,19 @@ export class ContraWebflowRuntime {
    * Render new experts for infinite scroll (append mode)
    */
   private renderNewExperts(container: Element, newExperts: ExpertProfile[]): void {
-    const template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
+    // Look for template in the container or its expert-grid child
+    let template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
+    let targetContainer = container;
+    
+    // If template not found directly, look in expert-grid child
+    if (!template) {
+      const expertGrid = this.querySelector(container, '.expert-grid');
+      if (expertGrid) {
+        template = this.querySelector(expertGrid, `[${ATTR_PREFIX}${ATTRS.template}]`);
+        targetContainer = expertGrid;
+      }
+    }
+    
     if (!template) {
       this.log('No template found for rendering new experts', container);
       return;
@@ -1409,7 +1465,7 @@ export class ContraWebflowRuntime {
     });
 
     // Append all new cards at once
-    container.appendChild(fragment);
+    targetContainer.appendChild(fragment);
 
     this.log(`Rendered ${newExperts.length} new expert cards for load more`);
   }
@@ -1433,84 +1489,14 @@ export class ContraWebflowRuntime {
 
   private findExpertContainers(): Element[] {
     this.log('Looking for expert containers...');
-    this.log('Document ready state:', document.readyState);
-    this.log('Total elements in document:', document.querySelectorAll('*').length);
     
-    // Simple and reliable approach: look for any element with key contra attributes
-    const selectors = [
-      '[data-contra-limit]',
-      '[data-contra-pagination]', 
-      '[data-contra-template]'
-    ];
+    // A container is DEFINED by having a limit or pagination attribute.
+    // This is the most reliable way to find the top-level component boundaries.
+    const selector = `[${ATTR_PREFIX}${ATTRS.limit}], [${ATTR_PREFIX}${ATTRS.paginationMode}]`;
+    const containers = Array.from(document.querySelectorAll(selector));
     
-    const foundElements: Element[] = [];
-    
-    for (const selector of selectors) {
-      const elements = Array.from(document.querySelectorAll(selector));
-      this.log(`Found ${elements.length} elements with selector: ${selector}`, elements);
-      foundElements.push(...elements);
-    }
-    
-    // If no elements found, try a broader search
-    if (foundElements.length === 0) {
-      this.log('No elements found with standard selectors, trying broader search...');
-      
-      // Look for any data-contra attributes
-      const allContraElements = Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination]'));
-      this.log(`Found ${allContraElements.length} elements with any contra attributes:`, allContraElements);
-      
-      // Look for the specific container structure we expect
-      const containerCandidates = Array.from(document.querySelectorAll('div')).filter(div => {
-        const hasLimit = div.hasAttribute('data-contra-limit');
-        const hasTemplate = div.querySelector('[data-contra-template]');
-        const hasContraClass = div.className.includes('contra');
-        return hasLimit || hasTemplate || hasContraClass;
-      });
-      
-      this.log(`Found ${containerCandidates.length} potential container candidates:`, containerCandidates);
-      foundElements.push(...containerCandidates);
-    }
-    
-    // Get unique containers
-    const containers = new Set<Element>();
-    
-    for (const element of foundElements) {
-      // If element has limit or pagination-mode, it's a container
-      if (element.hasAttribute('data-contra-limit') || element.hasAttribute('data-contra-pagination')) {
-        containers.add(element);
-        this.log('Found container (has limit/pagination):', element);
-      } 
-      // If element is a template, its parent is the container
-      else if (element.hasAttribute('data-contra-template')) {
-        const parent = element.parentElement;
-        if (parent) {
-          containers.add(parent);
-          this.log('Found container (template parent):', parent);
-        }
-      }
-      // If element has contra class, check if it's a container
-      else if (element.className.includes('contra')) {
-        // Check if this element or its children have the structure we need
-        const hasTemplate = element.querySelector('[data-contra-template]');
-        if (hasTemplate) {
-          containers.add(element);
-          this.log('Found container (has contra class and template):', element);
-        }
-      }
-    }
-    
-    const uniqueContainers = Array.from(containers);
-    this.log(`Total unique containers found: ${uniqueContainers.length}`, uniqueContainers);
-    
-    // If still no containers found, log detailed debugging info
-    if (uniqueContainers.length === 0) {
-      this.log('❌ No containers found! Debugging info:');
-      this.log('- Document body HTML:', document.body?.innerHTML?.substring(0, 500) + '...');
-      this.log('- All divs:', Array.from(document.querySelectorAll('div')).slice(0, 10));
-      this.log('- Elements with data attributes:', Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination]')));
-    }
-    
-    return uniqueContainers;
+    this.log(`Found ${containers.length} containers using selector: ${selector}`, containers);
+    return containers;
   }
 
   private parseFiltersFromElement(element: Element): ExpertFilters {
