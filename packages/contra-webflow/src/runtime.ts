@@ -265,11 +265,10 @@ export class ContraWebflowRuntime {
     }
 
     // Create a simple, unique ID for this container instance for state management.
-    const allContainers = Array.from(document.querySelectorAll('.grid-section'));
-    const containerIndex = allContainers.indexOf(container);
-    const containerId = `container-${containerIndex}`;
+    // This is a robust way to generate a unique ID and avoids DOM index issues.
+    const containerId = `container-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
-    this.log(`Initializing container #${containerIndex} (ID: ${containerId}) for program: ${baseProgramId}`);
+    this.log(`Initializing container with ID: ${containerId} for program: ${baseProgramId}`);
 
     try {
       // Setup container state from the list element
