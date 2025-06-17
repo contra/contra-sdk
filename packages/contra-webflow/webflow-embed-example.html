@@ -13,7 +13,7 @@
 
 <!-- 2. Runtime Script (Required once per page) -->
 <!-- Use cache-busting version for testing -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@f86a43c/packages/contra-webflow/dist/runtime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@27f13e3/packages/contra-webflow/dist/runtime.min.js"></script>
 
 <!-- 3. Styles (Recommended) -->
 <style>
@@ -139,8 +139,9 @@
         <div class="filter-group">
             <label for="sort-filter">Sort by:</label>
             <select id="sort-filter" data-contra-filter="sortBy" data-contra-list-target="expert-cards">
-                <option value="">Relevance</option>
-                <!-- Options dynamically populated by runtime -->
+                <option value="relevance">Relevance</option>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
             </select>
         </div>
         <div class="filter-group">

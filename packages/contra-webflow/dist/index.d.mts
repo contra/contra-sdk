@@ -126,8 +126,6 @@ declare class ContraWebflowRuntime {
     private showError;
     private dispatchEvent;
     private log;
-    private getAvailableFilters;
-    private populateFilterControls;
 }
 
 export { ContraWebflowRuntime };
