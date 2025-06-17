@@ -28,13 +28,6 @@ interface RuntimeConfig {
   videoControls?: boolean;
 }
 
-// Add google maps to window object for typescript
-declare global {
-  interface Window {
-    google: any;
-  }
-}
-
 // Attribute constants
 const ATTR_PREFIX = 'data-contra-';
 const ATTRS = {
@@ -186,7 +179,7 @@ export class ContraWebflowRuntime {
       // New: Fetch available filters and populate controls that target this list
       const availableFilters = await this.getAvailableFilters(programId);
       this.populateFilterControls(listId, availableFilters);
-
+    
       // Parse initial filters from the list element itself
       const initialFilters = this.parseFiltersFromElement(listElement);
       const limit = parseInt(this.getAttr(listElement, ATTRS.limit) || '20', 10);
@@ -838,7 +831,7 @@ export class ContraWebflowRuntime {
     if (emptyElement) {
       (emptyElement as HTMLElement).style.display = state.experts.length === 0 && !state.loading ? '' : 'none';
     }
-
+    
     // Update and control visibility of the load more button
     const loadMoreButton = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.listTarget}="${listId}"]`);
     if (loadMoreButton) {
@@ -862,7 +855,7 @@ export class ContraWebflowRuntime {
         this.loadExperts(targetListId, programId, true); // `true` to append
       } else {
         this.log(`Could not find list or program for target: ${targetListId}`);
-      }
+  }
     }
   }
 
@@ -916,13 +909,7 @@ export class ContraWebflowRuntime {
         const programId = this.getAttr(listElement, ATTRS.program);
         if (!programId) return;
 
-        // Special handler for Google Places Autocomplete
-        if (filterKey === 'location' && control instanceof HTMLInputElement) {
-            this.initGooglePlacesAutocomplete(control, targetListId, programId);
-            return; // Skip generic handler
-        }
-
-        const debounceTime = (control instanceof HTMLInputElement && ['text', 'search', 'number'].includes(control.type)) ? 300 : 0;
+        const debounceTime = (control instanceof HTMLInputElement && ['text', 'search'].includes(control.type)) ? 300 : 0;
         
         const handler = () => {
             const value = this.getControlValue(control as HTMLInputElement | HTMLSelectElement);
@@ -944,7 +931,7 @@ export class ContraWebflowRuntime {
             timeoutId = window.setTimeout(() => func.apply(this, args), delay);
         } else {
             func.apply(this, args);
-        }
+  }
     };
   }
 
@@ -1105,41 +1092,6 @@ export class ContraWebflowRuntime {
                 }
                 control.appendChild(optionElement);
             });
-        }
-    });
-  }
-
-  private initGooglePlacesAutocomplete(input: HTMLInputElement, listId: string, programId: string): void {
-    if (typeof window.google === 'undefined' || typeof window.google.maps === 'undefined') {
-        this.log('Google Maps API not loaded. Location filter will work as a text input.');
-        // Fallback to basic text input
-        input.addEventListener('change', () => {
-            this.updateFilterAndReload(listId, programId, 'location', input.value);
-        });
-        return;
-    }
-
-    this.log('Initializing Google Places Autocomplete on', input);
-    const autocomplete = new window.google.maps.places.Autocomplete(input, {
-        types: ['(cities)'],
-        fields: ['place_id', 'formatted_address']
-    });
-
-    autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place && place.place_id) {
-            // Replicate the format seen in API responses: "Formatted Address (PlaceId)"
-            const locationValue = `${place.formatted_address} (${place.place_id})`;
-            this.log(`Place selected:`, { formatted: locationValue });
-            this.updateFilterAndReload(listId, programId, 'location', locationValue);
-        }
-    });
-
-    // Handle user clearing the input
-    input.addEventListener('input', () => {
-        if (input.value.trim() === '') {
-            this.log('Location input cleared.');
-            this.updateFilterAndReload(listId, programId, 'location', '');
         }
     });
   }

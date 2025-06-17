@@ -11,9 +11,9 @@
 }
 </script>
 
-<!-- 2. Runtime and Dependencies (Required once per page) -->
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=Function.prototype"></script>
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@93f62f0/packages/contra-webflow/dist/runtime.min.js"></script>
+<!-- 2. Runtime Script (Required once per page) -->
+<!-- Use cache-busting version for testing -->
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@91242c1/packages/contra-webflow/dist/runtime.min.js"></script>
 
 <!-- 3. Styles (Recommended) -->
 <style>
@@ -65,6 +65,7 @@
     .expert-avatar-main { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
     .expert-name { font-size: 1.25rem; font-weight: 600; }
     .expert-location { color: #6b7280; }
+    .expert-details { display: flex; gap: 16px; color: #6b7280; }
     .skill-tags { display: flex; flex-wrap: wrap; gap: 8px; }
     .skill-tag { background: #f3f4f6; color: #374151; padding: 4px 12px; border-radius: 9999px; font-size: 12px; }
 
@@ -90,6 +91,12 @@
         gap: 16px;
         margin-bottom: 24px;
         align-items: center;
+        flex-wrap: wrap;
+    }
+    .filter-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
     }
     .filter-bar input, .filter-bar select {
         padding: 10px;
@@ -99,21 +106,6 @@
     }
     .filter-bar label {
         font-weight: 600;
-    }
-
-    /* Expert Card Meta */
-    .expert-meta {
-        display: flex;
-        gap: 16px;
-        align-items: center;
-        color: #6b7280;
-        font-size: 14px;
-    }
-    .expert-meta .availability-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: #10b981;
     }
 
 </style>
@@ -144,29 +136,30 @@
     
     <!-- Filter Bar -->
     <div class="filter-bar">
-        <label for="location-filter">Location:</label>
-        <input type="text" id="location-filter" placeholder="Search for a city"
-               data-contra-filter="location"
-               data-contra-list-target="expert-cards">
-
-        <label for="available-filter">Availability:</label>
-        <select id="available-filter" data-contra-filter="available" data-contra-list-target="expert-cards">
-            <option value="">Any</option>
-            <option value="true">Available Now</option>
-        </select>
-        
-        <label for="min-rate-filter">Rate ($/hr):</label>
-        <input type="number" id="min-rate-filter" placeholder="Min" data-contra-filter="minRate" data-contra-list-target="expert-cards" style="width: 80px;">
-        <input type="number" id="max-rate-filter" placeholder="Max" data-contra-filter="maxRate" data-contra-list-target="expert-cards" style="width: 80px;">
-
-        <label for="sort-filter">Sort by:</label>
-        <select id="sort-filter"
-                data-contra-filter="sortBy"
-                data-contra-list-target="expert-cards">
-            <option value="relevance">Relevance</option>
-            <option value="rate_asc">Rate (Low to High)</option>
-            <option value="rate_desc">Rate (High to Low)</option>
-        </select>
+        <div class="filter-group">
+            <label for="sort-filter">Sort by:</label>
+            <select id="sort-filter" data-contra-filter="sortBy" data-contra-list-target="expert-cards">
+                <option value="relevance">Relevance</option>
+                <option value="rate_asc">Rate (Low to High)</option>
+                <option value="rate_desc">Rate (High to Low)</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="languages-filter">Languages:</label>
+            <input type="text" id="languages-filter" placeholder="e.g. English, French" data-contra-filter="languages" data-contra-list-target="expert-cards">
+        </div>
+        <div class="filter-group">
+            <label for="min-rate-filter">Min Rate:</label>
+            <input type="number" id="min-rate-filter" placeholder="50" data-contra-filter="minRate" data-contra-list-target="expert-cards" style="width: 80px;">
+        </div>
+        <div class="filter-group">
+            <label for="max-rate-filter">Max Rate:</label>
+            <input type="number" id="max-rate-filter" placeholder="150" data-contra-filter="maxRate" data-contra-list-target="expert-cards" style="width: 80px;">
+        </div>
+        <div class="filter-group">
+            <input type="checkbox" id="available-filter" data-contra-filter="available" data-contra-list-target="expert-cards" value="true">
+            <label for="available-filter">Available Now</label>
+        </div>
     </div>
 
     <!-- Expert Card List: Fetches 2 experts initially -->
@@ -179,13 +172,10 @@
                 <div>
                     <h3 data-contra-field="name" class="expert-name"></h3>
                     <p data-contra-field="location" class="expert-location"></p>
-                </div>
-            </div>
-            <div class="expert-meta">
-                <span data-contra-field="hourlyRateUSD" data-contra-format="rate"></span>
-                <div data-contra-show-when="available:true" style="display: flex; align-items: center; gap: 6px;">
-                    <div class="availability-dot"></div>
-                    <span>Available Now</span>
+                    <div class="expert-details">
+                        <span data-contra-field="hourlyRateUSD" data-contra-format="rate"></span>
+                        <span data-contra-show-when="available:true" style="color: #10b981;">● Available</span>
+                    </div>
                 </div>
             </div>
             <div data-contra-repeat="skillTags" data-contra-max="8" class="skill-tags">
