@@ -1291,7 +1291,7 @@ export class ContraWebflowRuntime {
         btnElement.classList.add('loading');
       } else {
         btnElement.classList.remove('loading');
-        const hasMore = state.experts.length < state.totalCount;
+        const hasMore = state.hasNextPage;
         
         if (hasMore) {
           btnElement.textContent = this.config.loadMoreText;
