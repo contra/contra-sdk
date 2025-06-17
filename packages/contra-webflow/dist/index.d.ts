@@ -38,6 +38,10 @@ declare class ContraWebflowRuntime {
      */
     init(): Promise<void>;
     /**
+     * Find the specific element within the container that holds the expert list and configuration.
+     */
+    private findExpertListElement;
+    /**
      * Initialize a single expert container
      */
     private initContainer;
@@ -195,10 +199,6 @@ declare class ContraWebflowRuntime {
     private showError;
     private dispatchEvent;
     private log;
-    /**
-     * Find the specific element within the container that holds the expert list and configuration.
-     */
-    private findExpertListElement;
 }
 
 export { ContraWebflowRuntime };

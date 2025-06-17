@@ -238,6 +238,15 @@ export class ContraWebflowRuntime {
   }
 
   /**
+   * Find the specific element within the container that holds the expert list and configuration.
+   */
+  private findExpertListElement(container: Element): Element | null {
+    // This element is defined by having pagination or limit attributes.
+    const selector = `[${ATTR_PREFIX}${ATTRS.limit}], [${ATTR_PREFIX}${ATTRS.paginationMode}]`;
+    return this.querySelector(container, selector);
+  }
+
+  /**
    * Initialize a single expert container
    */
   private async initContainer(container: Element): Promise<void> {
@@ -1053,7 +1062,6 @@ export class ContraWebflowRuntime {
     const expertValue = expert[field];
 
     // Handle existence check (e.g., "skillTags" or "projects")
-    // This is the fix for "Invalid condition format"
     if (parts.length === 1) {
       if (expertValue == null) return false;
       
@@ -1077,18 +1085,35 @@ export class ContraWebflowRuntime {
     
     this.log(`Evaluating condition: ${field} (${expertValue}, type: ${typeof expertValue}) against ${expectedValue}`);
     
+    // Check for boolean comparison first
+    if (expectedValue === 'true' || expectedValue === 'false') {
+      const result = String(expertValue).toLowerCase() === expectedValue.toLowerCase();
+      this.log(`Boolean comparison: ${String(expertValue).toLowerCase()} === ${expectedValue} = ${result}`);
+      return result;
+    }
+
     // Check for comparison operators
     if (expectedValue.startsWith('>=')) {
-      return Number(expertValue) >= Number(expectedValue.substring(2));
+      const result = Number(expertValue) >= Number(expectedValue.substring(2));
+      this.log(`Comparison: ${expertValue} >= ${expectedValue.substring(2)} = ${result}`);
+      return result;
     } else if (expectedValue.startsWith('<=')) {
-      return Number(expertValue) <= Number(expectedValue.substring(2));
+      const result = Number(expertValue) <= Number(expectedValue.substring(2));
+      this.log(`Comparison: ${expertValue} <= ${expectedValue.substring(2)} = ${result}`);
+      return result;
     } else if (expectedValue.startsWith('>')) {
-      return Number(expertValue) > Number(expectedValue.substring(1));
+      const result = Number(expertValue) > Number(expectedValue.substring(1));
+      this.log(`Comparison: ${expertValue} > ${expectedValue.substring(1)} = ${result}`);
+      return result;
     } else if (expectedValue.startsWith('<')) {
-      return Number(expertValue) < Number(expectedValue.substring(1));
+      const result = Number(expertValue) < Number(expectedValue.substring(1));
+      this.log(`Comparison: ${expertValue} < ${expectedValue.substring(1)} = ${result}`);
+      return result;
     } else {
       // Direct value comparison (case-insensitive for strings)
-      return String(expertValue).toLowerCase() === expectedValue.toLowerCase();
+      const result = String(expertValue).toLowerCase() === expectedValue.toLowerCase();
+      this.log(`String comparison: ${String(expertValue).toLowerCase()} === ${expectedValue.toLowerCase()} = ${result}`);
+      return result;
     }
   }
 
@@ -1101,7 +1126,7 @@ export class ContraWebflowRuntime {
     // Show/hide empty state
     const emptyElement = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.empty}]`);
     if (emptyElement) {
-      (emptyElement as HTMLElement).style.display = state.experts.length === 0 ? '' : 'none';
+      (emptyElement as HTMLElement).style.display = state.experts.length === 0 && !state.loading ? '' : 'none';
     }
     
     // Update pagination info
@@ -1614,15 +1639,6 @@ export class ContraWebflowRuntime {
       console.log(`[ContraWebflow] ${message}`, ...args);
     }
   }
-
-  /**
-   * Find the specific element within the container that holds the expert list and configuration.
-   */
-  private findExpertListElement(container: Element): Element | null {
-    // This element is defined by having pagination or limit attributes.
-    const selector = `[${ATTR_PREFIX}${ATTRS.limit}], [${ATTR_PREFIX}${ATTRS.paginationMode}]`;
-    return this.querySelector(container, selector);
-  }
 }
 
 /**
@@ -1681,4 +1697,4 @@ if (document.readyState === 'loading') {
 }
 
 // Export runtime class for manual initialization
-export { ContraWebflowRuntime as default }; 
+export { ContraWebflowRuntime as default };

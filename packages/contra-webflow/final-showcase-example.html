@@ -697,7 +697,7 @@
                 <!-- Expert Container with Traditional Pagination -->
                 <div class="expert-container" data-contra-limit="4" data-contra-offset="0" data-contra-pagination-mode="traditional">
                     
-                    <!-- Expert Grid -->
+                    <!-- Expert Grid (Templates will be rendered here) -->
                     <div class="expert-grid">
                         <!-- Comprehensive Expert Template -->
                         <div data-contra-template class="expert-card">
@@ -780,7 +780,9 @@
                             </div>
                         </div>
                     </div>
-                    
+
+                    <!-- States and Pagination now INSIDE the configured container -->
+
                     <!-- Loading State -->
                     <div data-contra-loading class="loading-state" style="display: none;">
                         <span class="state-icon">⏳</span>
@@ -808,8 +810,6 @@
                         <div class="pagination-controls">
                             <button data-contra-action="first-page" class="pagination-btn">⏮️ First</button>
                             <button data-contra-action="prev-page" class="pagination-btn">← Previous</button>
-                            <button class="pagination-btn active">1</button>
-                            <span class="pagination-btn" style="border: none; background: none;">...</span>
                             <button data-contra-action="next-page" class="pagination-btn">Next →</button>
                             <button data-contra-action="last-page" class="pagination-btn">Last ⏭️</button>
                         </div>
@@ -903,6 +903,8 @@
                         </div>
                     </div>
                     
+                    <!-- States and Pagination now INSIDE the configured container -->
+
                     <!-- Loading State -->
                     <div data-contra-loading class="loading-state" style="display: none;">
                         <span class="state-icon">⏳</span>
