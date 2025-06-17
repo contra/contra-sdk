@@ -186,7 +186,7 @@ export class ContraWebflowRuntime {
       
       // Update state with these initial settings
       this.state.updateState(listId, { 
-        filters: initialFilters,
+      filters: initialFilters,
         limit: limit,
         offset: initialFilters.offset || 0,
       });
@@ -297,7 +297,7 @@ export class ContraWebflowRuntime {
     if (!append) {
       // Clear only previously rendered expert cards
       const existingCards = this.querySelectorAll(listElement, '.contra-rendered-item');
-      existingCards.forEach(card => card.remove());
+    existingCards.forEach(card => card.remove());
     }
 
     const fragment = document.createDocumentFragment();
@@ -1045,7 +1045,7 @@ export class ContraWebflowRuntime {
     try {
         const response = await fetch(url, {
             headers: {
-                'Authorization': `Bearer ${this.config.apiKey}`,
+                'X-API-Key': this.config.apiKey,
                 'Accept': 'application/json'
             }
         });
@@ -1117,14 +1117,14 @@ function autoInit(): void {
     }
     
     const initializeRuntime = () => {
-      const runtime = new ContraWebflowRuntime(config);
-      
-      // Expose runtime globally for debugging
-      (window as any).contraRuntime = runtime;
-      
-      runtime.init().catch(error => {
-        console.error('[ContraWebflow] Runtime initialization failed:', error);
-      });
+    const runtime = new ContraWebflowRuntime(config);
+    
+    // Expose runtime globally for debugging
+    (window as any).contraRuntime = runtime;
+    
+    runtime.init().catch(error => {
+      console.error('[ContraWebflow] Runtime initialization failed:', error);
+    });
     };
     
     // Use setTimeout to ensure DOM is fully ready
