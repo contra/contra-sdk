@@ -1388,11 +1388,11 @@ export class ContraWebflowRuntime {
       element.textContent = `Showing ${loadedCount} of ${totalCount} experts`;
     });
 
-    // Hide traditional pagination controls in infinite mode
-    const paginationControls = container.querySelector('.pagination-controls');
-    if (paginationControls) {
-      (paginationControls as HTMLElement).style.display = 'none';
-    }
+    // Show pagination controls if there are any results.
+    const paginationSections = this.querySelectorAll(container, '.pagination-section');
+    paginationSections.forEach(section => {
+      (section as HTMLElement).style.display = state.totalCount > 0 ? '' : 'none';
+    });
   }
 
   /**
