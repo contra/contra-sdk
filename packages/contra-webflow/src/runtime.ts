@@ -570,37 +570,39 @@ export class ContraWebflowRuntime {
    * Render experts into the container
    */
   private renderExperts(container: Element, experts: ExpertProfile[]): void {
-    // Find the grid where experts should be rendered. It MUST be a child of the container.
-    const targetGrid = this.querySelector(container, '.expert-grid');
-    
+    // --- Self-Healing Rendering Sandbox ---
+    // 1. Ensure a dedicated grid for experts exists.
+    let targetGrid = this.querySelector(container, '.expert-grid');
     if (!targetGrid) {
-      this.log('CRITICAL: .expert-grid element not found inside container. Cannot render experts.', container);
-      this.showError(container, new Error("Runtime Error: '.expert-grid' child element is missing."));
+      this.log('NOTICE: .expert-grid not found. Creating it dynamically for safe rendering.');
+      targetGrid = document.createElement('div');
+      targetGrid.className = 'expert-grid';
+      container.appendChild(targetGrid);
+    }
+
+    // 2. Find the template, wherever it is in the container.
+    const template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
+    if (!template) {
+      this.log('CRITICAL: Template element not found inside container. Cannot render experts.', container);
+      this.showError(container, new Error("Runtime Error: A template element with 'data-contra-template' is required inside your component."));
       return;
     }
     
-    // Find the template. It MUST be a direct child of the grid.
-    const template = this.querySelector(targetGrid, `[${ATTR_PREFIX}${ATTRS.template}]`);
-
-    if (!template) {
-      this.log('CRITICAL: Template element not found inside .expert-grid. Cannot render experts.', targetGrid);
-      this.showError(container, new Error("Runtime Error: Template element with 'data-contra-template' is missing inside '.expert-grid'."));
-      return;
+    // 3. Ensure the template is inside the grid to protect it from being cleared.
+    if (template.parentElement !== targetGrid) {
+      targetGrid.appendChild(template);
     }
 
-    // --- NON-DESTRUCTIVE RENDERING ---
-    // 1. Clear only the previously rendered expert cards from the grid.
-    //    This leaves all other elements (like the template) intact.
+    // 4. Perform surgical, non-destructive rendering ONLY within the grid.
     const existingCards = this.querySelectorAll(targetGrid, '.expert-card:not([data-contra-template])');
     existingCards.forEach(card => card.remove());
 
-    // 2. Render and append new expert cards into the grid.
     experts.forEach(expert => {
       const expertCard = this.populateExpertCard(template, expert);
       targetGrid.appendChild(expertCard);
     });
 
-    this.log(`Rendered ${experts.length} expert cards into`, targetGrid);
+    this.log(`Rendered ${experts.length} expert cards into the safe grid`, targetGrid);
   }
 
   /**
