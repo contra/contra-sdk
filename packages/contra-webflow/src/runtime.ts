@@ -148,6 +148,9 @@ export class ContraWebflowRuntime {
       // 3. Wire up all action buttons
       this.wireActionButtons();
 
+      // 4. Wire up all filter controls
+      this.wireFilterControls();
+
       this.log('Runtime initialization complete');
     } catch (error) {
       this.log('Runtime initialization failed', error);
@@ -852,6 +855,82 @@ export class ContraWebflowRuntime {
     }
   }
 
+  private updateFilterAndReload(listId: string, programId: string, filterKey: string, value: any): void {
+    const state = this.state.getState(listId);
+    const newFilters = { ...state.filters };
+
+    // Process and set value
+    let processedValue = value;
+    if (filterKey === 'available') {
+      processedValue = value === 'true';
+    } else if (['minRate', 'maxRate'].includes(filterKey)) {
+      processedValue = (value === '' || value === null) ? undefined : Number(value);
+    } else if (filterKey === 'languages' && typeof value === 'string') {
+        processedValue = value.split(',').map(v => v.trim()).filter(v => v);
+        if (processedValue.length === 0) {
+            processedValue = undefined;
+        }
+    }
+
+    if (processedValue !== undefined && processedValue !== '') {
+        (newFilters as any)[filterKey] = processedValue;
+    } else {
+        delete (newFilters as any)[filterKey];
+    }
+    
+    // Reset offset and update state
+    this.state.updateState(listId, { filters: newFilters, offset: 0 });
+
+    this.log(`Filter updated for list ${listId}, reloading. New filters:`, newFilters);
+    
+    // Reload the list
+    this.loadExperts(listId, programId, false);
+  }
+
+  private wireFilterControls(): void {
+    const filterControls = this.querySelectorAll(document.body, `[data-contra-filter]`);
+    this.log(`Found ${filterControls.length} filter controls to wire.`);
+
+    filterControls.forEach(control => {
+        const filterKey = control.getAttribute('data-contra-filter');
+        const targetListId = control.getAttribute('data-contra-list-target');
+
+        if (!filterKey || !targetListId) {
+            this.log('Filter control missing required attributes: data-contra-filter or data-contra-list-target', control);
+            return;
+        }
+
+        const listElement = this.querySelector(document.body, `[${ATTR_PREFIX}list-id="${targetListId}"]`);
+        if (!listElement) return;
+        const programId = this.getAttr(listElement, ATTRS.program);
+        if (!programId) return;
+
+        const debounceTime = (control instanceof HTMLInputElement && ['text', 'search'].includes(control.type)) ? 300 : 0;
+        
+        const handler = () => {
+            const value = this.getControlValue(control as HTMLInputElement | HTMLSelectElement);
+            this.updateFilterAndReload(targetListId, programId, filterKey, value);
+        };
+        
+        const debouncedHandler = this.debounce(handler, debounceTime);
+        
+        const eventType = (control instanceof HTMLInputElement && ['text', 'search'].includes(control.type)) ? 'input' : 'change';
+        control.addEventListener(eventType, debouncedHandler);
+    });
+  }
+
+  private debounce(func: (...args: any[]) => void, delay: number): (...args: any[]) => void {
+    let timeoutId: number;
+    return (...args: any[]) => {
+        clearTimeout(timeoutId);
+        if (delay > 0) {
+            timeoutId = window.setTimeout(() => func.apply(this, args), delay);
+        } else {
+            func.apply(this, args);
+        }
+    };
+  }
+
   /**
    * Utility Methods
    */
@@ -923,59 +1002,6 @@ export class ContraWebflowRuntime {
       return control.value;
     }
     return null;
-  }
-
-  private updateFilter(programId: string, filterKey: string, value: any, type: string = 'replace'): void {
-    const state = this.state.getState(programId);
-    const newFilters = { ...state.filters };
-
-    // Handle special cases for filter value conversion
-    let processedValue = value;
-    
-    if (filterKey === 'available') {
-      // Convert string values to boolean for availability filter
-      if (typeof value === 'string') {
-        if (value === 'true') {
-          processedValue = true;
-        } else if (value === 'false') {
-          processedValue = false;
-        } else if (value === '' || value === null) {
-          processedValue = undefined; // No filter
-        }
-      }
-    } else if (filterKey === 'minRate' || filterKey === 'maxRate') {
-      // Convert empty strings to undefined for rate filters
-      if (value === '' || value === null) {
-        processedValue = undefined;
-      } else {
-        processedValue = Number(value);
-      }
-    }
-
-    if (type === 'append' && Array.isArray(newFilters[filterKey as keyof ExpertFilters])) {
-      const currentArray = newFilters[filterKey as keyof ExpertFilters] as any[];
-      newFilters[filterKey as keyof ExpertFilters] = [...currentArray, processedValue] as any;
-    } else {
-      (newFilters as any)[filterKey] = processedValue;
-    }
-
-    // Reset offset to 0 when any filter changes (except offset itself)
-    // This ensures we start from the beginning when filters change
-    if (filterKey !== 'offset') {
-      newFilters.offset = 0;
-    }
-
-    this.state.updateState(programId, { filters: newFilters });
-    
-    this.log(`Filter updated: ${filterKey} = ${processedValue} (original: ${value})`);
-    
-    // Dispatch filter change event
-    const event: FilterChangeEvent = {
-      filters: newFilters,
-      element: document.querySelector(`[data-program-id="${programId}"]`) as HTMLElement
-    };
-    
-    this.dispatchEvent(document as any, 'filterChange', event);
   }
 
   private showLoading(container: Element, show: boolean): void {

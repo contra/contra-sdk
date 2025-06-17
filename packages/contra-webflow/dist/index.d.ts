@@ -111,6 +111,9 @@ declare class ContraWebflowRuntime {
      * Handle action buttons (just load-more for now).
      */
     private handleAction;
+    private updateFilterAndReload;
+    private wireFilterControls;
+    private debounce;
     /**
      * Utility Methods
      */
@@ -119,7 +122,6 @@ declare class ContraWebflowRuntime {
     private querySelectorAll;
     private parseFiltersFromElement;
     private getControlValue;
-    private updateFilter;
     private showLoading;
     private showError;
     private dispatchEvent;

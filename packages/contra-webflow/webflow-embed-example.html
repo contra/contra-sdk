@@ -13,7 +13,7 @@
 
 <!-- 2. Runtime Script (Required once per page) -->
 <!-- Use cache-busting version for testing -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@8fb4866/packages/contra-webflow/dist/runtime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@5db904e/packages/contra-webflow/dist/runtime.min.js"></script>
 
 <!-- 3. Styles (Recommended) -->
 <style>
@@ -84,6 +84,23 @@
     .load-more-btn:hover { background: #374151; }
     .load-more-btn:disabled { background: #9ca3af; cursor: not-allowed; }
 
+    /* Filter Styles */
+    .filter-bar {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+        align-items: center;
+    }
+    .filter-bar input, .filter-bar select {
+        padding: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    .filter-bar label {
+        font-weight: 600;
+    }
+
 </style>
 
 <!-- 4. HTML Structure -->
@@ -110,6 +127,23 @@
 <div class="contra-container">
     <h2>All Experts</h2>
     
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <label for="location-filter">Location:</label>
+        <input type="text" id="location-filter" placeholder="e.g. San Francisco"
+               data-contra-filter="location"
+               data-contra-list-target="expert-cards">
+
+        <label for="sort-filter">Sort by:</label>
+        <select id="sort-filter"
+                data-contra-filter="sortBy"
+                data-contra-list-target="expert-cards">
+            <option value="relevance">Relevance</option>
+            <option value="rate_asc">Rate (Low to High)</option>
+            <option value="rate_desc">Rate (High to Low)</option>
+        </select>
+    </div>
+
     <!-- Expert Card List: Fetches 2 experts initially -->
     <div data-contra-list-id="expert-cards" data-contra-program="kajabi_expert" data-contra-limit="2">
         
