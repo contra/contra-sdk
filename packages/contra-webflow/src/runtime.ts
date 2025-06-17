@@ -175,15 +175,16 @@ export class ContraWebflowRuntime {
 
       // Parse initial filters from the list element itself
       const initialFilters = this.parseFiltersFromElement(listElement);
+      const limit = parseInt(this.getAttr(listElement, ATTRS.limit) || '20', 10);
       
       // Update state with these initial settings
       this.state.updateState(listId, { 
         filters: initialFilters,
-        limit: initialFilters.limit || 20, // Use limit from attribute or default
+        limit: limit,
         offset: initialFilters.offset || 0,
       });
       
-      this.log(`List setup complete for: ${listId}`, { initialFilters });
+      this.log(`List setup complete for: ${listId}`, { initialFilters, limit });
       
       // Load initial data for the list
       await this.loadExperts(listId, programId);
