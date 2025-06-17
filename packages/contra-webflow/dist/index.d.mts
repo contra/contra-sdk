@@ -22,6 +22,7 @@ declare class ContraWebflowRuntime {
     private config;
     private state;
     private debouncedReload;
+    private filterOptionLabels;
     constructor(config: RuntimeConfig);
     /**
      * Initialize the runtime by finding and setting up all lists.
@@ -126,6 +127,9 @@ declare class ContraWebflowRuntime {
     private showError;
     private dispatchEvent;
     private log;
+    private getAvailableFilters;
+    private getFilterOptionLabel;
+    private populateFilterControls;
 }
 
 export { ContraWebflowRuntime };
