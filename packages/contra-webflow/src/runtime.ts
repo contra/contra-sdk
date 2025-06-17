@@ -1088,8 +1088,8 @@ export class ContraWebflowRuntime {
     if (labels && labels[value]) {
       return labels[value];
     }
-    // Capitalize the first letter as a fallback
-    return value.charAt(0).toUpperCase() + value.slice(1);
+    // Capitalize the first letter and lowercase the rest as a fallback
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
   }
 
   private populateAllFilterControls(programFilters: Map<string, any[]>): void {
@@ -1114,39 +1114,61 @@ export class ContraWebflowRuntime {
 
       if (!filterDef) return;
 
+      // Handle number input ranges
       if (filterDef.type === 'number' && control instanceof HTMLInputElement) {
         if (filterDef.minimum !== undefined) control.min = String(filterDef.minimum);
         if (filterDef.maximum !== undefined) control.max = String(filterDef.maximum);
       }
 
-      if (filterDef && filterDef.options && control instanceof HTMLSelectElement) {
-        this.log(`Populating options for filter '${filterKey}' on control`, control);
+      // Handle populating select dropdowns and datalists
+      if (filterDef.options) {
+        let targetElement: HTMLElement | null = null;
+        if (control instanceof HTMLSelectElement) {
+            targetElement = control;
+        } else if (control instanceof HTMLInputElement && control.hasAttribute('list')) {
+            targetElement = document.getElementById(control.getAttribute('list')!);
+        }
         
-        control.innerHTML = '';
+        if (targetElement) {
+          this.log(`Populating options for filter '${filterKey}' on element`, targetElement);
         
-        filterDef.options.forEach((option: any) => {
-          const optionElement = document.createElement('option');
-          const value = typeof option === 'object' && option.value !== undefined ? option.value : String(option);
-
-          let label = value;
-          // Special label parsing for locations
-          if (filterKey === 'locations') {
-            const labelMatch = value.match(/^(.*?)\s*\(/);
-            label = labelMatch ? labelMatch[1].trim() : value;
-          } else {
-            label = this.getFilterOptionLabel(filterKey!, value);
-          }
+          const placeholder = (targetElement.firstElementChild && targetElement.firstElementChild.getAttribute('value') === "") 
+            ? targetElement.firstElementChild.cloneNode(true) 
+            : null;
           
-          optionElement.value = value;
-          optionElement.textContent = label;
-          
-          // Set default for sortBy
-          if (filterKey === 'sortBy' && value === 'relevance') {
-            optionElement.selected = true;
+          targetElement.innerHTML = '';
+          if (placeholder) {
+            targetElement.appendChild(placeholder);
           }
+        
+          filterDef.options.forEach((option: any) => {
+            const optionElement = document.createElement('option');
+            const value = typeof option === 'object' && option.value !== undefined ? option.value : String(option);
 
-          control.appendChild(optionElement);
-        });
+            let label = value;
+            if (filterKey === 'locations') {
+              const labelMatch = value.match(/^(.*?)\s*\(/);
+              label = labelMatch ? labelMatch[1].trim() : value;
+              optionElement.value = label; // For datalist, the value shown is what's important
+            } else {
+              label = this.getFilterOptionLabel(filterKey!, value);
+              optionElement.value = value;
+            }
+            
+            optionElement.textContent = label;
+            
+            if (targetElement instanceof HTMLSelectElement) {
+                if (filterKey === 'sortBy' && value === 'relevance') {
+                    optionElement.selected = true;
+                }
+            } else {
+                // For datalist, the text content is not displayed, the value is.
+                optionElement.value = label;
+            }
+
+            targetElement.appendChild(optionElement);
+          });
+        }
       }
     });
   }
