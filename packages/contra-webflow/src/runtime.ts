@@ -239,18 +239,23 @@ export class ContraWebflowRuntime {
    * Initialize a single expert container
    */
   private async initContainer(container: Element): Promise<void> {
-    // Get program ID from config instead of element attribute
-    const programId = this.config.program;
-    if (!programId) {
+    // Get base program ID from config
+    const baseProgramId = this.config.program;
+    if (!baseProgramId) {
       this.log('No program ID found in config', container);
       return;
     }
 
-    this.log(`Initializing container for program: ${programId}`);
+    // Create unique program ID for this container to avoid state conflicts
+    const paginationMode = this.determinePaginationMode(container);
+    const containerIndex = Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-pagination-mode]')).indexOf(container);
+    const programId = `${baseProgramId}-${paginationMode}-${containerIndex}`;
+
+    this.log(`Initializing container for program: ${programId} (base: ${baseProgramId}, mode: ${paginationMode})`);
 
     try {
       // Setup container state
-      this.setupContainer(container, programId);
+      this.setupContainer(container, programId, baseProgramId);
       
       // Wire up filter controls
       this.wireFilterControls(container, programId);
@@ -270,13 +275,14 @@ export class ContraWebflowRuntime {
   /**
    * Setup container with initial state and classes
    */
-  private setupContainer(container: Element, programId: string): void {
+  private setupContainer(container: Element, programId: string, baseProgramId: string): void {
     const element = container as HTMLElement;
     
     // Add runtime classes and unique identifier
     element.classList.add('contra-runtime');
     element.setAttribute('data-contra-initialized', 'true');
-    element.setAttribute('data-program-id', programId); // Still set this for internal use
+    element.setAttribute('data-program-id', programId); // Use unique program ID
+    element.setAttribute('data-base-program-id', baseProgramId); // Store base program ID for API calls
     
     // Parse initial filters from attributes
     const initialFilters = this.parseFiltersFromElement(container);
@@ -446,7 +452,10 @@ export class ContraWebflowRuntime {
   private async loadExperts(container: Element, programId: string, isPageNavigation = false): Promise<void> {
     const state = this.state.getState(programId);
     
-    this.log(`Loading experts for program: ${programId}`, state.filters);
+    // Get base program ID for API calls
+    const baseProgramId = (container as HTMLElement).getAttribute('data-base-program-id') || this.config.program;
+    
+    this.log(`Loading experts for program: ${programId} (API: ${baseProgramId})`, state.filters);
 
     try {
       // Show loading state
@@ -466,8 +475,8 @@ export class ContraWebflowRuntime {
         }
       }
 
-      // Fetch experts from API
-      const response = await this.client.listExperts(programId, state.filters);
+      // Fetch experts from API using base program ID
+      const response = await this.client.listExperts(baseProgramId, state.filters);
       
       this.log(`Loaded ${response.data.length} experts`, response);
 
@@ -1307,6 +1316,9 @@ export class ContraWebflowRuntime {
       return;
     }
     
+    // Get base program ID for API calls
+    const baseProgramId = (container as HTMLElement).getAttribute('data-base-program-id') || this.config.program;
+    
     const limit = state.filters.limit || 20;
     
     // Calculate next offset based on currently loaded experts
@@ -1319,7 +1331,7 @@ export class ContraWebflowRuntime {
       this.updateLoadMoreButtonState(container, programId, true);
 
       // Fetch next batch using current expert count as offset
-      const response = await this.client.listExperts(programId, {
+      const response = await this.client.listExperts(baseProgramId, {
         ...state.filters,
         offset: currentOffset,
         limit: limit
