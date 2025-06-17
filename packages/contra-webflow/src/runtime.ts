@@ -1012,15 +1012,26 @@ export class ContraWebflowRuntime {
 
   private getControlValue(control: HTMLInputElement | HTMLSelectElement): any {
     if (control instanceof HTMLInputElement) {
-      switch (control.type) {
-        case 'checkbox':
-          return control.checked;
-        case 'number':
-        case 'range':
-          return control.valueAsNumber;
-        default:
-          return control.value;
+      if (control.type === 'checkbox') {
+        return control.checked;
       }
+      if (control.type === 'number' || control.type === 'range') {
+        return control.valueAsNumber;
+      }
+      // For text inputs with a datalist, find the corresponding option and use its data attribute if it exists
+      const listId = control.getAttribute('list');
+      if (listId) {
+        const datalist = document.getElementById(listId);
+        if (datalist) {
+          const selectedOption = Array.from(datalist.querySelectorAll('option')).find(
+            opt => opt.value === control.value
+          );
+          if (selectedOption) {
+            return selectedOption.getAttribute('data-api-value') || selectedOption.value;
+          }
+        }
+      }
+      return control.value;
     } else if (control instanceof HTMLSelectElement) {
       if (control.multiple) {
         return Array.from(control.selectedOptions).map(option => option.value);
@@ -1092,6 +1103,11 @@ export class ContraWebflowRuntime {
     return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
   }
 
+  private parseLocationLabel(locationValue: string): string {
+    const labelMatch = locationValue.match(/^(.*?)\s*\(/);
+    return labelMatch ? labelMatch[1].trim() : locationValue;
+  }
+
   private populateAllFilterControls(programFilters: Map<string, any[]>): void {
     this.log('Populating all filter controls on the page...');
     const allControls = this.querySelectorAll(document.body, `[data-contra-filter]`);
@@ -1143,27 +1159,21 @@ export class ContraWebflowRuntime {
         
           filterDef.options.forEach((option: any) => {
             const optionElement = document.createElement('option');
-            const value = typeof option === 'object' && option.value !== undefined ? option.value : String(option);
+            const rawValue = typeof option === 'object' && option.value !== undefined ? option.value : String(option);
 
-            let label = value;
             if (filterKey === 'locations') {
-              const labelMatch = value.match(/^(.*?)\s*\(/);
-              label = labelMatch ? labelMatch[1].trim() : value;
-              optionElement.value = label; // For datalist, the value shown is what's important
+              const label = this.parseLocationLabel(rawValue);
+              optionElement.value = label;
+              optionElement.setAttribute('data-api-value', rawValue);
             } else {
-              label = this.getFilterOptionLabel(filterKey!, value);
-              optionElement.value = value;
+              optionElement.value = rawValue;
+              optionElement.textContent = this.getFilterOptionLabel(filterKey!, rawValue);
             }
             
-            optionElement.textContent = label;
-            
             if (targetElement instanceof HTMLSelectElement) {
-                if (filterKey === 'sortBy' && value === 'relevance') {
+                if (filterKey === 'sortBy' && rawValue === 'relevance') {
                     optionElement.selected = true;
                 }
-            } else {
-                // For datalist, the text content is not displayed, the value is.
-                optionElement.value = label;
             }
 
             targetElement.appendChild(optionElement);

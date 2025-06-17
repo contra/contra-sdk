@@ -130,6 +130,7 @@ declare class ContraWebflowRuntime {
     private log;
     private getAvailableFilters;
     private getFilterOptionLabel;
+    private parseLocationLabel;
     private populateAllFilterControls;
 }
 
