@@ -38,8 +38,8 @@ function ModernDropdown({
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isOpen]);
 
@@ -100,9 +100,9 @@ function ModernDropdown({
       
       {/* Inline dropdown options that push content down */}
       <div
-        style={{
+            style={{
           width: '100%',
-          backgroundColor: colors.backgroundColor,
+              backgroundColor: colors.backgroundColor,
           border: isOpen ? `1px solid ${colors.inputBorder}` : 'none',
           borderTop: 'none',
           borderRadius: '0 0 8px 8px',
@@ -111,26 +111,26 @@ function ModernDropdown({
           transition: 'max-height 0.3s ease, border 0.2s ease',
           WebkitOverflowScrolling: 'touch',
           boxShadow: isOpen ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
-        }}
-      >
+            }}
+          >
         {options.map((option) => (
           <button
-            key={option.value}
-            type="button"
-            onClick={() => {
-              onChange(option.value);
-              setIsOpen(false);
-            }}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
               backgroundColor: value === option.value ? colors.hoverBackground : 'transparent',
-              border: 'none',
-              textAlign: 'left',
-              fontSize: '16px',
-              color: colors.textColor,
-              cursor: 'pointer',
-              outline: 'none',
+                  border: 'none',
+                  textAlign: 'left',
+                  fontSize: '16px',
+                  color: colors.textColor,
+                  cursor: 'pointer',
+                  outline: 'none',
               minHeight: '44px',
               display: 'flex',
               alignItems: 'center',
@@ -146,9 +146,9 @@ function ModernDropdown({
               if (value !== option.value) {
                 e.currentTarget.style.backgroundColor = 'transparent';
               }
-            }}
-          >
-            {option.label}
+                }}
+              >
+                {option.label}
             {value === option.value && (
               <svg 
                 width="16" 
@@ -167,7 +167,7 @@ function ModernDropdown({
               </svg>
             )}
           </button>
-        ))}
+            ))}
       </div>
     </div>
   );
@@ -225,7 +225,7 @@ function ModernRangeSlider({
       onChange([newMin, maxVal]);
     } else {
       const newMax = Math.max(newValue, minVal + step);
-      onChange([minVal, newMax]);
+    onChange([minVal, newMax]);
     }
   };
 
@@ -264,7 +264,7 @@ function ModernRangeSlider({
   }, [isDragging, minVal, maxVal, min, max, step, onChange]);
 
   return (
-    <div style={{ 
+      <div style={{
       position: 'relative', 
       margin: '20px 0',
       isolation: 'isolate', // Prevent stacking context issues
@@ -274,10 +274,10 @@ function ModernRangeSlider({
         ref={sliderRef}
         onClick={handleTrackClick}
         style={{
-          height: '4px',
-          backgroundColor: colors.sliderTrack,
-          borderRadius: '2px',
-          position: 'relative',
+        height: '4px',
+        backgroundColor: colors.sliderTrack,
+        borderRadius: '2px',
+        position: 'relative',
           cursor: 'pointer',
         }}
       >
@@ -481,24 +481,24 @@ export default function FilterFramer(props: any) {
       {/* Filter Button */}
       <motion.button
         style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          backgroundColor: colors.buttonBackground,
-          border: `1px solid ${colors.buttonBorder}`,
-          borderRadius: buttonBorderRadius,
-          padding: buttonPadding,
-          fontSize: buttonFontSize,
-          fontWeight: buttonFontWeight,
-          color: colors.buttonText,
-          cursor: 'pointer',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          outline: 'none',
-          userSelect: 'none',
-          width: width || 'auto',
-          height: height || 'auto',
-          ...style,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    backgroundColor: colors.buttonBackground,
+    border: `1px solid ${colors.buttonBorder}`,
+    borderRadius: buttonBorderRadius,
+    padding: buttonPadding,
+    fontSize: buttonFontSize,
+    fontWeight: buttonFontWeight,
+    color: colors.buttonText,
+    cursor: 'pointer',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    outline: 'none',
+    userSelect: 'none',
+    width: width || 'auto',
+    height: height || 'auto',
+    ...style,
         }}
         onClick={handleButtonClick}
         whileHover={enableAnimations ? { 
@@ -565,34 +565,34 @@ export default function FilterFramer(props: any) {
               }}
             >
               {/* Fixed Header */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 padding: '32px 32px 0 32px',
                 borderBottom: `1px solid ${colors.borderColor}`,
                 paddingBottom: '20px',
                 marginBottom: '0',
-              }}>
-                <h2 style={{
-                  margin: 0,
-                  fontSize: '24px',
-                  fontWeight: '600',
-                  color: colors.textColor,
                 }}>
-                  Filters
+                <h2 style={{
+                      margin: 0,
+                      fontSize: '24px',
+                      fontWeight: '600',
+                      color: colors.textColor,
+                }}>
+                    Filters
                 </h2>
                 <button
-                  onClick={handleModalClose}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '24px',
-                    color: colors.textMutedColor,
-                    cursor: 'pointer',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    outline: 'none',
+                    onClick={handleModalClose}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '24px',
+                      color: colors.textMutedColor,
+                      cursor: 'pointer',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      outline: 'none',
                     minWidth: '44px',
                     minHeight: '44px',
                     display: 'flex',
@@ -605,11 +605,11 @@ export default function FilterFramer(props: any) {
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  ×
+                    }}
+                  >
+                    ×
                 </button>
-              </div>
+                </div>
 
               {/* Scrollable Content */}
               <div style={{
@@ -659,9 +659,9 @@ export default function FilterFramer(props: any) {
                   />
 
                   <div style={{
-                    display: 'flex',
-                    gap: '16px',
-                    marginTop: '16px',
+                      display: 'flex',
+                      gap: '16px',
+                      marginTop: '16px',
                   }}>
                     <div style={{ flex: 1 }}>
                       <label style={{
@@ -674,14 +674,14 @@ export default function FilterFramer(props: any) {
                         Minimum
                       </label>
                       <div style={{
-                        backgroundColor: colors.inputBackground,
-                        border: `1px solid ${colors.inputBorder}`,
-                        borderRadius: '8px',
-                        padding: '16px',
-                        fontSize: '16px',
-                        color: colors.textColor,
-                        display: 'flex',
-                        alignItems: 'center',
+                          backgroundColor: colors.inputBackground,
+                          border: `1px solid ${colors.inputBorder}`,
+                          borderRadius: '8px',
+                          padding: '16px',
+                          fontSize: '16px',
+                          color: colors.textColor,
+                          display: 'flex',
+                          alignItems: 'center',
                       }}>
                         ${filters.minRate}
                       </div>
@@ -706,26 +706,26 @@ export default function FilterFramer(props: any) {
                         Maximum
                       </label>
                       <div style={{
-                        backgroundColor: colors.inputBackground,
-                        border: `1px solid ${colors.inputBorder}`,
-                        borderRadius: '8px',
-                        padding: '16px',
-                        fontSize: '16px',
-                        color: colors.textColor,
-                        display: 'flex',
-                        alignItems: 'center',
+                          backgroundColor: colors.inputBackground,
+                          border: `1px solid ${colors.inputBorder}`,
+                          borderRadius: '8px',
+                          padding: '16px',
+                          fontSize: '16px',
+                          color: colors.textColor,
+                          display: 'flex',
+                          alignItems: 'center',
                       }}>
                         ${filters.maxRate}{filters.maxRate >= maxRateLimit ? '+' : ''}
-                      </div>
+                    </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Location and Languages */}
                 <div style={{
-                  display: 'grid',
+                    display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                  gap: '24px',
+                    gap: '24px',
                   marginBottom: '32px',
                 }}>
                   {/* Location */}
@@ -785,25 +785,25 @@ export default function FilterFramer(props: any) {
 
               {/* Fixed Footer */}
               <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                 padding: '20px 32px 32px 32px',
                 borderTop: `1px solid ${colors.borderColor}`,
                 gap: '16px',
                 flexWrap: 'wrap',
               }}>
                 <button
-                  onClick={handleClearFilters}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: colors.textColor,
-                    fontSize: '16px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    padding: '12px 0',
-                    outline: 'none',
+                    onClick={handleClearFilters}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: colors.textColor,
+                      fontSize: '16px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      padding: '12px 0',
+                      outline: 'none',
                     minHeight: '44px',
                     transition: 'opacity 0.2s ease',
                   }}
@@ -812,23 +812,23 @@ export default function FilterFramer(props: any) {
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.opacity = '1';
-                  }}
-                >
-                  Clear all filters
+                    }}
+                  >
+                    Clear all filters
                 </button>
 
                 <button
-                  onClick={handleSaveFilters}
-                  style={{
-                    backgroundColor: colors.buttonPrimaryBackground,
-                    color: colors.buttonPrimaryText,
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '16px 32px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    outline: 'none',
+                    onClick={handleSaveFilters}
+                    style={{
+                      backgroundColor: colors.buttonPrimaryBackground,
+                      color: colors.buttonPrimaryText,
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '16px 32px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      outline: 'none',
                     minHeight: '44px',
                     whiteSpace: 'nowrap',
                     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
@@ -840,9 +840,9 @@ export default function FilterFramer(props: any) {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  Save filters
+                    }}
+                  >
+                    Save filters
                 </button>
               </div>
             </motion.div>

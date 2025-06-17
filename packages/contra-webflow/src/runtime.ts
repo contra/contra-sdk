@@ -547,8 +547,8 @@ export class ContraWebflowRuntime {
       return;
     }
 
-    // Clear existing expert cards (keep template)
-    const existingCards = this.querySelectorAll(container, ':scope > *:not([data-contra-template]):not([data-contra-loading]):not([data-contra-error]):not([data-contra-empty])');
+    // Clear only previously rendered expert cards
+    const existingCards = this.querySelectorAll(container, '.contra-rendered-item');
     existingCards.forEach(card => card.remove());
 
     // Render expert cards
@@ -565,6 +565,9 @@ export class ContraWebflowRuntime {
    */
   private populateExpertCard(template: Element, expert: ExpertProfile): Element {
     const card = template.cloneNode(true) as Element;
+    
+    // Add a marker class to identify this as a rendered card
+    card.classList.add('contra-rendered-item');
     
     // Remove template attribute and show the card
     card.removeAttribute(`${ATTR_PREFIX}${ATTRS.template}`);

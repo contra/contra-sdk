@@ -1,0 +1,272 @@
+<!-- Contra Expert Directory - Simple Webflow Embed -->
+
+<!-- 1. Configuration Script (Required) -->
+<script id="contra-config" type="application/json">
+{
+    "program": "kajabi_expert",
+    "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
+    "debug": true,
+    "paginationMode": "infinite"
+}
+</script>
+
+<!-- 2. Basic Styles (Recommended) -->
+<style>
+    .contra-expert-directory {
+        font-family: sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    /* Simple Expert Card */
+    .expert-card {
+        background: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .expert-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .expert-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .expert-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    .expert-location {
+        color: #555;
+    }
+
+    .availability-badge {
+        display: inline-block;
+        background-color: #dcfce7;
+        color: #166534;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 5px;
+    }
+
+    .expert-bio {
+        color: #333;
+        line-height: 1.5;
+        margin: 15px 0;
+    }
+
+    .expert-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding: 15px 0;
+        border-top: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+        margin: 15px 0;
+    }
+
+    .stat {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .stat-label {
+        display: block;
+        font-size: 0.8rem;
+        color: #777;
+    }
+
+    .star-rating {
+        color: #f59e0b;
+    }
+
+    .skill-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 15px 0;
+    }
+
+    .skill-tag {
+        background: #f3f4f6;
+        color: #374151;
+        padding: 5px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+    }
+
+    .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+        margin: 15px 0;
+    }
+
+    .project-thumbnail {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    .expert-actions a {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 10px 15px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        border: 1px solid #ddd;
+        color: #333;
+    }
+    
+    .expert-actions .expert-cta {
+        background: #111827;
+        color: #fff;
+        border-color: #111827;
+    }
+
+    /* Pagination Styles */
+    .pagination-section {
+        text-align: center;
+        padding: 20px 0;
+    }
+
+    .pagination-info {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 20px;
+    }
+
+    .load-more-btn {
+        background: #111827;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .load-more-btn:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+    }
+    
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #111827;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+</style>
+
+<!-- 3. HTML Structure -->
+<div class="contra-expert-directory">
+    <!-- Main Expert Container (runtime attaches here) -->
+    <div data-contra-limit="5" data-contra-offset="0" data-contra-pagination-mode="infinite">
+        
+        <!-- Expert Card Template (hidden) -->
+        <article data-contra-template class="expert-card" style="display: none;">
+            <header class="expert-header">
+                <img data-contra-field="avatarUrl" class="expert-avatar" alt="Expert Avatar">
+                <div>
+                    <h2 data-contra-field="name" class="expert-name"></h2>
+                    <p data-contra-field="location" class="expert-location"></p>
+                </div>
+            </header>
+            
+            <div data-contra-show-when="available:true" class="availability-badge">
+                Available Now
+            </div>
+
+            <p data-contra-field="oneLiner" class="expert-bio"></p>
+            
+            <div class="expert-stats">
+                <div class="stat">
+                    <span data-contra-field="earningsUSD" data-contra-format="earnings" class="stat-value"></span>
+                    <span class="stat-label">Earned</span>
+                </div>
+                <div class="stat">
+                    <span data-contra-field="projectsCompletedCount" class="stat-value"></span>
+                    <span class="stat-label">Projects</span>
+                </div>
+                <div class="stat">
+                    <span data-contra-field="averageReviewScore" data-contra-format="rating" class="stat-value"></span>
+                    <div data-contra-stars class="star-rating"></div>
+                    <span class="stat-label">Rating</span>
+                </div>
+            </div>
+            
+            <div data-contra-repeat="skillTags" data-contra-max="8" class="skill-tags">
+                <span data-contra-field="name" class="skill-tag"></span>
+            </div>
+            
+            <div data-contra-repeat="projects" data-contra-max="4" class="projects-grid">
+                <img data-contra-field="coverUrl" class="project-thumbnail" alt="Project Thumbnail">
+            </div>
+            
+            <footer class="expert-actions">
+                <a data-contra-field="profileUrl" target="_blank" rel="noopener">View Profile</a>
+                <a data-contra-field="inquiryUrl" target="_blank" rel="noopener" class="expert-cta">Contact Expert</a>
+            </footer>
+        </article>
+        
+        <!-- Loading State -->
+        <div data-contra-loading style="display: none; text-align: center; padding: 40px;">
+            <div class="loading-spinner"></div>
+            <p>Loading experts...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div data-contra-error style="display: none; text-align: center; padding: 40px; color: red;">
+            <p>Error: Could not load experts.</p>
+        </div>
+        
+        <!-- Empty State -->
+        <div data-contra-empty style="display: none; text-align: center; padding: 40px;">
+            <p>No experts found matching your criteria.</p>
+        </div>
+    </div>
+    
+    <!-- Pagination Section -->
+    <div class="pagination-section">
+        <div data-contra-pagination-info class="pagination-info"></div>
+        <button data-contra-action="load-more" class="load-more-btn">Load More</button>
+        <div data-contra-infinite-loading style="display: none; padding: 20px;">
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Contra SDK Runtime (Required) -->
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@latest/packages/contra-webflow/dist/runtime.min.js?v=1.1.0"></script> 
