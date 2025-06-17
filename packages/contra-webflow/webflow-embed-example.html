@@ -147,10 +147,10 @@
         </div>
         <div class="filter-group">
             <label for="location-filter">Location:</label>
-            <input type="text" id="location-filter" list="location-options" placeholder="e.g. San Francisco" data-contra-filter="locations" data-contra-list-target="expert-cards">
-            <datalist id="location-options">
+            <select id="location-filter" data-contra-filter="locations" data-contra-list-target="expert-cards">
+                <option value="">All Locations</option>
                 <!-- Options dynamically populated by runtime -->
-            </datalist>
+            </select>
         </div>
         <div class="filter-group">
             <label for="languages-filter">Languages:</label>

@@ -1012,26 +1012,15 @@ export class ContraWebflowRuntime {
 
   private getControlValue(control: HTMLInputElement | HTMLSelectElement): any {
     if (control instanceof HTMLInputElement) {
-      if (control.type === 'checkbox') {
-        return control.checked;
+      switch (control.type) {
+        case 'checkbox':
+          return control.checked;
+        case 'number':
+        case 'range':
+          return control.valueAsNumber;
+        default:
+          return control.value;
       }
-      if (control.type === 'number' || control.type === 'range') {
-        return control.valueAsNumber;
-      }
-      // For text inputs with a datalist, find the corresponding option and use its data attribute if it exists
-      const listId = control.getAttribute('list');
-      if (listId) {
-        const datalist = document.getElementById(listId);
-        if (datalist) {
-          const selectedOption = Array.from(datalist.querySelectorAll('option')).find(
-            opt => opt.value === control.value
-          );
-          if (selectedOption) {
-            return selectedOption.getAttribute('data-api-value') || selectedOption.value;
-          }
-        }
-      }
-      return control.value;
     } else if (control instanceof HTMLSelectElement) {
       if (control.multiple) {
         return Array.from(control.selectedOptions).map(option => option.value);
@@ -1103,11 +1092,6 @@ export class ContraWebflowRuntime {
     return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
   }
 
-  private parseLocationLabel(locationValue: string): string {
-    const labelMatch = locationValue.match(/^(.*?)\s*\(/);
-    return labelMatch ? labelMatch[1].trim() : locationValue;
-  }
-
   private populateAllFilterControls(programFilters: Map<string, any[]>): void {
     this.log('Populating all filter controls on the page...');
     const allControls = this.querySelectorAll(document.body, `[data-contra-filter]`);
@@ -1136,49 +1120,37 @@ export class ContraWebflowRuntime {
         if (filterDef.maximum !== undefined) control.max = String(filterDef.maximum);
       }
 
-      // Handle populating select dropdowns and datalists
-      if (filterDef.options) {
-        let targetElement: HTMLElement | null = null;
-        if (control instanceof HTMLSelectElement) {
-            targetElement = control;
-        } else if (control instanceof HTMLInputElement && control.hasAttribute('list')) {
-            targetElement = document.getElementById(control.getAttribute('list')!);
+      // Handle populating select dropdowns
+      if (filterDef.options && control instanceof HTMLSelectElement) {
+        this.log(`Populating options for filter '${filterKey}' on control`, control);
+        
+        const placeholder = control.firstElementChild?.cloneNode(true) as Element | null;
+        control.innerHTML = '';
+        if (placeholder && placeholder.getAttribute('value') === '') {
+          control.appendChild(placeholder);
         }
         
-        if (targetElement) {
-          this.log(`Populating options for filter '${filterKey}' on element`, targetElement);
-        
-          const placeholder = (targetElement.firstElementChild && targetElement.firstElementChild.getAttribute('value') === "") 
-            ? targetElement.firstElementChild.cloneNode(true) 
-            : null;
+        filterDef.options.forEach((option: any) => {
+          const optionElement = document.createElement('option');
+          const value = typeof option === 'object' && option.value !== undefined ? option.value : String(option);
           
-          targetElement.innerHTML = '';
-          if (placeholder) {
-            targetElement.appendChild(placeholder);
+          optionElement.value = value;
+
+          // Determine the user-friendly label
+          let label: string;
+          if (filterKey === 'locations') {
+            const labelMatch = value.match(/^(.*?)\s*\(/);
+            label = labelMatch ? labelMatch[1].trim() : value;
+          } else {
+            label = this.getFilterOptionLabel(filterKey!, value);
           }
-        
-          filterDef.options.forEach((option: any) => {
-            const optionElement = document.createElement('option');
-            const rawValue = typeof option === 'object' && option.value !== undefined ? option.value : String(option);
-
-            if (filterKey === 'locations') {
-              const label = this.parseLocationLabel(rawValue);
-              optionElement.value = label;
-              optionElement.setAttribute('data-api-value', rawValue);
-            } else {
-              optionElement.value = rawValue;
-              optionElement.textContent = this.getFilterOptionLabel(filterKey!, rawValue);
-            }
-            
-            if (targetElement instanceof HTMLSelectElement) {
-                if (filterKey === 'sortBy' && rawValue === 'relevance') {
-                    optionElement.selected = true;
-                }
-            }
-
-            targetElement.appendChild(optionElement);
-          });
-        }
+          optionElement.textContent = label;
+          
+          if (filterKey === 'sortBy' && value === 'relevance') {
+            optionElement.selected = true;
+          }
+          control.appendChild(optionElement);
+        });
       }
     });
   }
