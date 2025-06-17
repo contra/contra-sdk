@@ -414,8 +414,11 @@ export class ContraWebflowRuntime {
       this.showLoading(container, true);
       this.state.updateState(containerId, { loading: true, error: null });
 
-      // Fetch experts from API
-      const response = await this.client.listExperts(programId, state.filters);
+      // Fetch experts from API, ensuring totalCount is requested
+      const response = await this.client.listExperts(programId, {
+        ...state.filters,
+        includeTotals: true,
+      } as any);
       
       this.log(`Loaded ${response.data.length} experts`, response);
 
@@ -1260,8 +1263,9 @@ export class ContraWebflowRuntime {
       const response = await this.client.listExperts(programId, {
         ...state.filters,
         offset: currentOffset,
-        limit: limit
-      });
+        limit: limit,
+        includeTotals: true,
+      } as any);
 
       this.log(`Loaded ${response.data.length} more experts from offset ${currentOffset}`);
 
