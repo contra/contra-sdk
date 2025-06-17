@@ -248,21 +248,28 @@ export class ContraWebflowRuntime {
       return;
     }
 
+    // Find the specific list element within the container
+    const expertListElement = this.findExpertListElement(container);
+    if (!expertListElement) {
+      this.log('No expert list element found in container', container);
+      return;
+    }
+
     // Create a simple, unique ID for this container instance for state management.
-    const allContainers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}${ATTRS.limit}], [${ATTR_PREFIX}${ATTRS.paginationMode}]`));
+    const allContainers = Array.from(document.querySelectorAll('.grid-section'));
     const containerIndex = allContainers.indexOf(container);
     const containerId = `container-${containerIndex}`;
 
     this.log(`Initializing container #${containerIndex} (ID: ${containerId}) for program: ${baseProgramId}`);
 
     try {
-      // Setup container state
-      this.setupContainer(container, containerId, baseProgramId);
+      // Setup container state from the list element
+      this.setupContainer(container, expertListElement, containerId, baseProgramId);
       
-      // Wire up filter controls
+      // Wire up filter controls (scoped to the whole container)
       this.wireFilterControls(container, containerId);
       
-      // Wire up action buttons
+      // Wire up action buttons (scoped to the whole container)
       this.wireActionButtons(container, containerId);
       
       // Setup debounced reload for this container
@@ -296,7 +303,7 @@ export class ContraWebflowRuntime {
   /**
    * Setup container with initial state and classes
    */
-  private setupContainer(container: Element, containerId: string, programId: string): void {
+  private setupContainer(container: Element, expertListElement: Element, containerId: string, programId: string): void {
     const element = container as HTMLElement;
     
     // Add runtime classes and identifier
@@ -304,9 +311,9 @@ export class ContraWebflowRuntime {
     element.setAttribute('data-contra-initialized', 'true');
     element.setAttribute('data-container-id', containerId); // Use simple ID for DOM selection
     
-    // Parse pagination mode and settings
-    const paginationMode = this.getAttr(container, ATTRS.paginationMode) || 'traditional';
-    const limit = parseInt(this.getAttr(container, ATTRS.limit) || '20');
+    // Parse pagination mode and settings from the list element
+    const paginationMode = this.getAttr(expertListElement, ATTRS.paginationMode) || 'traditional';
+    const limit = parseInt(this.getAttr(expertListElement, ATTRS.limit) || '20');
     
     // Initialize container state using the simple containerId
     this.state.updateState(containerId, { 
@@ -1460,9 +1467,9 @@ export class ContraWebflowRuntime {
   private findExpertContainers(): Element[] {
     this.log('Looking for expert containers...');
     
-    // A container is DEFINED by having a limit or pagination attribute.
+    // A container is DEFINED by being a grid-section.
     // This is the most reliable way to find the top-level component boundaries.
-    const selector = `[${ATTR_PREFIX}${ATTRS.limit}], [${ATTR_PREFIX}${ATTRS.paginationMode}]`;
+    const selector = `.grid-section`;
     const containers = Array.from(document.querySelectorAll(selector));
     
     this.log(`Found ${containers.length} containers using selector: ${selector}`, containers);
@@ -1606,6 +1613,15 @@ export class ContraWebflowRuntime {
     if (this.config.debug) {
       console.log(`[ContraWebflow] ${message}`, ...args);
     }
+  }
+
+  /**
+   * Find the specific element within the container that holds the expert list and configuration.
+   */
+  private findExpertListElement(container: Element): Element | null {
+    // This element is defined by having pagination or limit attributes.
+    const selector = `[${ATTR_PREFIX}${ATTRS.limit}], [${ATTR_PREFIX}${ATTRS.paginationMode}]`;
+    return this.querySelector(container, selector);
   }
 }
 
