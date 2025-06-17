@@ -145,19 +145,29 @@ export class ContraWebflowRuntime {
     this.log('Initializing runtime...');
 
     try {
-      // 1. Discover all lists on the page
+      // 1. Discover all lists and unique programs to fetch filters for
       const listElements = this.querySelectorAll(document.body, `[${ATTR_PREFIX}${ATTRS.listId}]`);
       this.log(`Found ${listElements.length} lists to initialize.`);
+      
+      const programFilters = new Map<string, any[]>();
+      for (const listElement of listElements) {
+        const programId = this.getAttr(listElement, ATTRS.program);
+        if (programId && !programFilters.has(programId)) {
+          this.log(`Fetching filters for program: ${programId}`);
+          programFilters.set(programId, await this.getAvailableFilters(programId));
+        }
+      }
 
-      // 2. Initialize each list
+      // 2. Populate all filter controls on the page once
+      this.populateAllFilterControls(programFilters);
+
+      // 3. Initialize each list
       for (const listElement of listElements) {
         await this.initList(listElement);
       }
 
-      // 3. Wire up all action buttons
+      // 4. Wire up all action buttons and filter controls
       this.wireActionButtons();
-
-      // 4. Wire up all filter controls
       this.wireFilterControls();
 
       this.log('Runtime initialization complete');
@@ -185,17 +195,13 @@ export class ContraWebflowRuntime {
       // Mark as initialized
       (listElement as HTMLElement).setAttribute('data-contra-initialized', 'true');
       
-      // New: Fetch available filters and populate controls that target this list
-      const availableFilters = await this.getAvailableFilters(programId);
-      this.populateFilterControls(listId, availableFilters);
-    
       // Parse initial filters from the list element itself
       const initialFilters = this.parseFiltersFromElement(listElement);
       const limit = parseInt(this.getAttr(listElement, ATTRS.limit) || '20', 10);
       
       // Update state with these initial settings
       this.state.updateState(listId, { 
-      filters: initialFilters,
+        filters: initialFilters,
         limit: limit,
         offset: initialFilters.offset || 0,
       });
@@ -1081,39 +1087,48 @@ export class ContraWebflowRuntime {
     return value.charAt(0).toUpperCase() + value.slice(1);
   }
 
-  private populateFilterControls(listId: string, filters: any[]): void {
-    if (!filters || filters.length === 0) return;
+  private populateAllFilterControls(programFilters: Map<string, any[]>): void {
+    this.log('Populating all filter controls on the page...');
+    const allControls = this.querySelectorAll(document.body, `[data-contra-filter]`);
 
-    this.log(`Populating filter controls for list ${listId} with`, filters);
+    allControls.forEach(control => {
+      const targetListId = control.getAttribute('data-contra-list-target');
+      if (!targetListId) return;
 
-    const filterControls = this.querySelectorAll(document.body, `[data-contra-list-target="${listId}"]`);
+      const targetList = this.querySelector(document.body, `[data-contra-list-id="${targetListId}"]`);
+      if (!targetList) return;
 
-    filterControls.forEach(control => {
-        const filterKey = control.getAttribute('data-contra-filter');
-        const filterDef = filters.find(f => f.name === filterKey);
+      const programId = this.getAttr(targetList, ATTRS.program);
+      if (!programId) return;
 
-        if (filterDef && filterDef.options && control instanceof HTMLSelectElement) {
-            this.log(`Populating options for filter '${filterKey}'`, filterDef.options);
-            
-            const placeholder = control.firstElementChild?.cloneNode(true) as Element | null;
-            control.innerHTML = ''; // Clear existing options
-            if (placeholder && placeholder.nodeName === 'OPTION') {
-                control.appendChild(placeholder);
-            }
-            
-            filterDef.options.forEach((option: any) => {
-                const optionElement = document.createElement('option');
-                if (typeof option === 'object' && option.value) {
-                    optionElement.value = option.value;
-                    optionElement.textContent = this.getFilterOptionLabel(filterKey!, option.value);
-                } else {
-                    const value = String(option);
-                    optionElement.value = value;
-                    optionElement.textContent = this.getFilterOptionLabel(filterKey!, value);
-                }
-                control.appendChild(optionElement);
-            });
+      const filters = programFilters.get(programId);
+      if (!filters) return;
+
+      const filterKey = control.getAttribute('data-contra-filter');
+      const filterDef = filters.find(f => f.name === filterKey);
+
+      if (filterDef && filterDef.options && control instanceof HTMLSelectElement) {
+        this.log(`Populating options for filter '${filterKey}' on control`, control);
+        
+        const placeholder = control.firstElementChild?.cloneNode(true) as Element | null;
+        control.innerHTML = '';
+        if (placeholder && placeholder.nodeName === 'OPTION') {
+          control.appendChild(placeholder);
         }
+        
+        filterDef.options.forEach((option: any) => {
+          const optionElement = document.createElement('option');
+          if (typeof option === 'object' && option.value) {
+            optionElement.value = option.value;
+            optionElement.textContent = this.getFilterOptionLabel(filterKey!, option.value);
+          } else {
+            const value = String(option);
+            optionElement.value = value;
+            optionElement.textContent = this.getFilterOptionLabel(filterKey!, value);
+          }
+          control.appendChild(optionElement);
+        });
+      }
     });
   }
 }
