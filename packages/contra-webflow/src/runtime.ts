@@ -866,7 +866,9 @@ export class ContraWebflowRuntime {
     // Process and set value
     let processedValue = value;
     if (filterKey === 'available') {
-      processedValue = value === 'true';
+      // If checkbox is checked, value is true. If unchecked, it's false.
+      // We only want to apply the filter when it's true.
+      processedValue = value ? true : undefined;
     } else if (['minRate', 'maxRate'].includes(filterKey)) {
       processedValue = (value === '' || value === null) ? undefined : Number(value);
     } else if (filterKey === 'languages' && typeof value === 'string') {

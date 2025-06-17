@@ -13,7 +13,7 @@
 
 <!-- 2. Runtime Script (Required once per page) -->
 <!-- Use cache-busting version for testing -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@91242c1/packages/contra-webflow/dist/runtime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@f86a43c/packages/contra-webflow/dist/runtime.min.js"></script>
 
 <!-- 3. Styles (Recommended) -->
 <style>
@@ -139,9 +139,8 @@
         <div class="filter-group">
             <label for="sort-filter">Sort by:</label>
             <select id="sort-filter" data-contra-filter="sortBy" data-contra-list-target="expert-cards">
-                <option value="relevance">Relevance</option>
-                <option value="rate_asc">Rate (Low to High)</option>
-                <option value="rate_desc">Rate (High to Low)</option>
+                <option value="">Relevance</option>
+                <!-- Options dynamically populated by runtime -->
             </select>
         </div>
         <div class="filter-group">
@@ -174,7 +173,7 @@
                     <p data-contra-field="location" class="expert-location"></p>
                     <div class="expert-details">
                         <span data-contra-field="hourlyRateUSD" data-contra-format="rate"></span>
-                        <span data-contra-show-when="available:true" style="color: #10b981;">● Available</span>
+                        <span data-contra-show-when="available:true" style="color: #10b981;">● Available Now</span>
                     </div>
                 </div>
             </div>
