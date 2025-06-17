@@ -242,22 +242,22 @@ export class ContraWebflowRuntime {
    */
   private async initContainer(container: Element): Promise<void> {
     // Get program ID from config
-    const programId = this.config.program;
-    if (!programId) {
+    const baseProgramId = this.config.program;
+    if (!baseProgramId) {
       this.log('No program ID found in config', container);
       return;
     }
 
-    // Create simple container identifier
-    const containers = document.querySelectorAll('[data-contra-limit], [data-contra-pagination]');
-    const containerIndex = Array.from(containers).indexOf(container);
+    // Create a simple, unique ID for this container instance for state management.
+    const allContainers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}${ATTRS.limit}], [${ATTR_PREFIX}${ATTRS.paginationMode}]`));
+    const containerIndex = allContainers.indexOf(container);
     const containerId = `container-${containerIndex}`;
 
-    this.log(`Initializing container ${containerId} for program: ${programId}`);
+    this.log(`Initializing container #${containerIndex} (ID: ${containerId}) for program: ${baseProgramId}`);
 
     try {
       // Setup container state
-      this.setupContainer(container, containerId, programId);
+      this.setupContainer(container, containerId, baseProgramId);
       
       // Wire up filter controls
       this.wireFilterControls(container, containerId);
@@ -302,13 +302,13 @@ export class ContraWebflowRuntime {
     // Add runtime classes and identifier
     element.classList.add('contra-runtime');
     element.setAttribute('data-contra-initialized', 'true');
-    element.setAttribute('data-container-id', containerId);
+    element.setAttribute('data-container-id', containerId); // Use simple ID for DOM selection
     
     // Parse pagination mode and settings
-    const paginationMode = this.getAttr(container, 'pagination') || 'traditional';
-    const limit = parseInt(this.getAttr(container, 'limit') || '20');
+    const paginationMode = this.getAttr(container, ATTRS.paginationMode) || 'traditional';
+    const limit = parseInt(this.getAttr(container, ATTRS.limit) || '20');
     
-    // Initialize container state
+    // Initialize container state using the simple containerId
     this.state.updateState(containerId, { 
       filters: { limit, offset: 0 },
       paginationMode: paginationMode as 'traditional' | 'infinite',
@@ -323,10 +323,10 @@ export class ContraWebflowRuntime {
       loadingPages: new Set(),
       isInfiniteLoading: false,
       lastScrollPosition: 0,
-      programId: programId
+      programId: programId // This is the base programId for API calls
     });
     
-    this.log(`Container ${containerId} setup complete:`, { paginationMode, limit });
+    this.log(`Container ${containerId} setup complete:`, { paginationMode, limit, programId });
   }
 
   /**
@@ -343,27 +343,25 @@ export class ContraWebflowRuntime {
       
       if (!filterKey) return;
 
+      const eventListener = () => {
+        this.updateFilter(containerId, filterKey, this.getControlValue(control as HTMLInputElement | HTMLSelectElement), filterType);
+        if (this.config.autoReload) {
+          const debouncedReload = this.debouncedReload.get(containerId);
+          if (debouncedReload) {
+            debouncedReload();
+          }
+        }
+      };
+
       // Add event listeners based on control type
       if (control instanceof HTMLInputElement) {
-        const eventType = control.type === 'range' || control.type === 'number' ? 'input' : 'change';
-        
-        control.addEventListener(eventType, () => {
-          this.updateFilter(containerId, filterKey, this.getControlValue(control), filterType);
-          if (this.config.autoReload) {
-            this.debouncedReload.get(containerId)?.();
-          }
-        });
-        
+        const eventType = ['range', 'number', 'text', 'search'].includes(control.type) ? 'input' : 'change';
+        control.addEventListener(eventType, eventListener);
       } else if (control instanceof HTMLSelectElement) {
-        control.addEventListener('change', () => {
-          this.updateFilter(containerId, filterKey, this.getControlValue(control), filterType);
-          if (this.config.autoReload) {
-            this.debouncedReload.get(containerId)?.();
-          }
-        });
+        control.addEventListener('change', eventListener);
       }
       
-      this.log(`Wired filter control: ${filterKey} (${filterType})`, control);
+      this.log(`Wired filter control for ${containerId}: ${filterKey} (${filterType})`, control);
     });
   }
 
@@ -572,36 +570,37 @@ export class ContraWebflowRuntime {
    * Render experts into the container
    */
   private renderExperts(container: Element, experts: ExpertProfile[]): void {
-    // Look for template in the container or its expert-grid child
-    let template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
-    let targetContainer = container;
+    // Find the grid where experts should be rendered. It MUST be a child of the container.
+    const targetGrid = this.querySelector(container, '.expert-grid');
     
-    // If template not found directly, look in expert-grid child
-    if (!template) {
-      const expertGrid = this.querySelector(container, '.expert-grid');
-      if (expertGrid) {
-        template = this.querySelector(expertGrid, `[${ATTR_PREFIX}${ATTRS.template}]`);
-        targetContainer = expertGrid;
-      }
+    if (!targetGrid) {
+      this.log('CRITICAL: .expert-grid element not found inside container. Cannot render experts.', container);
+      this.showError(container, new Error("Runtime Error: '.expert-grid' child element is missing."));
+      return;
     }
     
+    // Find the template. It MUST be a direct child of the grid.
+    const template = this.querySelector(targetGrid, `[${ATTR_PREFIX}${ATTRS.template}]`);
+
     if (!template) {
-      this.log('No template found in container or expert-grid', container);
+      this.log('CRITICAL: Template element not found inside .expert-grid. Cannot render experts.', targetGrid);
+      this.showError(container, new Error("Runtime Error: Template element with 'data-contra-template' is missing inside '.expert-grid'."));
       return;
     }
 
-    // Clear existing expert cards (only remove cards that were previously rendered)
-    // Keep template, state elements, filters, pagination, and other controls
-    const existingCards = this.querySelectorAll(targetContainer, '.expert-card:not([data-contra-template])');
+    // --- NON-DESTRUCTIVE RENDERING ---
+    // 1. Clear only the previously rendered expert cards from the grid.
+    //    This leaves all other elements (like the template) intact.
+    const existingCards = this.querySelectorAll(targetGrid, '.expert-card:not([data-contra-template])');
     existingCards.forEach(card => card.remove());
 
-    // Render expert cards
+    // 2. Render and append new expert cards into the grid.
     experts.forEach(expert => {
       const expertCard = this.populateExpertCard(template, expert);
-      targetContainer.appendChild(expertCard);
+      targetGrid.appendChild(expertCard);
     });
 
-    this.log(`Rendered ${experts.length} expert cards in`, targetContainer);
+    this.log(`Rendered ${experts.length} expert cards into`, targetGrid);
   }
 
   /**
@@ -1045,6 +1044,7 @@ export class ContraWebflowRuntime {
     const expertValue = expert[field];
 
     // Handle existence check (e.g., "skillTags" or "projects")
+    // This is the fix for "Invalid condition format"
     if (parts.length === 1) {
       if (expertValue == null) return false;
       
@@ -1059,64 +1059,27 @@ export class ContraWebflowRuntime {
       return result;
     }
     
+    const expectedValue = parts.slice(1).join(':');
+    
     if (expertValue == null) {
-      this.log(`Field '${field}' is null/undefined, condition fails`);
+      this.log(`Field '${field}' is null/undefined, condition fails for value: '${expectedValue}'`);
       return false;
     }
     
-    const restOfCondition = parts.slice(1).join(':'); // Handle colons in values
-    this.log(`Evaluating condition: ${field} (${expertValue}, type: ${typeof expertValue}) against ${restOfCondition}`);
+    this.log(`Evaluating condition: ${field} (${expertValue}, type: ${typeof expertValue}) against ${expectedValue}`);
     
     // Check for comparison operators
-    if (restOfCondition.startsWith('>=')) {
-      const value = restOfCondition.substring(2);
-      const result = Number(expertValue) >= Number(value);
-      this.log(`Comparison: ${expertValue} >= ${value} = ${result}`);
-      return result;
-    } else if (restOfCondition.startsWith('<=')) {
-      const value = restOfCondition.substring(2);
-      const result = Number(expertValue) <= Number(value);
-      this.log(`Comparison: ${expertValue} <= ${value} = ${result}`);
-      return result;
-    } else if (restOfCondition.startsWith('>')) {
-      const value = restOfCondition.substring(1);
-      const result = Number(expertValue) > Number(value);
-      this.log(`Comparison: ${expertValue} > ${value} = ${result}`);
-      return result;
-    } else if (restOfCondition.startsWith('<')) {
-      const value = restOfCondition.substring(1);
-      const result = Number(expertValue) < Number(value);
-      this.log(`Comparison: ${expertValue} < ${value} = ${result}`);
-      return result;
+    if (expectedValue.startsWith('>=')) {
+      return Number(expertValue) >= Number(expectedValue.substring(2));
+    } else if (expectedValue.startsWith('<=')) {
+      return Number(expertValue) <= Number(expectedValue.substring(2));
+    } else if (expectedValue.startsWith('>')) {
+      return Number(expertValue) > Number(expectedValue.substring(1));
+    } else if (expectedValue.startsWith('<')) {
+      return Number(expertValue) < Number(expectedValue.substring(1));
     } else {
-      // Direct value comparison with type-aware handling
-      let result = false;
-      
-      // Handle boolean fields specially
-      if (typeof expertValue === 'boolean') {
-        // Convert string condition to boolean for comparison
-        if (restOfCondition.toLowerCase() === 'true') {
-          result = expertValue === true;
-        } else if (restOfCondition.toLowerCase() === 'false') {
-          result = expertValue === false;
-        } else {
-          result = false;
-        }
-        this.log(`Boolean comparison: ${expertValue} === ${restOfCondition.toLowerCase() === 'true'} = ${result}`);
-      } else if (typeof expertValue === 'number') {
-        // Handle numeric comparisons
-        const numValue = Number(restOfCondition);
-        result = !isNaN(numValue) && expertValue === numValue;
-        this.log(`Number comparison: ${expertValue} === ${numValue} = ${result}`);
-      } else {
-        // String comparison (case-insensitive)
-        const expertStr = String(expertValue);
-        const valueStr = String(restOfCondition);
-        result = expertStr.toLowerCase() === valueStr.toLowerCase();
-        this.log(`String comparison: '${expertStr}' === '${valueStr}' = ${result}`);
-      }
-      
-      return result;
+      // Direct value comparison (case-insensitive for strings)
+      return String(expertValue).toLowerCase() === expectedValue.toLowerCase();
     }
   }
 
@@ -1398,13 +1361,11 @@ export class ContraWebflowRuntime {
       }
     });
 
-    // --- FIX: Show pagination controls if there are ANY results, not just if there's more than one page.
+    // Show/hide pagination section based on whether there are multiple pages
     const paginationSections = this.querySelectorAll(container, '.pagination-section');
     this.log(`Updating pagination visibility. Total Pages: ${totalPages}, Total Count: ${state.totalCount}`);
     paginationSections.forEach(section => {
-      // The old logic `totalPages > 1` was hiding the controls undesirably.
-      // The new logic shows the controls as long as there's something to show.
-      (section as HTMLElement).style.display = state.totalCount > 0 ? '' : 'none';
+      (section as HTMLElement).style.display = totalPages > 1 ? '' : 'none';
     });
   }
 
@@ -1445,21 +1406,19 @@ export class ContraWebflowRuntime {
    * Render new experts for infinite scroll (append mode)
    */
   private renderNewExperts(container: Element, newExperts: ExpertProfile[]): void {
-    // Look for template in the container or its expert-grid child
-    let template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
-    let targetContainer = container;
+    // Find the grid where experts should be rendered. It MUST be a child of the container.
+    const targetGrid = this.querySelector(container, '.expert-grid');
     
-    // If template not found directly, look in expert-grid child
-    if (!template) {
-      const expertGrid = this.querySelector(container, '.expert-grid');
-      if (expertGrid) {
-        template = this.querySelector(expertGrid, `[${ATTR_PREFIX}${ATTRS.template}]`);
-        targetContainer = expertGrid;
-      }
+    if (!targetGrid) {
+      this.log('CRITICAL: .expert-grid element not found inside container. Cannot append experts.', container);
+      return;
     }
     
+    // Find the template. It MUST be a direct child of the grid.
+    const template = this.querySelector(targetGrid, `[${ATTR_PREFIX}${ATTRS.template}]`);
+
     if (!template) {
-      this.log('No template found for rendering new experts', container);
+      this.log('CRITICAL: Template element not found inside .expert-grid. Cannot append experts.', targetGrid);
       return;
     }
 
@@ -1471,10 +1430,10 @@ export class ContraWebflowRuntime {
       fragment.appendChild(expertCard);
     });
 
-    // Append all new cards at once
-    targetContainer.appendChild(fragment);
+    // Append all new cards at once to the grid
+    targetGrid.appendChild(fragment);
 
-    this.log(`Rendered ${newExperts.length} new expert cards for load more`);
+    this.log(`Appended ${newExperts.length} new expert cards to`, targetGrid);
   }
 
   // ... (utility methods continue below)
