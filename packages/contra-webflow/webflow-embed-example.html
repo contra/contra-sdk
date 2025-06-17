@@ -13,7 +13,7 @@
 
 <!-- 2. Runtime Script (Required once per page) -->
 <!-- This is the FINAL, CORRECT script link. -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@d1b1cfe/packages/contra-webflow/dist/runtime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@782c078/packages/contra-webflow/dist/runtime.min.js"></script>
 
 <!-- 3. Styles (Recommended) -->
 <style>
@@ -65,9 +65,53 @@
     .expert-avatar-main { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
     .expert-name { font-size: 1.25rem; font-weight: 600; }
     .expert-location { color: #6b7280; }
-    .expert-details { display: flex; gap: 16px; color: #6b7280; }
-    .skill-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .expert-details { display: flex; gap: 16px; color: #6b7280; align-items: center; }
+    .expert-oneliner { margin-top: 16px; color: #374151; }
+    .skill-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     .skill-tag { background: #f3f4f6; color: #374151; padding: 4px 12px; border-radius: 9999px; font-size: 12px; }
+
+    /* Project Styles */
+    .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+    .project-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .project-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .project-cover {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+    }
+    .project-title {
+        padding: 12px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    /* Social Links */
+    .social-links {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+    .social-link {
+        color: #6b7280;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .social-link:hover {
+        color: #111827;
+    }
 
     /* Load More Button Styles */
     .load-more-section { text-align: center; padding: 20px; }
@@ -189,10 +233,22 @@
                     </div>
                 </div>
             </div>
+            <p data-contra-field="oneLiner" class="expert-oneliner"></p>
             <div data-contra-repeat="skillTags" data-contra-max="8" class="skill-tags">
                 <div data-contra-field="name" class="skill-tag"></div>
             </div>
-            <a data-contra-field="profileUrl" target="_blank" class="load-more-btn" style="align-self: flex-start;">View Profile</a>
+            <div data-contra-repeat="projects" data-contra-max="3" class="projects-grid">
+                <a data-contra-field="projectUrl" target="_blank" class="project-card">
+                    <img data-contra-field="coverUrl" class="project-cover" alt="Project Cover">
+                    <div data-contra-field="title" class="project-title"></div>
+                </a>
+            </div>
+            <div data-contra-repeat="socialLinks" class="social-links">
+                 <a data-contra-field="url" target="_blank" class="social-link">
+                    <span data-contra-field="label"></span>
+                </a>
+            </div>
+            <a data-contra-field="profileUrl" target="_blank" class="load-more-btn" style="align-self: flex-start; margin-top: 16px;">View Profile</a>
         </div>
 
         <!-- Loading state for this list -->
