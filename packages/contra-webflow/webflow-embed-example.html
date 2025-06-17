@@ -13,7 +13,7 @@
 
 <!-- 2. Runtime Script (Required once per page) -->
 <!-- This is the FINAL, CORRECT script link. -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@96042fa/packages/contra-webflow/dist/runtime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@614ac27/packages/contra-webflow/dist/runtime.min.js"></script>
 
 <!-- 3. Styles (Recommended) -->
 <style>
@@ -146,8 +146,15 @@
             </select>
         </div>
         <div class="filter-group">
+            <label for="location-filter">Location:</label>
+            <select id="location-filter" data-contra-filter="locations" data-contra-list-target="expert-cards">
+                <option value="">All Locations</option>
+                <!-- Options dynamically populated by runtime -->
+            </select>
+        </div>
+        <div class="filter-group">
             <label for="languages-filter">Languages:</label>
-            <input type="text" id="languages-filter" placeholder="e.g. English, French" data-contra-filter="languages" data-contra-list-target="expert-cards">
+            <input type="text" id="languages-filter" placeholder="e.g. English" data-contra-filter="languages" data-contra-list-target="expert-cards">
         </div>
         <div class="filter-group">
             <label for="min-rate-filter">Min Rate:</label>

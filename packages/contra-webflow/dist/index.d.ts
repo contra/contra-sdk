@@ -22,6 +22,7 @@ declare class ContraWebflowRuntime {
     private config;
     private state;
     private debouncedReload;
+    private filterNameMap;
     private filterOptionLabels;
     constructor(config: RuntimeConfig);
     /**

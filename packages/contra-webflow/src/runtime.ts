@@ -105,6 +105,9 @@ export class ContraWebflowRuntime {
   private config: Required<RuntimeConfig>;
   private state = new RuntimeState();
   private debouncedReload: Map<string, () => void> = new Map();
+  private filterNameMap: Record<string, string> = {
+    locations: 'location',
+  };
   private filterOptionLabels: Record<string, Record<string, string>> = {
     sortBy: {
       relevance: 'Relevance',
@@ -894,9 +897,11 @@ export class ContraWebflowRuntime {
     }
 
     if (processedValue !== undefined && processedValue !== '') {
-        (newFilters as any)[filterKey] = processedValue;
+        const apiKey = this.filterNameMap[filterKey] || filterKey;
+        (newFilters as any)[apiKey] = processedValue;
     } else {
-        delete (newFilters as any)[filterKey];
+        const apiKey = this.filterNameMap[filterKey] || filterKey;
+        delete (newFilters as any)[apiKey];
     }
     
     // Reset offset and update state
@@ -1107,6 +1112,13 @@ export class ContraWebflowRuntime {
       const filterKey = control.getAttribute('data-contra-filter');
       const filterDef = filters.find(f => f.name === filterKey);
 
+      if (!filterDef) return;
+
+      if (filterDef.type === 'number' && control instanceof HTMLInputElement) {
+        if (filterDef.minimum !== undefined) control.min = String(filterDef.minimum);
+        if (filterDef.maximum !== undefined) control.max = String(filterDef.maximum);
+      }
+
       if (filterDef && filterDef.options && control instanceof HTMLSelectElement) {
         this.log(`Populating options for filter '${filterKey}' on control`, control);
         
@@ -1114,11 +1126,21 @@ export class ContraWebflowRuntime {
         
         filterDef.options.forEach((option: any) => {
           const optionElement = document.createElement('option');
-          const value = typeof option === 'object' ? option.value : String(option);
+          const value = typeof option === 'object' && option.value !== undefined ? option.value : String(option);
 
-          optionElement.value = value;
-          optionElement.textContent = this.getFilterOptionLabel(filterKey!, value);
+          let label = value;
+          // Special label parsing for locations
+          if (filterKey === 'locations') {
+            const labelMatch = value.match(/^(.*?)\s*\(/);
+            label = labelMatch ? labelMatch[1].trim() : value;
+          } else {
+            label = this.getFilterOptionLabel(filterKey!, value);
+          }
           
+          optionElement.value = value;
+          optionElement.textContent = label;
+          
+          // Set default for sortBy
           if (filterKey === 'sortBy' && value === 'relevance') {
             optionElement.selected = true;
           }
