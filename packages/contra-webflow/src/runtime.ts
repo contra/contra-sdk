@@ -1110,22 +1110,19 @@ export class ContraWebflowRuntime {
       if (filterDef && filterDef.options && control instanceof HTMLSelectElement) {
         this.log(`Populating options for filter '${filterKey}' on control`, control);
         
-        const placeholder = control.firstElementChild?.cloneNode(true) as Element | null;
         control.innerHTML = '';
-        if (placeholder && placeholder.nodeName === 'OPTION') {
-          control.appendChild(placeholder);
-        }
         
         filterDef.options.forEach((option: any) => {
           const optionElement = document.createElement('option');
-          if (typeof option === 'object' && option.value) {
-            optionElement.value = option.value;
-            optionElement.textContent = this.getFilterOptionLabel(filterKey!, option.value);
-          } else {
-            const value = String(option);
-            optionElement.value = value;
-            optionElement.textContent = this.getFilterOptionLabel(filterKey!, value);
+          const value = typeof option === 'object' ? option.value : String(option);
+
+          optionElement.value = value;
+          optionElement.textContent = this.getFilterOptionLabel(filterKey!, value);
+          
+          if (filterKey === 'sortBy' && value === 'relevance') {
+            optionElement.selected = true;
           }
+
           control.appendChild(optionElement);
         });
       }
