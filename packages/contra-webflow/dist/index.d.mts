@@ -113,6 +113,8 @@ declare class ContraWebflowRuntime {
      * Handle action buttons (just load-more for now).
      */
     private handleAction;
+    private clearFilters;
+    private resetControlValue;
     private updateFilterAndReload;
     private wireFilterControls;
     private debounce;

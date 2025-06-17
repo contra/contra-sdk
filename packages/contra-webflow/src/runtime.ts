@@ -880,7 +880,56 @@ export class ContraWebflowRuntime {
         this.loadExperts(targetListId, programId, true); // `true` to append
       } else {
         this.log(`Could not find list or program for target: ${targetListId}`);
+      }
+    } else if (action === 'clear-filters') {
+      this.clearFilters(targetListId);
+    }
   }
+
+  private clearFilters(targetListId: string): void {
+    const listElement = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.listId}="${targetListId}"]`);
+    if (!listElement) {
+        this.log(`Cannot find list element with ID: ${targetListId} to clear filters.`);
+        return;
+    }
+    const programId = this.getAttr(listElement, ATTRS.program);
+    if (!programId) {
+        this.log(`Cannot find programId for list: ${targetListId}`);
+        return;
+    }
+
+    this.log(`Clearing filters for list: ${targetListId}`);
+
+    // 1. Reset state
+    this.state.updateState(targetListId, { filters: {}, offset: 0 });
+
+    // 2. Reset controls visually
+    const filterControls = this.querySelectorAll(document.body, `[data-contra-filter][data-contra-list-target="${targetListId}"]`);
+    filterControls.forEach(control => {
+        this.resetControlValue(control as HTMLInputElement | HTMLSelectElement);
+    });
+
+    // 3. Reload data
+    this.loadExperts(targetListId, programId, false); // false to replace, not append
+  }
+
+  private resetControlValue(control: HTMLInputElement | HTMLSelectElement): void {
+    if (control instanceof HTMLInputElement) {
+        switch (control.type) {
+            case 'checkbox':
+            case 'radio':
+                control.checked = false;
+                break;
+            case 'number':
+            case 'range':
+                control.value = '';
+                break;
+            default: // text, search, etc.
+                control.value = '';
+                break;
+        }
+    } else if (control instanceof HTMLSelectElement) {
+        control.selectedIndex = 0; // Reset to the first option
     }
   }
 
