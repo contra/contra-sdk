@@ -14,6 +14,11 @@ interface RuntimeConfig {
     videoLoop?: boolean;
     videoControls?: boolean;
 }
+declare global {
+    interface Window {
+        google: any;
+    }
+}
 /**
  * Main Runtime Class
  */
@@ -128,6 +133,7 @@ declare class ContraWebflowRuntime {
     private log;
     private getAvailableFilters;
     private populateFilterControls;
+    private initGooglePlacesAutocomplete;
 }
 
 export { ContraWebflowRuntime };

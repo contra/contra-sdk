@@ -11,9 +11,9 @@
 }
 </script>
 
-<!-- 2. Runtime Script (Required once per page) -->
-<!-- Use cache-busting version for testing -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@91242c1/packages/contra-webflow/dist/runtime.min.js"></script>
+<!-- 2. Runtime and Dependencies (Required once per page) -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=Function.prototype"></script>
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@93f62f0/packages/contra-webflow/dist/runtime.min.js"></script>
 
 <!-- 3. Styles (Recommended) -->
 <style>
@@ -145,12 +145,9 @@
     <!-- Filter Bar -->
     <div class="filter-bar">
         <label for="location-filter">Location:</label>
-        <select id="location-filter"
-                data-contra-filter="location"
-                data-contra-list-target="expert-cards">
-            <option value="">All Locations</option>
-            <!-- Options dynamically populated by runtime -->
-        </select>
+        <input type="text" id="location-filter" placeholder="Search for a city"
+               data-contra-filter="location"
+               data-contra-list-target="expert-cards">
 
         <label for="available-filter">Availability:</label>
         <select id="available-filter" data-contra-filter="available" data-contra-list-target="expert-cards">

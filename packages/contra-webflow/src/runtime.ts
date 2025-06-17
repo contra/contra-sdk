@@ -28,6 +28,13 @@ interface RuntimeConfig {
   videoControls?: boolean;
 }
 
+// Add google maps to window object for typescript
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 // Attribute constants
 const ATTR_PREFIX = 'data-contra-';
 const ATTRS = {
@@ -909,7 +916,13 @@ export class ContraWebflowRuntime {
         const programId = this.getAttr(listElement, ATTRS.program);
         if (!programId) return;
 
-        const debounceTime = (control instanceof HTMLInputElement && ['text', 'search'].includes(control.type)) ? 300 : 0;
+        // Special handler for Google Places Autocomplete
+        if (filterKey === 'location' && control instanceof HTMLInputElement) {
+            this.initGooglePlacesAutocomplete(control, targetListId, programId);
+            return; // Skip generic handler
+        }
+
+        const debounceTime = (control instanceof HTMLInputElement && ['text', 'search', 'number'].includes(control.type)) ? 300 : 0;
         
         const handler = () => {
             const value = this.getControlValue(control as HTMLInputElement | HTMLSelectElement);
@@ -1092,6 +1105,41 @@ export class ContraWebflowRuntime {
                 }
                 control.appendChild(optionElement);
             });
+        }
+    });
+  }
+
+  private initGooglePlacesAutocomplete(input: HTMLInputElement, listId: string, programId: string): void {
+    if (typeof window.google === 'undefined' || typeof window.google.maps === 'undefined') {
+        this.log('Google Maps API not loaded. Location filter will work as a text input.');
+        // Fallback to basic text input
+        input.addEventListener('change', () => {
+            this.updateFilterAndReload(listId, programId, 'location', input.value);
+        });
+        return;
+    }
+
+    this.log('Initializing Google Places Autocomplete on', input);
+    const autocomplete = new window.google.maps.places.Autocomplete(input, {
+        types: ['(cities)'],
+        fields: ['place_id', 'formatted_address']
+    });
+
+    autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place && place.place_id) {
+            // Replicate the format seen in API responses: "Formatted Address (PlaceId)"
+            const locationValue = `${place.formatted_address} (${place.place_id})`;
+            this.log(`Place selected:`, { formatted: locationValue });
+            this.updateFilterAndReload(listId, programId, 'location', locationValue);
+        }
+    });
+
+    // Handle user clearing the input
+    input.addEventListener('input', () => {
+        if (input.value.trim() === '') {
+            this.log('Location input cleared.');
+            this.updateFilterAndReload(listId, programId, 'location', '');
         }
     });
   }
