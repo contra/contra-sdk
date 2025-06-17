@@ -1361,11 +1361,13 @@ export class ContraWebflowRuntime {
       }
     });
 
-    // Show/hide pagination section based on whether there are multiple pages
+    // Show pagination controls if there are ANY results.
+    // This prevents the controls from disappearing when totalPages is 1,
+    // providing a consistent and stable UI.
     const paginationSections = this.querySelectorAll(container, '.pagination-section');
     this.log(`Updating pagination visibility. Total Pages: ${totalPages}, Total Count: ${state.totalCount}`);
     paginationSections.forEach(section => {
-      (section as HTMLElement).style.display = totalPages > 1 ? '' : 'none';
+      (section as HTMLElement).style.display = state.totalCount > 0 ? '' : 'none';
     });
   }
 
