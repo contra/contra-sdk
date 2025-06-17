@@ -46,26 +46,6 @@ declare class ContraWebflowRuntime {
      */
     private setupContainer;
     /**
-     * Determine pagination mode from container attributes or config
-     */
-    private determinePaginationMode;
-    /**
-     * Setup pagination system based on mode
-     */
-    private setupPagination;
-    /**
-     * Setup infinite scroll functionality
-     */
-    private setupInfiniteScroll;
-    /**
-     * Setup traditional pagination button states
-     */
-    private setupTraditionalPagination;
-    /**
-     * Setup load more button for infinite scroll
-     */
-    private setupLoadMoreButton;
-    /**
      * Wire up filter controls to auto-update
      */
     private wireFilterControls;
@@ -74,7 +54,7 @@ declare class ContraWebflowRuntime {
      */
     private wireActionButtons;
     /**
-     * Load experts for a program with proper pagination handling
+     * Load experts for a container with proper pagination handling
      */
     private loadExperts;
     /**

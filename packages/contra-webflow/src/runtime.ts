@@ -102,6 +102,7 @@ class RuntimeState {
     isInfiniteLoading: boolean;
     lastScrollPosition: number;
     paginationMode: 'traditional' | 'infinite' | 'hybrid';
+    programId: string;
   }>();
 
   getState(programId: string) {
@@ -120,7 +121,8 @@ class RuntimeState {
         hasPreviousPage: false,
         isInfiniteLoading: false,
         lastScrollPosition: 0,
-        paginationMode: 'traditional'
+        paginationMode: 'traditional',
+        programId: ''
       });
     }
     return this.states.get(programId)!;
@@ -239,35 +241,32 @@ export class ContraWebflowRuntime {
    * Initialize a single expert container
    */
   private async initContainer(container: Element): Promise<void> {
-    // Get base program ID from config
-    const baseProgramId = this.config.program;
-    if (!baseProgramId) {
+    // Get program ID from config
+    const programId = this.config.program;
+    if (!programId) {
       this.log('No program ID found in config', container);
       return;
     }
 
-    // Create unique program ID for this container to avoid state conflicts
-    const paginationMode = this.determinePaginationMode(container);
-    const containerIndex = Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-pagination-mode]')).indexOf(container);
-    const programId = `${baseProgramId}-${paginationMode}-${containerIndex}`;
+    // Create simple container identifier
+    const containers = document.querySelectorAll('[data-contra-limit], [data-contra-pagination]');
+    const containerIndex = Array.from(containers).indexOf(container);
+    const containerId = `container-${containerIndex}`;
 
-    this.log(`Initializing container for program: ${programId} (base: ${baseProgramId}, mode: ${paginationMode})`);
+    this.log(`Initializing container ${containerId} for program: ${programId}`);
 
     try {
       // Setup container state
-      this.setupContainer(container, programId, baseProgramId);
-      
-      // Wire up filter controls
-      this.wireFilterControls(container, programId);
+      this.setupContainer(container, containerId, programId);
       
       // Wire up action buttons
-      this.wireActionButtons(container, programId);
+      this.wireActionButtons(container, containerId);
       
       // Load initial data
-      await this.loadExperts(container, programId);
+      await this.loadExperts(container, containerId);
 
     } catch (error) {
-      this.log(`Failed to initialize container for program ${programId}`, error);
+      this.log(`Failed to initialize container ${containerId}`, error);
       this.showError(container, error as Error);
     }
   }
@@ -275,118 +274,37 @@ export class ContraWebflowRuntime {
   /**
    * Setup container with initial state and classes
    */
-  private setupContainer(container: Element, programId: string, baseProgramId: string): void {
+  private setupContainer(container: Element, containerId: string, programId: string): void {
     const element = container as HTMLElement;
     
-    // Add runtime classes and unique identifier
+    // Add runtime classes and identifier
     element.classList.add('contra-runtime');
     element.setAttribute('data-contra-initialized', 'true');
-    element.setAttribute('data-program-id', programId); // Use unique program ID
-    element.setAttribute('data-base-program-id', baseProgramId); // Store base program ID for API calls
+    element.setAttribute('data-container-id', containerId);
     
-    // Parse initial filters from attributes
-    const initialFilters = this.parseFiltersFromElement(container);
+    // Parse pagination mode and settings
+    const paginationMode = this.getAttr(container, 'pagination') || 'traditional';
+    const limit = parseInt(this.getAttr(container, 'limit') || '20');
     
-    // Determine pagination mode
-    const paginationMode = this.determinePaginationMode(container);
-    
-    this.state.updateState(programId, { 
-      filters: initialFilters,
-      paginationMode: paginationMode
+    // Initialize container state
+    this.state.updateState(containerId, { 
+      filters: { limit, offset: 0 },
+      paginationMode: paginationMode as 'traditional' | 'infinite',
+      experts: [],
+      loading: false,
+      error: null,
+      currentPage: 1,
+      totalCount: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      cachedPages: new Map(),
+      loadingPages: new Set(),
+      isInfiniteLoading: false,
+      lastScrollPosition: 0,
+      programId: programId
     });
     
-    // Setup pagination
-    this.setupPagination(container, programId, paginationMode);
-    
-    // Create debounced reload function
-    const debouncedReload = utils.debounce(() => {
-      this.loadExperts(container, programId);
-    }, this.config.debounceDelay);
-    
-    this.debouncedReload.set(programId, debouncedReload);
-    
-    this.log(`Container setup complete for program: ${programId}`, { initialFilters, paginationMode });
-  }
-
-  /**
-   * Determine pagination mode from container attributes or config
-   */
-  private determinePaginationMode(container: Element): 'traditional' | 'infinite' | 'hybrid' {
-    const explicitMode = this.getAttr(container, 'pagination-mode') as 'traditional' | 'infinite' | 'hybrid';
-    return explicitMode || this.config.paginationMode;
-  }
-
-  /**
-   * Setup pagination system based on mode
-   */
-  private setupPagination(container: Element, programId: string, mode: 'traditional' | 'infinite' | 'hybrid'): void {
-    this.log(`Setting up ${mode} pagination for program: ${programId}`);
-    
-    if (mode === 'infinite' || mode === 'hybrid') {
-      this.setupInfiniteScroll(container, programId);
-    }
-    
-    if (mode === 'traditional' || mode === 'hybrid') {
-      this.setupTraditionalPagination(container, programId);
-    }
-    
-    // Setup load more button for hybrid/infinite modes
-    if (mode === 'infinite' || mode === 'hybrid') {
-      this.setupLoadMoreButton(container, programId);
-    }
-  }
-
-  /**
-   * Setup infinite scroll functionality
-   */
-  private setupInfiniteScroll(container: Element, programId: string): void {
-    let isScrolling = false;
-    
-    const handleScroll = utils.throttle(() => {
-      if (isScrolling) return;
-      
-      const state = this.state.getState(programId);
-      if (state.isInfiniteLoading || !state.hasNextPage) return;
-      
-      const scrollPosition = window.scrollY + window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const threshold = this.config.infiniteScrollThreshold;
-      
-      if (scrollPosition >= documentHeight - threshold) {
-        isScrolling = true;
-        this.loadNextPageInfinite(container, programId).finally(() => {
-          isScrolling = false;
-        });
-      }
-    }, 100);
-    
-    window.addEventListener('scroll', handleScroll);
-    
-    // Store cleanup function
-    (container as any).__infiniteScrollCleanup = () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }
-
-  /**
-   * Setup traditional pagination button states
-   */
-  private setupTraditionalPagination(container: Element, programId: string): void {
-    // Will be handled in updatePaginationControls
-    this.updatePaginationControls(container, programId);
-  }
-
-  /**
-   * Setup load more button for infinite scroll
-   */
-  private setupLoadMoreButton(container: Element, programId: string): void {
-    const loadMoreButtons = this.querySelectorAll(container, '[data-contra-action="load-more"]');
-    
-    loadMoreButtons.forEach(button => {
-      if (!button.textContent?.trim()) {
-        button.textContent = this.config.loadMoreText;
-      }
-    });
+    this.log(`Container ${containerId} setup complete:`, { paginationMode, limit });
   }
 
   /**
@@ -430,7 +348,7 @@ export class ContraWebflowRuntime {
   /**
    * Wire up action buttons (pagination, sorting, etc.)
    */
-  private wireActionButtons(container: Element, programId: string): void {
+  private wireActionButtons(container: Element, containerId: string): void {
     const actionButtons = this.querySelectorAll(container, `[${ATTR_PREFIX}${ATTRS.action}]`);
     
     actionButtons.forEach(button => {
@@ -441,56 +359,41 @@ export class ContraWebflowRuntime {
 
       button.addEventListener('click', (e) => {
         e.preventDefault();
-        this.handleAction(programId, action, target, button);
+        this.handleAction(containerId, action, target, button);
       });
     });
   }
 
   /**
-   * Load experts for a program with proper pagination handling
+   * Load experts for a container with proper pagination handling
    */
-  private async loadExperts(container: Element, programId: string, isPageNavigation = false): Promise<void> {
-    const state = this.state.getState(programId);
+  private async loadExperts(container: Element, containerId: string, isPageNavigation = false): Promise<void> {
+    const state = this.state.getState(containerId);
+    const programId = state.programId;
     
-    // Get base program ID for API calls
-    const baseProgramId = (container as HTMLElement).getAttribute('data-base-program-id') || this.config.program;
-    
-    this.log(`Loading experts for program: ${programId} (API: ${baseProgramId})`, state.filters);
+    this.log(`Loading experts for container: ${containerId}, program: ${programId}`, state.filters);
 
     try {
       // Show loading state
       this.showLoading(container, true);
-      this.state.updateState(programId, { loading: true, error: null });
+      this.state.updateState(containerId, { loading: true, error: null });
 
-      // For traditional pagination, check cache first
-      if (isPageNavigation && state.paginationMode === 'traditional') {
-        const currentPage = this.calculateCurrentPage(state.filters);
-        const cachedExperts = this.state.getCachedPage(programId, currentPage);
-        if (cachedExperts) {
-          this.log(`Using cached page ${currentPage}`);
-          this.renderExperts(container, cachedExperts);
-          this.updatePaginationState(programId, cachedExperts, state.totalCount, state.filters);
-          this.showLoading(container, false);
-          return;
-        }
-      }
-
-      // Fetch experts from API using base program ID
-      const response = await this.client.listExperts(baseProgramId, state.filters);
+      // Fetch experts from API
+      const response = await this.client.listExperts(programId, state.filters);
       
       this.log(`Loaded ${response.data.length} experts`, response);
 
       // Update pagination state based on mode
       if (state.paginationMode === 'traditional') {
-        this.handleTraditionalPaginationResponse(programId, container, response);
+        this.handleTraditionalPaginationResponse(containerId, container, response);
       } else {
-        this.handleInfinitePaginationResponse(programId, container, response);
+        this.handleInfinitePaginationResponse(containerId, container, response);
       }
 
     } catch (error) {
-      this.log(`Failed to load experts for program: ${programId}`, error);
+      this.log(`Failed to load experts for container: ${containerId}`, error);
       
-      this.state.updateState(programId, { 
+      this.state.updateState(containerId, { 
         loading: false, 
         error: error as Error 
       });
@@ -500,7 +403,7 @@ export class ContraWebflowRuntime {
       // Dispatch error event
       this.dispatchEvent(container, 'expertsError', {
         error: error as Error,
-        context: `Loading experts for program ${programId}`
+        context: `Loading experts for container ${containerId}`
       } as ErrorEvent);
     } finally {
       this.showLoading(container, false);
@@ -511,11 +414,11 @@ export class ContraWebflowRuntime {
    * Handle traditional pagination response (page-based navigation)
    */
   private handleTraditionalPaginationResponse(
-    programId: string, 
+    containerId: string, 
     container: Element, 
     response: { data: ExpertProfile[], totalCount: number }
   ): void {
-    const state = this.state.getState(programId);
+    const state = this.state.getState(containerId);
     
     // Calculate pagination metadata
     const limit = state.filters.limit || 20;
@@ -526,7 +429,7 @@ export class ContraWebflowRuntime {
     const hasPreviousPage = currentPage > 1;
 
     // Update state
-    this.state.updateState(programId, {
+    this.state.updateState(containerId, {
       experts: response.data,
       totalCount: response.totalCount,
       currentPage: currentPage,
@@ -536,14 +439,14 @@ export class ContraWebflowRuntime {
     });
 
     // Cache the page
-    this.state.cachePage(programId, currentPage, response.data);
+    this.state.cachePage(containerId, currentPage, response.data);
 
     // Render experts (replace mode for traditional pagination)
     this.renderExperts(container, response.data);
     
     // Update UI
-    this.updateUIStates(container, programId);
-    this.updatePaginationControls(container, programId);
+    this.updateUIStates(container, containerId);
+    this.updatePaginationControls(container, containerId);
     
     // Dispatch event
     this.dispatchEvent(container, 'expertsLoaded', {
@@ -564,11 +467,11 @@ export class ContraWebflowRuntime {
    * Handle infinite pagination response (cumulative loading)
    */
   private handleInfinitePaginationResponse(
-    programId: string, 
+    containerId: string, 
     container: Element, 
     response: { data: ExpertProfile[], totalCount: number }
   ): void {
-    const state = this.state.getState(programId);
+    const state = this.state.getState(containerId);
     const isLoadMore = state.experts.length > 0;
     
     // For infinite loading, append to existing experts
@@ -576,7 +479,7 @@ export class ContraWebflowRuntime {
     const hasNextPage = allExperts.length < response.totalCount;
     
     // Update state
-    this.state.updateState(programId, {
+    this.state.updateState(containerId, {
       experts: allExperts,
       totalCount: response.totalCount,
       hasNextPage: hasNextPage,
@@ -593,8 +496,8 @@ export class ContraWebflowRuntime {
     }
     
     // Update UI
-    this.updateUIStates(container, programId);
-    this.updatePaginationControls(container, programId);
+    this.updateUIStates(container, containerId);
+    this.updatePaginationControls(container, containerId);
     
     // Dispatch event
     this.dispatchEvent(container, 'expertsLoaded', {
@@ -1210,12 +1113,12 @@ export class ContraWebflowRuntime {
   /**
    * Handle action buttons with proper pagination logic
    */
-  private handleAction(programId: string, action: string, _target?: string | null, button?: Element): void {
-    const state = this.state.getState(programId);
-    const container = document.querySelector(`[data-program-id="${programId}"]`);
+  private handleAction(containerId: string, action: string, _target?: string | null, button?: Element): void {
+    const state = this.state.getState(containerId);
+    const container = document.querySelector(`[data-container-id="${containerId}"]`);
     
     if (!container) {
-      this.log(`Container not found for program: ${programId}`);
+      this.log(`Container not found: ${containerId}`);
       return;
     }
 
@@ -1232,27 +1135,27 @@ export class ContraWebflowRuntime {
         if (state.paginationMode === 'traditional') {
           const nextOffset = currentOffset + limit;
           if (nextOffset < state.totalCount) {
-            this.updateFilter(programId, 'offset', nextOffset);
-            this.loadExperts(container as Element, programId, true);
+            this.updateFilter(containerId, 'offset', nextOffset);
+            this.loadExperts(container as Element, containerId, true);
           }
         } else {
           // For infinite mode, use load more functionality
-          this.loadMoreExperts(container as Element, programId);
+          this.loadMoreExperts(container as Element, containerId);
         }
         break;
         
       case 'prev-page':
         if (state.paginationMode === 'traditional') {
           const prevOffset = Math.max(0, currentOffset - limit);
-          this.updateFilter(programId, 'offset', prevOffset);
-          this.loadExperts(container as Element, programId, true);
+          this.updateFilter(containerId, 'offset', prevOffset);
+          this.loadExperts(container as Element, containerId, true);
         }
         break;
         
       case 'first-page':
         if (state.paginationMode === 'traditional') {
-          this.updateFilter(programId, 'offset', 0);
-          this.loadExperts(container as Element, programId, true);
+          this.updateFilter(containerId, 'offset', 0);
+          this.loadExperts(container as Element, containerId, true);
         }
         break;
         
@@ -1260,39 +1163,24 @@ export class ContraWebflowRuntime {
         if (state.paginationMode === 'traditional') {
           const totalPages = Math.ceil(state.totalCount / limit);
           const lastPageOffset = (totalPages - 1) * limit;
-          this.updateFilter(programId, 'offset', lastPageOffset);
-          this.loadExperts(container as Element, programId, true);
+          this.updateFilter(containerId, 'offset', lastPageOffset);
+          this.loadExperts(container as Element, containerId, true);
         }
         break;
         
       case 'load-more':
         // Handle load more for infinite/hybrid modes
-        this.loadMoreExperts(container as Element, programId).finally(() => {
+        this.loadMoreExperts(container as Element, containerId).finally(() => {
           if (button && button instanceof HTMLButtonElement) {
             button.disabled = false;
           }
         });
         return; // Exit early to avoid re-enabling button
         
-      case 'clear-filters':
-        // Reset pagination when clearing filters
-        this.state.updateState(programId, { 
-          filters: { limit: state.filters.limit, offset: 0 }, // Keep limit, reset offset
-          currentPage: 1,
-          cachedPages: new Map() // Clear cache
-        });
-        if (this.config.autoReload) {
-          this.debouncedReload.get(programId)?.();
-        }
-        break;
-        
       case 'reload':
         // Clear cache and reload
-        this.state.updateState(programId, { cachedPages: new Map() });
-        this.client.clearCache(`experts:${programId}`);
-        if (this.config.autoReload) {
-          this.debouncedReload.get(programId)?.();
-        }
+        this.state.updateState(containerId, { cachedPages: new Map() });
+        this.loadExperts(container as Element, containerId);
         break;
     }
     
@@ -1316,9 +1204,6 @@ export class ContraWebflowRuntime {
       return;
     }
     
-    // Get base program ID for API calls
-    const baseProgramId = (container as HTMLElement).getAttribute('data-base-program-id') || this.config.program;
-    
     const limit = state.filters.limit || 20;
     
     // Calculate next offset based on currently loaded experts
@@ -1331,7 +1216,7 @@ export class ContraWebflowRuntime {
       this.updateLoadMoreButtonState(container, programId, true);
 
       // Fetch next batch using current expert count as offset
-      const response = await this.client.listExperts(baseProgramId, {
+      const response = await this.client.listExperts(programId, {
         ...state.filters,
         offset: currentOffset,
         limit: limit
@@ -1554,7 +1439,7 @@ export class ContraWebflowRuntime {
     // Simple and reliable approach: look for any element with key contra attributes
     const selectors = [
       '[data-contra-limit]',
-      '[data-contra-pagination-mode]', 
+      '[data-contra-pagination]', 
       '[data-contra-template]'
     ];
     
@@ -1571,7 +1456,7 @@ export class ContraWebflowRuntime {
       this.log('No elements found with standard selectors, trying broader search...');
       
       // Look for any data-contra attributes
-      const allContraElements = Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination-mode]'));
+      const allContraElements = Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination]'));
       this.log(`Found ${allContraElements.length} elements with any contra attributes:`, allContraElements);
       
       // Look for the specific container structure we expect
@@ -1591,7 +1476,7 @@ export class ContraWebflowRuntime {
     
     for (const element of foundElements) {
       // If element has limit or pagination-mode, it's a container
-      if (element.hasAttribute('data-contra-limit') || element.hasAttribute('data-contra-pagination-mode')) {
+      if (element.hasAttribute('data-contra-limit') || element.hasAttribute('data-contra-pagination')) {
         containers.add(element);
         this.log('Found container (has limit/pagination):', element);
       } 
@@ -1622,7 +1507,7 @@ export class ContraWebflowRuntime {
       this.log('❌ No containers found! Debugging info:');
       this.log('- Document body HTML:', document.body?.innerHTML?.substring(0, 500) + '...');
       this.log('- All divs:', Array.from(document.querySelectorAll('div')).slice(0, 10));
-      this.log('- Elements with data attributes:', Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination-mode]')));
+      this.log('- Elements with data attributes:', Array.from(document.querySelectorAll('[data-contra-limit], [data-contra-template], [data-contra-pagination]')));
     }
     
     return uniqueContainers;
@@ -1733,7 +1618,7 @@ export class ContraWebflowRuntime {
     // Dispatch filter change event
     const event: FilterChangeEvent = {
       filters: newFilters,
-      element: document.querySelector(`[data-program-id="${programId}"]`) as HTMLElement
+      element: document.querySelector(`[data-container-id="${programId}"]`) as HTMLElement
     };
     
     this.dispatchEvent(document as any, 'filterChange', event);
