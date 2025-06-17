@@ -1,23 +1,13 @@
 /**
  * Webflow Runtime for Contra Experts
- * Features: Performance optimization, filtering, error handling, loading states
+ * Simplified for flexibility and predictability.
  */
 interface RuntimeConfig {
     apiKey: string;
-    program?: string;
     debug?: boolean;
     loadingClass?: string;
     errorClass?: string;
     emptyClass?: string;
-    autoReload?: boolean;
-    debounceDelay?: number;
-    maxRetries?: number;
-    paginationMode?: 'traditional' | 'infinite' | 'hybrid';
-    infiniteScrollThreshold?: number;
-    preloadNextPage?: boolean;
-    maxCachedPages?: number;
-    smoothScrollBehavior?: 'auto' | 'smooth';
-    loadMoreText?: string;
     videoAutoplay?: boolean;
     videoHoverPlay?: boolean;
     videoMuted?: boolean;
@@ -34,51 +24,23 @@ declare class ContraWebflowRuntime {
     private debouncedReload;
     constructor(config: RuntimeConfig);
     /**
-     * Initialize the runtime and find all expert containers
+     * Initialize the runtime by finding and setting up all lists.
      */
     init(): Promise<void>;
     /**
-     * Initialize a single expert container
+     * Initialize a single expert list.
      */
-    private initContainer;
+    private initList;
     /**
-     * Setup container with initial state and classes
-     */
-    private setupContainer;
-    /**
-     * Determine pagination mode from container attributes or config
-     */
-    private determinePaginationMode;
-    /**
-     * Setup pagination system based on mode
-     */
-    private setupPagination;
-    /**
-     * Setup infinite scroll functionality
-     */
-    private setupInfiniteScroll;
-    /**
-     * Setup traditional pagination button states
-     */
-    private setupTraditionalPagination;
-    /**
-     * Setup load more button for infinite scroll
-     */
-    private setupLoadMoreButton;
-    /**
-     * Wire up filter controls to auto-update
-     */
-    private wireFilterControls;
-    /**
-     * Wire up action buttons (pagination, sorting, etc.)
+     * Wire up all action buttons on the page.
      */
     private wireActionButtons;
     /**
-     * Load experts for a program
+     * Load experts for a given list.
      */
     private loadExperts;
     /**
-     * Render experts into the container
+     * Render experts into the container. Can clear or append.
      */
     private renderExperts;
     /**
@@ -142,44 +104,19 @@ declare class ContraWebflowRuntime {
      */
     private evaluateCondition;
     /**
-     * Update UI states based on current data
+     * Update UI states based on current data for a specific list.
      */
     private updateUIStates;
     /**
-     * Handle action buttons (pagination, sorting, etc.)
+     * Handle action buttons (just load-more for now).
      */
     private handleAction;
-    /**
-     * Load more experts - unified method for all pagination modes
-     */
-    private loadMoreExperts;
-    /**
-     * Update load more button state
-     */
-    private updateLoadMoreButtonState;
-    /**
-     * Load next page for infinite scroll
-     */
-    private loadNextPageInfinite;
-    /**
-     * Update pagination control states
-     */
-    private updatePaginationControls;
-    /**
-     * Update infinite loading state
-     */
-    private updateInfiniteLoadingState;
-    /**
-     * Render new experts for infinite scroll (append mode)
-     */
-    private renderNewExperts;
     /**
      * Utility Methods
      */
     private getAttr;
     private querySelector;
     private querySelectorAll;
-    private findExpertContainers;
     private parseFiltersFromElement;
     private getControlValue;
     private updateFilter;

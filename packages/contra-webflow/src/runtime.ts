@@ -10,29 +10,16 @@ import type {
 
 /**
  * Webflow Runtime for Contra Experts
- * Features: Performance optimization, filtering, error handling, loading states
+ * Simplified for flexibility and predictability.
  */
 
-// Configuration interface
+// Simplified configuration
 interface RuntimeConfig {
   apiKey: string;
-  program?: string;  // Program ID from config
   debug?: boolean;
   loadingClass?: string;
   errorClass?: string;
   emptyClass?: string;
-  autoReload?: boolean;
-  debounceDelay?: number;
-  maxRetries?: number;
-  
-  // Pagination Configuration
-  paginationMode?: 'traditional' | 'infinite' | 'hybrid';
-  infiniteScrollThreshold?: number;        // Pixels from bottom to trigger load
-  preloadNextPage?: boolean;              // Preload next page for performance
-  maxCachedPages?: number;                // Max pages to keep in memory
-  smoothScrollBehavior?: 'auto' | 'smooth';
-  loadMoreText?: string;                  // Custom "Load More" button text
-  
   // Video configuration
   videoAutoplay?: boolean;
   videoHoverPlay?: boolean;
@@ -44,9 +31,12 @@ interface RuntimeConfig {
 // Attribute constants
 const ATTR_PREFIX = 'data-contra-';
 const ATTRS = {
-  // Core attributes
+  // Core list attributes
+  listId: 'list-id',
   program: 'program',
   template: 'template',
+  
+  // States
   loading: 'loading',
   error: 'error',
   empty: 'empty',
@@ -59,108 +49,51 @@ const ATTRS = {
   repeat: 'repeat',
   max: 'max',
   
-  // Filter controls
-  filter: 'filter',
-  filterType: 'filter-type',
-  
-  // Filter attributes
-  available: 'available',
-  
   // Sorting and pagination
-  sort: 'sort',
-  page: 'page',
   limit: 'limit',
-  
-  // Pagination mode and controls
-  paginationMode: 'pagination-mode',
-  infiniteLoading: 'infinite-loading',
-  paginationInfo: 'pagination-info',
-  
-  // UI states
-  showWhen: 'show-when',
-  hideWhen: 'hide-when',
   
   // Actions
   action: 'action',
-  target: 'target'
+  listTarget: 'list-target',
+
+  // Conditional display
+  showWhen: 'show-when',
+  hideWhen: 'hide-when'
 } as const;
 
-// State management
+// State management is now keyed by the list's unique ID
 class RuntimeState {
   private states = new Map<string, {
     filters: ExpertFilters;
     experts: ExpertProfile[];
     loading: boolean;
     error: Error | null;
-    currentPage: number;
+    offset: number;
+    limit: number;
     totalCount: number;
-    // Advanced pagination state
-    cachedPages: Map<number, ExpertProfile[]>;
-    loadingPages: Set<number>;
     hasNextPage: boolean;
-    hasPreviousPage: boolean;
-    isInfiniteLoading: boolean;
-    lastScrollPosition: number;
-    paginationMode: 'traditional' | 'infinite' | 'hybrid';
   }>();
 
-  getState(programId: string) {
-    if (!this.states.has(programId)) {
-      this.states.set(programId, {
+  getState(listId: string) {
+    if (!this.states.has(listId)) {
+      this.states.set(listId, {
         filters: {},
         experts: [],
         loading: false,
         error: null,
-        currentPage: 1,
+        offset: 0,
+        limit: 20, // Default limit
         totalCount: 0,
-        // Advanced pagination defaults
-        cachedPages: new Map(),
-        loadingPages: new Set(),
-        hasNextPage: false,
-        hasPreviousPage: false,
-        isInfiniteLoading: false,
-        lastScrollPosition: 0,
-        paginationMode: 'traditional'
+        hasNextPage: false
       });
     }
-    return this.states.get(programId)!;
+    return this.states.get(listId)!;
   }
 
-  updateState(programId: string, updates: Partial<ReturnType<RuntimeState['getState']>>) {
-    const state = this.getState(programId);
+  updateState(listId: string, updates: Partial<ReturnType<RuntimeState['getState']>>) {
+    const state = this.getState(listId);
     Object.assign(state, updates);
-    this.states.set(programId, state);
-  }
-
-  // Advanced pagination helpers
-  cachePage(programId: string, pageNumber: number, experts: ExpertProfile[]) {
-    const state = this.getState(programId);
-    state.cachedPages.set(pageNumber, experts);
-    
-    // Implement LRU cache cleanup
-    if (state.cachedPages.size > 5) { // maxCachedPages from config
-      const oldestPage = Math.min(...state.cachedPages.keys());
-      state.cachedPages.delete(oldestPage);
-    }
-  }
-
-  getCachedPage(programId: string, pageNumber: number): ExpertProfile[] | null {
-    const state = this.getState(programId);
-    return state.cachedPages.get(pageNumber) || null;
-  }
-
-  setPageLoading(programId: string, pageNumber: number, loading: boolean) {
-    const state = this.getState(programId);
-    if (loading) {
-      state.loadingPages.add(pageNumber);
-    } else {
-      state.loadingPages.delete(pageNumber);
-    }
-  }
-
-  isPageLoading(programId: string, pageNumber: number): boolean {
-    const state = this.getState(programId);
-    return state.loadingPages.has(pageNumber);
+    this.states.set(listId, state);
   }
 }
 
@@ -176,26 +109,15 @@ export class ContraWebflowRuntime {
   constructor(config: RuntimeConfig) {
     this.config = {
       debug: false,
-      program: '',  // Default empty program
       loadingClass: 'loading',
       errorClass: 'error',
       emptyClass: 'empty',
-      autoReload: true,
-      debounceDelay: 300,
-      maxRetries: 3,
-      // Pagination Configuration defaults
-      paginationMode: 'traditional',
-      infiniteScrollThreshold: 500,
-      preloadNextPage: true,
-      maxCachedPages: 5,
-      smoothScrollBehavior: 'auto',
-      loadMoreText: 'Load More',
       // Video configuration defaults
-      videoAutoplay: false,      // No autoplay by default (better UX)
-      videoHoverPlay: true,       // Hover to play by default
-      videoMuted: true,           // Muted for autoplay compatibility
-      videoLoop: true,            // Loop videos
-      videoControls: false,       // No controls for cleaner look
+      videoAutoplay: false,
+      videoHoverPlay: true,
+      videoMuted: true,
+      videoLoop: true,
+      videoControls: false,
       ...config
     };
 
@@ -208,25 +130,23 @@ export class ContraWebflowRuntime {
   }
 
   /**
-   * Initialize the runtime and find all expert containers
+   * Initialize the runtime by finding and setting up all lists.
    */
   async init(): Promise<void> {
     this.log('Initializing runtime...');
 
     try {
-      // Find all expert containers
-      const allContainers = this.findExpertContainers();
-      // Filter out already initialized containers
-      const containers = allContainers.filter(container => 
-        !container.hasAttribute('data-contra-initialized')
-      );
-      
-      this.log(`Found ${containers.length} uninitialised expert containers (${allContainers.length} total)`);
+      // 1. Discover all lists on the page
+      const listElements = this.querySelectorAll(document.body, `[${ATTR_PREFIX}${ATTRS.listId}]`);
+      this.log(`Found ${listElements.length} lists to initialize.`);
 
-      // Initialize each container
-      for (const container of containers) {
-        await this.initContainer(container);
+      // 2. Initialize each list
+      for (const listElement of listElements) {
+        await this.initList(listElement);
       }
+
+      // 3. Wire up all action buttons
+      this.wireActionButtons();
 
       this.log('Runtime initialization complete');
     } catch (error) {
@@ -236,328 +156,150 @@ export class ContraWebflowRuntime {
   }
 
   /**
-   * Initialize a single expert container
+   * Initialize a single expert list.
    */
-  private async initContainer(container: Element): Promise<void> {
-    // Get program ID from config instead of element attribute
-    const programId = this.config.program;
-    if (!programId) {
-      this.log('No program ID found in config', container);
+  private async initList(listElement: Element): Promise<void> {
+    const listId = this.getAttr(listElement, ATTRS.listId);
+    const programId = this.getAttr(listElement, ATTRS.program);
+
+    if (!listId || !programId) {
+      this.log('List element is missing required attributes `data-contra-list-id` or `data-contra-program`.', listElement);
       return;
     }
 
-    this.log(`Initializing container for program: ${programId}`);
+    this.log(`Initializing list: ${listId} for program: ${programId}`);
 
     try {
-      // Setup container state
-      this.setupContainer(container, programId);
+      // Mark as initialized
+      (listElement as HTMLElement).setAttribute('data-contra-initialized', 'true');
+
+      // Parse initial filters from the list element itself
+      const initialFilters = this.parseFiltersFromElement(listElement);
       
-      // Wire up filter controls
-      this.wireFilterControls(container, programId);
+      // Update state with these initial settings
+      this.state.updateState(listId, { 
+        filters: initialFilters,
+        limit: initialFilters.limit || 20, // Use limit from attribute or default
+        offset: initialFilters.offset || 0,
+      });
       
-      // Wire up action buttons
-      this.wireActionButtons(container, programId);
+      this.log(`List setup complete for: ${listId}`, { initialFilters });
       
-      // Load initial data
-      await this.loadExperts(container, programId);
+      // Load initial data for the list
+      await this.loadExperts(listId, programId);
 
     } catch (error) {
-      this.log(`Failed to initialize container for program ${programId}`, error);
-      this.showError(container, error as Error);
+      this.log(`Failed to initialize list ${listId}`, error);
+      this.showError(listElement, error as Error);
     }
   }
 
   /**
-   * Setup container with initial state and classes
+   * Wire up all action buttons on the page.
    */
-  private setupContainer(container: Element, programId: string): void {
-    const element = container as HTMLElement;
-    
-    // Add runtime classes and unique identifier
-    element.classList.add('contra-runtime');
-    element.setAttribute('data-contra-initialized', 'true');
-    element.setAttribute('data-program-id', programId); // Still set this for internal use
-    
-    // Parse initial filters from attributes
-    const initialFilters = this.parseFiltersFromElement(container);
-    
-    // Determine pagination mode
-    const paginationMode = this.determinePaginationMode(container);
-    
-    this.state.updateState(programId, { 
-      filters: initialFilters,
-      paginationMode: paginationMode
-    });
-    
-    // Setup pagination
-    this.setupPagination(container, programId, paginationMode);
-    
-    // Create debounced reload function
-    const debouncedReload = utils.debounce(() => {
-      this.loadExperts(container, programId);
-    }, this.config.debounceDelay);
-    
-    this.debouncedReload.set(programId, debouncedReload);
-    
-    this.log(`Container setup complete for program: ${programId}`, { initialFilters, paginationMode });
-  }
-
-  /**
-   * Determine pagination mode from container attributes or config
-   */
-  private determinePaginationMode(container: Element): 'traditional' | 'infinite' | 'hybrid' {
-    const explicitMode = this.getAttr(container, 'pagination-mode') as 'traditional' | 'infinite' | 'hybrid';
-    return explicitMode || this.config.paginationMode;
-  }
-
-  /**
-   * Setup pagination system based on mode
-   */
-  private setupPagination(container: Element, programId: string, mode: 'traditional' | 'infinite' | 'hybrid'): void {
-    this.log(`Setting up ${mode} pagination for program: ${programId}`);
-    
-    if (mode === 'infinite' || mode === 'hybrid') {
-      this.setupInfiniteScroll(container, programId);
-    }
-    
-    if (mode === 'traditional' || mode === 'hybrid') {
-      this.setupTraditionalPagination(container, programId);
-    }
-    
-    // Setup load more button for hybrid/infinite modes
-    if (mode === 'infinite' || mode === 'hybrid') {
-      this.setupLoadMoreButton(container, programId);
-    }
-  }
-
-  /**
-   * Setup infinite scroll functionality
-   */
-  private setupInfiniteScroll(container: Element, programId: string): void {
-    let isScrolling = false;
-    
-    const handleScroll = utils.throttle(() => {
-      if (isScrolling) return;
-      
-      const state = this.state.getState(programId);
-      if (state.isInfiniteLoading || !state.hasNextPage) return;
-      
-      const scrollPosition = window.scrollY + window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const threshold = this.config.infiniteScrollThreshold;
-      
-      if (scrollPosition >= documentHeight - threshold) {
-        isScrolling = true;
-        this.loadNextPageInfinite(container, programId).finally(() => {
-          isScrolling = false;
-        });
-      }
-    }, 100);
-    
-    window.addEventListener('scroll', handleScroll);
-    
-    // Store cleanup function
-    (container as any).__infiniteScrollCleanup = () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }
-
-  /**
-   * Setup traditional pagination button states
-   */
-  private setupTraditionalPagination(container: Element, programId: string): void {
-    // Will be handled in updatePaginationControls
-    this.updatePaginationControls(container, programId);
-  }
-
-  /**
-   * Setup load more button for infinite scroll
-   */
-  private setupLoadMoreButton(container: Element, programId: string): void {
-    const loadMoreButtons = this.querySelectorAll(container, '[data-contra-action="load-more"]');
-    
-    loadMoreButtons.forEach(button => {
-      if (!button.textContent?.trim()) {
-        button.textContent = this.config.loadMoreText;
-      }
-    });
-  }
-
-  /**
-   * Wire up filter controls to auto-update
-   */
-  private wireFilterControls(container: Element, programId: string): void {
-    const filterControls = this.querySelectorAll(container, `[${ATTR_PREFIX}${ATTRS.filter}]`);
-    
-    this.log(`Found ${filterControls.length} filter controls for program: ${programId}`);
-
-    filterControls.forEach(control => {
-      const filterKey = this.getAttr(control, ATTRS.filter);
-      const filterType = this.getAttr(control, ATTRS.filterType) || 'replace';
-      
-      if (!filterKey) return;
-
-      // Add event listeners based on control type
-      if (control instanceof HTMLInputElement) {
-        const eventType = control.type === 'range' || control.type === 'number' ? 'input' : 'change';
-        
-        control.addEventListener(eventType, () => {
-          this.updateFilter(programId, filterKey, this.getControlValue(control), filterType);
-          if (this.config.autoReload) {
-            this.debouncedReload.get(programId)?.();
-          }
-        });
-        
-      } else if (control instanceof HTMLSelectElement) {
-        control.addEventListener('change', () => {
-          this.updateFilter(programId, filterKey, this.getControlValue(control), filterType);
-          if (this.config.autoReload) {
-            this.debouncedReload.get(programId)?.();
-          }
-        });
-      }
-      
-      this.log(`Wired filter control: ${filterKey} (${filterType})`, control);
-    });
-  }
-
-  /**
-   * Wire up action buttons (pagination, sorting, etc.)
-   */
-  private wireActionButtons(container: Element, programId: string): void {
-    const actionButtons = this.querySelectorAll(container, `[${ATTR_PREFIX}${ATTRS.action}]`);
+  private wireActionButtons(): void {
+    const actionButtons = this.querySelectorAll(document.body, `[${ATTR_PREFIX}${ATTRS.action}]`);
     
     actionButtons.forEach(button => {
       const action = this.getAttr(button, ATTRS.action);
-      const target = this.getAttr(button, ATTRS.target);
+      const targetListId = this.getAttr(button, ATTRS.listTarget);
       
-      if (!action) return;
+      if (!action || !targetListId) {
+        this.log('Action button is missing required `data-contra-action` or `data-contra-list-target` attributes.', button);
+        return;
+      }
 
       button.addEventListener('click', (e) => {
         e.preventDefault();
-        this.handleAction(programId, action, target, button);
+        this.handleAction(action, targetListId, button);
       });
     });
   }
 
   /**
-   * Load experts for a program
+   * Load experts for a given list.
    */
-  private async loadExperts(container: Element, programId: string, isPageNavigation = false): Promise<void> {
-    const state = this.state.getState(programId);
+  private async loadExperts(listId: string, programId: string, append = false): Promise<void> {
+    const listElement = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.listId}="${listId}"]`);
+    if (!listElement) {
+      this.log(`Cannot find list element with ID: ${listId}`);
+      return;
+    }
+
+    const state = this.state.getState(listId);
+    const filters = {
+      ...state.filters,
+      limit: state.limit,
+      offset: state.offset,
+    };
     
-    this.log(`Loading experts for program: ${programId}`, state.filters);
+    this.log(`Loading experts for list: ${listId}`, filters);
 
     try {
-      // Show loading state
-      this.showLoading(container, true);
-      this.state.updateState(programId, { loading: true, error: null });
+      this.showLoading(listElement, true);
+      this.state.updateState(listId, { loading: true, error: null });
 
-      // Check cache first for page navigation
-      const currentPage = Math.floor((state.filters.offset || 0) / (state.filters.limit || 20)) + 1;
-      if (isPageNavigation && state.paginationMode === 'traditional') {
-        const cachedExperts = this.state.getCachedPage(programId, currentPage);
-        if (cachedExperts) {
-          this.log(`Using cached page ${currentPage}`);
-          this.renderExperts(container, cachedExperts);
-          this.state.updateState(programId, { 
-            experts: cachedExperts, 
-            currentPage: currentPage,
-            loading: false 
-          });
-          this.updatePaginationControls(container, programId);
-          this.showLoading(container, false);
-          return;
-        }
-      }
-
-      // Fetch experts
-      const response = await this.client.listExperts(programId, state.filters);
+      const response = await this.client.listExperts(programId, filters);
       
-      this.log(`Loaded ${response.data.length} experts`, response);
+      this.log(`Loaded ${response.data.length} experts for list ${listId}`, response);
 
-      // Calculate pagination state - simplified to match React implementation
-      const limit = state.filters.limit || 20;
-      const offset = state.filters.offset || 0;
-      const page = Math.floor(offset / limit) + 1;
-      const totalPages = Math.ceil(response.totalCount / limit);
-      
-      // Simple pagination logic like React: if we got a full page, there might be more
-      const hasNextPage = response.data.length === limit;
-      const hasPreviousPage = page > 1;
+      const newExperts = response.data;
+      const allExperts = append ? [...state.experts, ...newExperts] : newExperts;
 
-      // Update state with pagination info
-      this.state.updateState(programId, {
-        experts: response.data,
+      // Update state
+      this.state.updateState(listId, {
+        experts: allExperts,
         totalCount: response.totalCount,
-        currentPage: page,
-        hasNextPage: hasNextPage,
-        hasPreviousPage: hasPreviousPage,
+        offset: state.offset + newExperts.length,
+        hasNextPage: allExperts.length < response.totalCount,
         loading: false
       });
 
-      // Cache the page
-      this.state.cachePage(programId, page, response.data);
-
       // Render experts
-      this.renderExperts(container, response.data);
+      this.renderExperts(listElement, newExperts, append);
       
-      // Update UI states including pagination
-      this.updateUIStates(container, programId);
-      this.updatePaginationControls(container, programId);
-      
-      // Dispatch event
-      this.dispatchEvent(container, 'expertsLoaded', {
-        experts: response.data,
-        totalCount: response.totalCount,
-        filters: state.filters,
-        page: page,
-        totalPages: totalPages,
-        hasNextPage: hasNextPage,
-        hasPreviousPage: hasPreviousPage
-      } as ExpertLoadEvent);
+      // Update UI states
+      this.updateUIStates(listElement, listId);
 
     } catch (error) {
-      this.log(`Failed to load experts for program: ${programId}`, error);
+      this.log(`Failed to load experts for list: ${listId}`, error);
       
-      this.state.updateState(programId, { 
+      this.state.updateState(listId, { 
         loading: false, 
         error: error as Error 
       });
       
-      this.showError(container, error as Error);
+      this.showError(listElement, error as Error);
       
-      // Dispatch error event
-      this.dispatchEvent(container, 'expertsError', {
-        error: error as Error,
-        context: `Loading experts for program ${programId}`
-      } as ErrorEvent);
     } finally {
-      this.showLoading(container, false);
+      this.showLoading(listElement, false);
     }
   }
 
   /**
-   * Render experts into the container
+   * Render experts into the container. Can clear or append.
    */
-  private renderExperts(container: Element, experts: ExpertProfile[]): void {
-    const template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
+  private renderExperts(listElement: Element, experts: ExpertProfile[], append: boolean): void {
+    const template = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.template}]`);
     if (!template) {
-      this.log('No template found in container', container);
+      this.log('No template found in list', listElement);
       return;
     }
 
-    // Clear only previously rendered expert cards
-    const existingCards = this.querySelectorAll(container, '.contra-rendered-item');
-    existingCards.forEach(card => card.remove());
+    if (!append) {
+      // Clear only previously rendered expert cards
+      const existingCards = this.querySelectorAll(listElement, '.contra-rendered-item');
+      existingCards.forEach(card => card.remove());
+    }
 
-    // Render expert cards
+    const fragment = document.createDocumentFragment();
     experts.forEach(expert => {
       const expertCard = this.populateExpertCard(template, expert);
-      container.appendChild(expertCard);
+      fragment.appendChild(expertCard);
     });
+    listElement.appendChild(fragment);
 
-    this.log(`Rendered ${experts.length} expert cards`);
+    this.log(`Rendered ${experts.length} expert cards into list`, listElement);
   }
 
   /**
@@ -1071,330 +813,43 @@ export class ContraWebflowRuntime {
   }
 
   /**
-   * Update UI states based on current data
+   * Update UI states based on current data for a specific list.
    */
-  private updateUIStates(container: Element, programId: string): void {
-    const state = this.state.getState(programId);
+  private updateUIStates(listElement: Element, listId: string): void {
+    const state = this.state.getState(listId);
     
     // Show/hide empty state
-    const emptyElement = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.empty}]`);
+    const emptyElement = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.empty}]`);
     if (emptyElement) {
-      (emptyElement as HTMLElement).style.display = state.experts.length === 0 ? '' : 'none';
-    }
-    
-    // Update pagination info
-    const paginationElements = this.querySelectorAll(container, '[data-contra-pagination-info]');
-    paginationElements.forEach(element => {
-      const { currentPage, totalCount } = state;
-      const pageSize = state.filters.limit || 20;
-      const totalPages = Math.ceil(totalCount / pageSize);
-      
-      element.textContent = `Page ${currentPage} of ${totalPages} (${totalCount} total)`;
-    });
-    
-    // Update filter summaries
-    const filterSummaries = this.querySelectorAll(container, '[data-contra-filter-summary]');
-    filterSummaries.forEach(element => {
-      const activeFilters = Object.entries(state.filters)
-        .filter(([_key, value]) => value != null && value !== '')
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', ');
-      
-      element.textContent = activeFilters || 'No filters applied';
-    });
-  }
-
-  /**
-   * Handle action buttons (pagination, sorting, etc.)
-   */
-  private handleAction(programId: string, action: string, _target?: string | null, button?: Element): void {
-    const state = this.state.getState(programId);
-    const container = document.querySelector(`[data-program-id="${programId}"]`);
-    
-    if (!container) {
-      this.log(`Container not found for program: ${programId}`);
-      return;
+      (emptyElement as HTMLElement).style.display = state.experts.length === 0 && !state.loading ? '' : 'none';
     }
 
-    // Show button feedback
-    if (button && button instanceof HTMLButtonElement) {
-      const originalText = button.textContent;
-      button.disabled = true;
-    }
-    
-    switch (action) {
-      case 'next-page':
-        const limit = state.filters.limit || 20;
-        const nextOffset = (state.filters.offset || 0) + limit;
-        
-        if (nextOffset < state.totalCount) {
-          this.updateFilter(programId, 'offset', nextOffset);
-          // Use page navigation mode for caching
-          setTimeout(() => {
-            this.loadExperts(container as Element, programId, true);
-          }, 0);
-        }
-        break;
-        
-      case 'prev-page':
-        const prevOffset = Math.max(0, (state.filters.offset || 0) - (state.filters.limit || 20));
-        this.updateFilter(programId, 'offset', prevOffset);
-        // Use page navigation mode for caching
-        setTimeout(() => {
-          this.loadExperts(container as Element, programId, true);
-        }, 0);
-        break;
-        
-      case 'load-more':
-        // Handle load more for all pagination modes
-        this.loadMoreExperts(container as Element, programId).finally(() => {
-          if (button && button instanceof HTMLButtonElement) {
-            button.disabled = false;
-          }
-        });
-        return; // Exit early to avoid re-enabling button
-        
-      case 'first-page':
-        this.updateFilter(programId, 'offset', 0);
-        setTimeout(() => {
-          this.loadExperts(container as Element, programId, true);
-        }, 0);
-        break;
-        
-      case 'last-page':
-        const lastPageOffset = Math.max(0, Math.floor((state.totalCount - 1) / (state.filters.limit || 20)) * (state.filters.limit || 20));
-        this.updateFilter(programId, 'offset', lastPageOffset);
-        setTimeout(() => {
-          this.loadExperts(container as Element, programId, true);
-        }, 0);
-        break;
-        
-      case 'clear-filters':
-        // Reset pagination when clearing filters
-        this.state.updateState(programId, { 
-          filters: { limit: state.filters.limit }, // Keep limit
-          currentPage: 1,
-          cachedPages: new Map() // Clear cache
-        });
-        if (this.config.autoReload) {
-          this.debouncedReload.get(programId)?.();
-        }
-        break;
-        
-      case 'reload':
-        // Clear cache and reload
-        this.state.updateState(programId, { cachedPages: new Map() });
-        this.client.clearCache(`experts:${programId}`);
-        if (this.config.autoReload) {
-          this.debouncedReload.get(programId)?.();
-        }
-        break;
-    }
-    
-    // Re-enable button after action completes
-    if (button && button instanceof HTMLButtonElement && action !== 'load-more') {
-      setTimeout(() => {
-        button.disabled = false;
-      }, 100);
+    // Update and control visibility of the load more button
+    const loadMoreButton = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.listTarget}="${listId}"]`);
+    if (loadMoreButton) {
+      const btn = loadMoreButton as HTMLButtonElement;
+      const hasMore = state.hasNextPage;
+
+      btn.style.display = hasMore ? '' : 'none';
+      btn.disabled = state.loading;
+      btn.textContent = state.loading ? 'Loading...' : 'Load More';
     }
   }
 
   /**
-   * Load more experts - unified method for all pagination modes
+   * Handle action buttons (just load-more for now).
    */
-  private async loadMoreExperts(container: Element, programId: string): Promise<void> {
-    const state = this.state.getState(programId);
-    const limit = state.filters.limit || 20;
-    
-    // Calculate next offset based on currently loaded experts
-    const currentOffset = state.experts.length;
-    
-    this.log(`Loading more experts: currentOffset=${currentOffset}, limit=${limit}`);
-
-    try {
-      this.state.updateState(programId, { isInfiniteLoading: true });
-      this.updateLoadMoreButtonState(container, programId, true);
-
-      // Fetch next batch - use current expert count as offset
-      const response = await this.client.listExperts(programId, {
-        ...state.filters,
-        offset: currentOffset,
-        limit: limit
-      });
-
-      this.log(`Loaded ${response.data.length} more experts from offset ${currentOffset}`);
-
-      // Append new experts to existing ones (like React implementation)
-      const allExperts = [...state.experts, ...response.data];
-      
-      // Simple pagination logic: if we got a full page, there might be more
-      const hasNextPage = response.data.length === limit;
-      
-      this.state.updateState(programId, {
-        experts: allExperts,
-        totalCount: response.totalCount,
-        hasNextPage: hasNextPage,
-        isInfiniteLoading: false
-      });
-
-      // Render only the new experts (append mode)
-      this.renderNewExperts(container, response.data);
-      
-      // Update pagination controls
-      this.updatePaginationControls(container, programId);
-
-      // Dispatch event
-      this.dispatchEvent(container, 'expertsLoaded', {
-        experts: response.data,
-        totalExperts: allExperts,
-        totalCount: response.totalCount,
-        isLoadMore: true
-      });
-
-    } catch (error) {
-      this.log(`Failed to load more experts`, error);
-      this.state.updateState(programId, { isInfiniteLoading: false });
-      
-      // Show error in load more button
-      this.updateLoadMoreButtonState(container, programId, false, 'Error loading more');
-      
-      setTimeout(() => {
-        this.updateLoadMoreButtonState(container, programId, false);
-      }, 3000);
-    } finally {
-      this.updateLoadMoreButtonState(container, programId, false);
-    }
-  }
-
-  /**
-   * Update load more button state
-   */
-  private updateLoadMoreButtonState(container: Element, programId: string, loading: boolean, errorText?: string): void {
-    const loadMoreButtons = this.querySelectorAll(container, '[data-contra-action="load-more"]');
-    const state = this.state.getState(programId);
-    
-    loadMoreButtons.forEach(button => {
-      const btnElement = button as HTMLButtonElement;
-      
-      if (errorText) {
-        btnElement.textContent = errorText;
-        btnElement.disabled = true;
-        btnElement.classList.add('error');
-        return;
-      }
-      
-      btnElement.classList.remove('error');
-      
-      if (loading) {
-        btnElement.textContent = 'Loading...';
-        btnElement.disabled = true;
-        btnElement.classList.add('loading');
+  private handleAction(action: string, targetListId: string, button: Element): void {
+    if (action === 'load-more') {
+      const listElement = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.listId}="${targetListId}"]`);
+      const programId = this.getAttr(listElement!, ATTRS.program);
+      if (listElement && programId) {
+        this.loadExperts(targetListId, programId, true); // `true` to append
       } else {
-        btnElement.classList.remove('loading');
-        const hasMore = state.hasNextPage;
-        
-        if (hasMore) {
-          btnElement.textContent = this.config.loadMoreText;
-          btnElement.disabled = false;
-        } else {
-          btnElement.textContent = 'All experts loaded';
-          btnElement.disabled = true;
-          btnElement.classList.add('disabled');
-        }
+        this.log(`Could not find list or program for target: ${targetListId}`);
       }
-    });
-  }
-
-  /**
-   * Load next page for infinite scroll
-   */
-  private async loadNextPageInfinite(container: Element, programId: string): Promise<void> {
-    // Use the unified loadMoreExperts method
-    return this.loadMoreExperts(container, programId);
-  }
-
-  /**
-   * Update pagination control states
-   */
-  private updatePaginationControls(container: Element, programId: string): void {
-    const state = this.state.getState(programId);
-    const limit = state.filters.limit || 20;
-    const totalPages = Math.ceil(state.totalCount / limit);
-    
-    // Update button states
-    const prevButtons = this.querySelectorAll(container, '[data-contra-action="prev-page"]');
-    const nextButtons = this.querySelectorAll(container, '[data-contra-action="next-page"]');
-
-    // Previous page buttons
-    prevButtons.forEach(button => {
-      const btnElement = button as HTMLButtonElement;
-      btnElement.disabled = state.currentPage <= 1;
-      btnElement.classList.toggle('disabled', state.currentPage <= 1);
-    });
-
-    // Next page buttons
-    nextButtons.forEach(button => {
-      const btnElement = button as HTMLButtonElement;
-      btnElement.disabled = state.currentPage >= totalPages;
-      btnElement.classList.toggle('disabled', state.currentPage >= totalPages);
-    });
-
-    // Update load more buttons
-    this.updateLoadMoreButtonState(container, programId, state.isInfiniteLoading);
-
-    // Update pagination info elements
-    const paginationInfoElements = this.querySelectorAll(container, '[data-contra-pagination-info]');
-    paginationInfoElements.forEach(element => {
-      const loadedCount = state.experts.length;
-      const totalCount = state.totalCount;
-      
-      // Different info based on pagination mode
-      if (state.paginationMode === 'infinite' || state.paginationMode === 'hybrid') {
-        element.textContent = `Showing ${loadedCount} of ${totalCount} experts`;
-      } else {
-        element.textContent = `Page ${state.currentPage} of ${totalPages} (${totalCount} total)`;
-      }
-    });
-
-    this.log(`Pagination controls updated: loaded ${state.experts.length}/${state.totalCount}, hasNext: ${state.hasNextPage}`);
-  }
-
-  /**
-   * Update infinite loading state
-   */
-  private updateInfiniteLoadingState(container: Element, loading: boolean): void {
-    const loadingIndicators = this.querySelectorAll(container, '[data-contra-infinite-loading]');
-    
-    loadingIndicators.forEach(indicator => {
-      (indicator as HTMLElement).style.display = loading ? '' : 'none';
-    });
-  }
-
-  /**
-   * Render new experts for infinite scroll (append mode)
-   */
-  private renderNewExperts(container: Element, newExperts: ExpertProfile[]): void {
-    const template = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.template}]`);
-    if (!template) {
-      this.log('No template found for rendering new experts', container);
-      return;
     }
-
-    // Create a document fragment for efficient DOM manipulation
-    const fragment = document.createDocumentFragment();
-
-    newExperts.forEach(expert => {
-      const expertCard = this.populateExpertCard(template, expert);
-      fragment.appendChild(expertCard);
-    });
-
-    // Append all new cards at once
-    container.appendChild(fragment);
-
-    this.log(`Rendered ${newExperts.length} new expert cards for load more`);
   }
-
-  // ... (utility methods continue below)
 
   /**
    * Utility Methods
@@ -1409,24 +864,6 @@ export class ContraWebflowRuntime {
 
   private querySelectorAll(element: Element, selector: string): Element[] {
     return Array.from(element.querySelectorAll(selector));
-  }
-
-  private findExpertContainers(): Element[] {
-    this.log('Looking for expert containers...');
-    
-    // A container is now STRICTLY defined as an element with a `data-contra-program` attribute.
-    // This provides a single, reliable source of truth and prevents accidental detection.
-    const containers = Array.from(document.querySelectorAll(`[${ATTR_PREFIX}${ATTRS.program}]`));
-    
-    this.log(`Found ${containers.length} containers with [${ATTR_PREFIX}${ATTRS.program}]`, containers);
-    
-    // If still no containers found, log detailed debugging info
-    if (containers.length === 0) {
-      this.log('❌ No containers found! A container must have the "data-contra-program" attribute.');
-      this.log('- Document body HTML:', document.body?.innerHTML?.substring(0, 500) + '...');
-    }
-    
-    return containers;
   }
 
   private parseFiltersFromElement(element: Element): ExpertFilters {
@@ -1591,12 +1028,6 @@ function autoInit(): void {
       return;
     }
     
-    if (!config.program) {
-      console.error('[ContraWebflow] Program ID is required in config.');
-      return;
-    }
-    
-    // Add a small delay to ensure all DOM elements are ready
     const initializeRuntime = () => {
       const runtime = new ContraWebflowRuntime(config);
       
