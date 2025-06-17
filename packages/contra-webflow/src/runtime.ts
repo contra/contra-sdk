@@ -175,6 +175,10 @@ export class ContraWebflowRuntime {
     try {
       // Mark as initialized
       (listElement as HTMLElement).setAttribute('data-contra-initialized', 'true');
+      
+      // New: Fetch available filters and populate controls that target this list
+      const availableFilters = await this.getAvailableFilters(programId);
+      this.populateFilterControls(listId, availableFilters);
 
       // Parse initial filters from the list element itself
       const initialFilters = this.parseFiltersFromElement(listElement);
@@ -1033,6 +1037,63 @@ export class ContraWebflowRuntime {
     if (this.config.debug) {
       console.log(`[ContraWebflow] ${message}`, ...args);
     }
+  }
+
+  private async getAvailableFilters(programId: string): Promise<any[]> {
+    const url = `https://contra.com/public-api/programs/${programId}/filters`;
+    this.log(`Fetching available filters for program: ${programId}`);
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${this.config.apiKey}`,
+                'Accept': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch filters: ${response.statusText}`);
+        }
+        const data = await response.json();
+        this.log('Successfully fetched filters', data.data);
+        return data.data || [];
+    } catch (error) {
+        this.log('Error fetching available filters', error);
+        return [];
+    }
+  }
+  
+  private populateFilterControls(listId: string, filters: any[]): void {
+    if (!filters || filters.length === 0) return;
+
+    this.log(`Populating filter controls for list ${listId} with`, filters);
+
+    const filterControls = this.querySelectorAll(document.body, `[data-contra-list-target="${listId}"]`);
+
+    filterControls.forEach(control => {
+        const filterKey = control.getAttribute('data-contra-filter');
+        const filterDef = filters.find(f => f.name === filterKey);
+
+        if (filterDef && filterDef.options && control instanceof HTMLSelectElement) {
+            this.log(`Populating options for filter '${filterKey}'`, filterDef.options);
+            
+            const placeholder = control.firstElementChild?.cloneNode(true) as Element | null;
+            control.innerHTML = ''; // Clear existing options
+            if (placeholder && placeholder.nodeName === 'OPTION') {
+                control.appendChild(placeholder);
+            }
+            
+            filterDef.options.forEach((option: any) => {
+                const optionElement = document.createElement('option');
+                if (typeof option === 'object' && option.value) {
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.label || option.value;
+                } else {
+                    optionElement.value = String(option);
+                    optionElement.textContent = String(option);
+                }
+                control.appendChild(optionElement);
+            });
+        }
+    });
   }
 }
 
