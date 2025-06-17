@@ -210,59 +210,24 @@ export class ContraWebflowRuntime {
   /**
    * Initialize the runtime and find all expert containers
    */
-  async init(): Promise<void> {
+  async init(container: Element): Promise<void> {
     this.log('Initializing runtime...');
 
     try {
-      // Find all expert containers
-      const allContainers = this.findExpertContainers();
-      // Filter out already initialized containers
-      const containers = allContainers.filter(container => 
-        !container.hasAttribute('data-contra-initialized')
-      );
-      
-      this.log(`Found ${containers.length} uninitialised expert containers (${allContainers.length} total)`);
-
-      // Initialize each container
-      for (const container of containers) {
-        await this.initContainer(container);
-      }
-
-      this.log('Runtime initialization complete');
-    } catch (error) {
-      this.log('Runtime initialization failed', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Initialize a single expert container
-   */
-  private async initContainer(container: Element): Promise<void> {
-    // Get program ID from config instead of element attribute
-    const programId = this.config.program;
-    if (!programId) {
-      this.log('No program ID found in config', container);
-      return;
-    }
-
-    this.log(`Initializing container for program: ${programId}`);
-
-    try {
       // Setup container state
-      this.setupContainer(container, programId);
+      this.setupContainer(container, container.getAttribute('data-program-id') || '');
       
       // Wire up filter controls
-      this.wireFilterControls(container, programId);
+      this.wireFilterControls(container, container.getAttribute('data-program-id') || '');
       
       // Wire up action buttons
-      this.wireActionButtons(container, programId);
+      this.wireActionButtons(container, container.getAttribute('data-program-id') || '');
       
       // Load initial data
-      await this.loadExperts(container, programId);
+      await this.loadExperts(container, container.getAttribute('data-program-id') || '');
 
     } catch (error) {
-      this.log(`Failed to initialize container for program ${programId}`, error);
+      this.log(`Failed to initialize container for program ${container.getAttribute('data-program-id') || ''}`, error);
       this.showError(container, error as Error);
     }
   }
@@ -1647,34 +1612,39 @@ function autoInit(): void {
   }
 
   try {
-    const config = JSON.parse(configElement.textContent || '{}');
-    
-    // Validate required config
-    if (!config.apiKey) {
-      console.error('[ContraWebflow] API key is required in config.');
-      return;
-    }
-    
-    if (!config.program) {
-      console.error('[ContraWebflow] Program ID is required in config.');
-      return;
-    }
-    
-    // Add a small delay to ensure all DOM elements are ready
-    const initializeRuntime = () => {
-      const runtime = new ContraWebflowRuntime(config);
-      
-      // Expose runtime globally for debugging
-      (window as any).contraRuntime = runtime;
-      
-      runtime.init().catch(error => {
-        console.error('[ContraWebflow] Runtime initialization failed:', error);
-      });
-    };
-    
-    // Use setTimeout to ensure DOM is fully ready
-    setTimeout(initializeRuntime, 100);
-    
+    const multiConfig = JSON.parse(configElement.textContent || '{}');
+    const baseConfig = (multiConfig.global || {});
+
+    console.log('[ContraWebflow] Initializing with multi-instance config:', multiConfig);
+
+    // Find all elements with a data-contra-instance attribute
+    const instances = document.querySelectorAll('[data-contra-instance]');
+
+    instances.forEach(instanceElement => {
+      const instanceId = instanceElement.getAttribute('data-contra-instance');
+      if (instanceId && multiConfig[instanceId]) {
+        // Combine global config with instance-specific config
+        const instanceConfig = {
+          ...baseConfig,
+          ...multiConfig[instanceId],
+          apiKey: baseConfig.apiKey, // Ensure API key is not overridden
+          debug: baseConfig.debug    // Ensure debug flag is not overridden
+        };
+        
+        console.log(`[ContraWebflow] Found instance "${instanceId}". Initializing...`, instanceConfig);
+
+        const runtime = new ContraWebflowRuntime(instanceConfig);
+        
+        // Pass the container element directly to the init method
+        runtime.init(instanceElement).catch(error => {
+          console.error(`[ContraWebflow] Runtime initialization failed for instance "${instanceId}":`, error);
+        });
+
+      } else {
+        console.warn(`[ContraWebflow] Found instance element but no config for ID: "${instanceId}"`);
+      }
+    });
+
   } catch (error) {
     console.error('[ContraWebflow] Failed to parse config:', error);
   }
