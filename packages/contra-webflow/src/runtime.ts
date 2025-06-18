@@ -612,18 +612,19 @@ export class ContraWebflowRuntime {
    */
   private createVideoElement(url: string, originalElement: Element): HTMLVideoElement {
     const video = document.createElement('video');
-    const posterUrl = this.extractVideoThumbnail(url);
     
     // Video attributes
     video.src = url;
     video.loop = this.config.videoLoop;
     video.playsInline = true; // Essential for inline playback on iOS
-    video.preload = 'none'; // Use 'none' to show poster and load video on demand.
+    video.preload = 'metadata';
     video.controls = this.config.videoControls;
-
+    
+    // Set the poster image for faster perceived load times.
+    const posterUrl = this.extractVideoThumbnail(url);
     if (posterUrl) {
       video.poster = posterUrl;
-      this.log(`Set poster for video: ${posterUrl}`);
+      this.log(`Set poster for video ${url}: ${posterUrl}`);
     }
     
     // Muted is critical for autoplay on mobile.
@@ -647,12 +648,13 @@ export class ContraWebflowRuntime {
     // Error handling with fallback to poster or placeholder
     video.onerror = () => {
       this.log(`Video failed to load: ${url}`);
-      // If video fails, replace it with the poster image permanently.
+      // Try to extract a thumbnail from Cloudinary video URL
+      const posterUrl = this.extractVideoThumbnail(url);
       if (posterUrl) {
         const fallbackImg = this.createImageElement(posterUrl, originalElement);
         video.parentElement?.replaceChild(fallbackImg, video);
       } else {
-        // Show placeholder if no poster is available
+        // Show placeholder
         video.style.background = '#f3f4f6';
         video.style.position = 'relative';
         video.innerHTML = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#9ca3af;font-size:12px;">Video unavailable</div>';
