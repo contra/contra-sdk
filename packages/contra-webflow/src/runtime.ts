@@ -603,11 +603,16 @@ export class ContraWebflowRuntime {
     
     // Video attributes
     video.src = url;
-    video.muted = this.config.videoMuted;
     video.loop = this.config.videoLoop;
-    video.playsInline = true;
+    video.playsInline = true; // Essential for inline playback on iOS
     video.preload = 'metadata';
     video.controls = this.config.videoControls;
+    
+    // Muted is critical for autoplay on mobile.
+    if (this.config.videoMuted) {
+        video.muted = true;
+        video.setAttribute('muted', ''); // Set attribute for maximum compatibility
+    }
     
     // Maintain aspect ratio and object-fit from original
     video.style.width = '100%';
@@ -639,17 +644,25 @@ export class ContraWebflowRuntime {
 
     // Hover-to-play functionality (if enabled and not autoplay)
     if (this.config.videoHoverPlay && !this.config.videoAutoplay) {
-      video.addEventListener('mouseenter', () => {
+      const playVideo = () => {
         video.currentTime = 0;
-        video.play().catch(() => {
-          // Ignore play errors (browser policies)
-        });
-      });
-
-      video.addEventListener('mouseleave', () => {
+        video.play().catch(() => { /* Ignore play errors (browser policies) */ });
+      };
+      const pauseVideo = () => {
         video.pause();
         video.currentTime = 0;
-      });
+      };
+
+      // Desktop events
+      video.addEventListener('mouseenter', playVideo);
+      video.addEventListener('mouseleave', pauseVideo);
+      
+      // Mobile (touch) events
+      video.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevents ghost clicks and other artifacts
+        playVideo();
+      }, { passive: false });
+      video.addEventListener('touchend', pauseVideo);
     }
 
     return video;
