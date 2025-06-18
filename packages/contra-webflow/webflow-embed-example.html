@@ -129,6 +129,18 @@
     .load-more-btn:hover { background: #374151; }
     .load-more-btn:disabled { background: #9ca3af; cursor: not-allowed; }
 
+    /* State-based visibility driven by the runtime */
+    [data-contra-loading],
+    [data-contra-empty] {
+        display: none; /* Hidden by default */
+    }
+    .contra-list-loading > [data-contra-loading] {
+        display: block; /* Show loading element when parent is loading */
+    }
+    .contra-list-empty > [data-contra-empty] {
+        display: block; /* Show empty element when parent is empty */
+    }
+
     /* Filter Styles */
     .filter-bar {
         display: flex;
@@ -276,7 +288,7 @@
         </div>
 
         <!-- Empty state for this list -->
-        <div data-contra-empty style="display: none; text-align: center; padding: 40px;">
+        <div data-contra-empty style="text-align: center; padding: 40px;">
             <p>No experts found.</p>
         </div>
 

@@ -285,7 +285,7 @@ export class ContraWebflowRuntime {
       const newExperts = response.data;
       const allExperts = append ? [...state.experts, ...newExperts] : newExperts;
 
-      // Update state
+      // Update state before touching the DOM
       this.state.updateState(listId, {
         experts: allExperts,
         totalCount: response.totalCount,
@@ -294,23 +294,16 @@ export class ContraWebflowRuntime {
         loading: false
       });
 
-      // Render experts
+      // Render experts and then immediately update all UI states
       this.renderExperts(listElement, newExperts, append);
-      
-      // Update UI states
       this.updateUIStates(listElement, listId);
 
     } catch (error) {
       this.log(`Failed to load experts for list: ${listId}`, error);
-      
-      this.state.updateState(listId, { 
-        loading: false, 
-        error: error as Error 
-      });
-      
+      this.state.updateState(listId, { loading: false, error: error as Error });
       this.showError(listElement, error as Error);
-      
     } finally {
+      // Always ensure loading state is removed
       this.showLoading(listElement, false);
     }
   }
@@ -857,13 +850,10 @@ export class ContraWebflowRuntime {
   private updateUIStates(listElement: Element, listId: string): void {
     const state = this.state.getState(listId);
     
-    // Show/hide empty state based on the final expert list and loading status.
-    const emptyElement = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.empty}]`);
-    if (emptyElement) {
-      const showEmpty = !state.loading && state.experts.length === 0;
-      (emptyElement as HTMLElement).style.display = showEmpty ? '' : 'none';
-      this.log(`List ${listId}: Empty state is ${showEmpty ? 'visible' : 'hidden'}. Reason: loading=${state.loading}, experts=${state.experts.length}`);
-    }
+    // Toggle empty state class based on final expert list and loading status.
+    const isListEmpty = !state.loading && state.experts.length === 0;
+    (listElement as HTMLElement).classList.toggle('contra-list-empty', isListEmpty);
+    this.log(`List ${listId}: Empty state class is ${isListEmpty ? 'ON' : 'OFF'}.`);
     
     // Update and control visibility of the load more button
     const loadMoreButton = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.action}="load-more"][${ATTR_PREFIX}${ATTRS.listTarget}="${listId}"]`);
@@ -1095,11 +1085,7 @@ export class ContraWebflowRuntime {
   }
 
   private showLoading(container: Element, show: boolean): void {
-    const loadingElement = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.loading}]`);
-    if (loadingElement) {
-      (loadingElement as HTMLElement).style.display = show ? '' : 'none';
-    }
-    
+    (container as HTMLElement).classList.toggle('contra-list-loading', show);
     (container as HTMLElement).classList.toggle(this.config.loadingClass, show);
   }
 
