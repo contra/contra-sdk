@@ -659,6 +659,15 @@ export class ContraWebflowRuntime {
     if (this.config.videoAutoplay) {
       video.autoplay = true;
       video.setAttribute('autoplay', '');
+      
+      // Programmatically play the video to support mobile autoplay, which often ignores the attribute alone.
+      // The promise is caught to handle cases where the browser blocks autoplay (e.g., Low Power Mode).
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          this.log('Autoplay was prevented.', { error, videoUrl: url });
+        });
+      }
     }
     
     // Error handling with fallback to poster or placeholder
@@ -677,7 +686,7 @@ export class ContraWebflowRuntime {
       video.addEventListener('mouseenter', () => {
         video.currentTime = 0;
         video.play().catch(() => { /* Ignore play errors */ });
-      });
+        });
       video.addEventListener('mouseleave', () => {
         video.pause();
         video.currentTime = 0;
@@ -747,7 +756,7 @@ export class ContraWebflowRuntime {
     // Loosened the check to work for any Cloudinary upload URL
     if (!videoUrl.includes('/upload/')) {
         this.log('URL does not appear to be a Cloudinary video, cannot generate poster.', videoUrl);
-        return null;
+    return null;
     }
 
     // Always change the file extension to .jpg for the poster
