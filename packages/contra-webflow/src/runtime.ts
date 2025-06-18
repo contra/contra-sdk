@@ -196,12 +196,19 @@ export class ContraWebflowRuntime {
 
     try {
       (listElement as HTMLElement).setAttribute('data-contra-initialized', 'true');
+      (listElement as HTMLElement).classList.add('contra-list');
       
       const template = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.template}]`);
       if (template) {
           (template as HTMLElement).style.display = 'none';
           this.log(`Template found and hidden for list: ${listId}`);
       }
+      
+      // Defensively remove inline display styles from state elements to prevent conflicts.
+      const loadingEl = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.loading}]`);
+      if (loadingEl) (loadingEl as HTMLElement).style.removeProperty('display');
+      const emptyEl = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.empty}]`);
+      if (emptyEl) (emptyEl as HTMLElement).style.removeProperty('display');
 
       const initialFilters = this.parseFiltersFromElement(listElement);
       const limit = parseInt(this.getAttr(listElement, ATTRS.limit) || '20', 10);
