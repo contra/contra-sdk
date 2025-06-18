@@ -383,10 +383,27 @@ export class ContraWebflowRuntime {
     card.removeAttribute(`${ATTR_PREFIX}${ATTRS.template}`);
     (card as HTMLElement).style.display = '';
 
-    // Populate field bindings
+    // --- Fix for repeater template pollution ---
+    // 1. Temporarily detach repeater templates
+    const repeatContainers = this.querySelectorAll(card, `[${ATTR_PREFIX}${ATTRS.repeat}]`);
+    const detachedTemplates = new Map<Element, DocumentFragment>();
+    repeatContainers.forEach(container => {
+        const fragment = document.createDocumentFragment();
+        while (container.firstChild) {
+            fragment.appendChild(container.firstChild);
+        }
+        detachedTemplates.set(container, fragment);
+    });
+
+    // 2. Populate fields on the main card (now safely without repeater templates)
     this.populateFields(card, expert);
     
-    // Handle repeating elements (projects, social links)
+    // 3. Re-attach the pristine templates
+    detachedTemplates.forEach((fragment, container) => {
+        container.appendChild(fragment);
+    });
+
+    // 4. Handle repeating elements, which will now use the clean templates
     this.populateRepeatingElements(card, expert);
     
     // Handle conditional display
@@ -656,57 +673,26 @@ export class ContraWebflowRuntime {
 
     // Hover-to-play functionality (if enabled and not autoplay)
     if (this.config.videoHoverPlay && !this.config.videoAutoplay) {
-      let isPlaying = false;
-      
-      const playVideo = () => {
-        if (!isPlaying) {
+      // --- Desktop hover events ---
+      video.addEventListener('mouseenter', () => {
         video.currentTime = 0;
-          video.play().then(() => {
-            isPlaying = true;
-          }).catch((error) => {
-            this.log('Video play failed:', error);
-          });
-        }
-      };
-      
-      const pauseVideo = () => {
-        if (isPlaying) {
+        video.play().catch(() => { /* Ignore play errors */ });
+      });
+      video.addEventListener('mouseleave', () => {
         video.pause();
         video.currentTime = 0;
-          isPlaying = false;
-        }
-      };
-
-      // Desktop events
-      video.addEventListener('mouseenter', playVideo);
-      video.addEventListener('mouseleave', pauseVideo);
+      });
       
-      // Mobile (touch) events - simplified approach
-      let touchTimeout: number;
-      
-      video.addEventListener('touchstart', (e) => {
-        // Clear any existing timeout
-        if (touchTimeout) {
-          clearTimeout(touchTimeout);
+      // --- Mobile & Desktop click/tap events ---
+      video.addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent navigation if video is in a link
+        if (video.paused) {
+          video.currentTime = 0;
+          video.play().catch((err) => this.log('Video play failed on click', err));
+        } else {
+          video.pause();
         }
-        
-        // Start playing on touch
-        playVideo();
-        
-        // Set a timeout to pause after 3 seconds if no touchend
-        touchTimeout = window.setTimeout(() => {
-          pauseVideo();
-        }, 3000);
-      }, { passive: true });
-      
-      video.addEventListener('touchend', () => {
-        // Clear timeout and pause
-        if (touchTimeout) {
-          clearTimeout(touchTimeout);
-        }
-        // Small delay before pausing to avoid immediate pause on quick taps
-        setTimeout(pauseVideo, 100);
-      }, { passive: true });
+      });
     }
 
     return video;
@@ -758,7 +744,8 @@ export class ContraWebflowRuntime {
    * Extract video thumbnail from Cloudinary URL
    */
   private extractVideoThumbnail(videoUrl: string): string | null {
-    if (!videoUrl.includes('/video/upload/')) {
+    // Loosened the check to work for any Cloudinary upload URL
+    if (!videoUrl.includes('/upload/')) {
         this.log('URL does not appear to be a Cloudinary video, cannot generate poster.', videoUrl);
         return null;
     }
@@ -771,35 +758,31 @@ export class ContraWebflowRuntime {
 
     if (parts.length !== 2) {
         this.log(`Could not parse URL for thumbnail generation: ${videoUrl}`);
-        // Fallback to just the jpg-extended URL
         return posterUrl;
     }
 
     const [baseUrl, path] = parts;
     let pathComponents = path.split('/');
     
-    // The transformation string is the first component after /upload/
     const firstPathComponent = pathComponents[0];
     const hasTransformations = CLOUDINARY_TRANSFORM_PREFIXES.some(prefix => firstPathComponent.includes(prefix));
 
     if (!hasTransformations) {
-        // No transformations to modify, just return the URL with the .jpg extension
         this.log(`No Cloudinary transformations found, returning basic .jpg poster URL for: ${videoUrl}`);
         return posterUrl;
     }
 
     let transformations = pathComponents.shift() || '';
     
-    // From the transformation string, remove params that are not ideal for a static poster image.
+    // Remove params not ideal for a static poster (e.g., flags like fl_progressive)
     const params = transformations.split(',');
     const filteredParams = params.filter(param => 
-        !param.startsWith('fl_') && // remove all flags (e.g., fl_progressive, fl_animated for gifs)
-        param !== 'f_auto'         // remove f_auto, as we are forcing jpg
+        !param.startsWith('fl_') && 
+        param !== 'f_auto'
     );
 
     const newTransformations = filteredParams.join(',');
 
-    // Re-add the transformations only if any exist to avoid empty transformation blocks (e.g. "//")
     if (newTransformations) {
         pathComponents.unshift(newTransformations);
     }
@@ -867,20 +850,8 @@ export class ContraWebflowRuntime {
     // Create items from template
     items.forEach(item => {
       const itemElement = template.cloneNode(true) as Element;
-      
-      // Special handling for different item types
-      const containerType = this.getAttr(container, ATTRS.repeat);
-      if (containerType === 'skillTags' && typeof item === 'object' && item.name) {
-        // For skill tags, directly set the text content instead of using populateFields
-        const nameElement = this.querySelector(itemElement, `[${ATTR_PREFIX}${ATTRS.field}="name"]`);
-        if (nameElement) {
-          nameElement.textContent = item.name;
-        }
-      } else {
-        // For other types (projects, socialLinks), use normal field population
+      // The template pollution is fixed, so we can reliably use populateFields for all item types.
       this.populateFields(itemElement, item);
-      }
-      
       container.appendChild(itemElement);
     });
     
