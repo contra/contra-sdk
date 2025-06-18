@@ -15,7 +15,6 @@ interface RuntimeConfig {
     videoControls?: boolean;
     imageTransformations?: string;
     videoTransformations?: string;
-    responsiveImageBreakpoints?: Record<number, string>;
 }
 /**
  * Main Runtime Class
@@ -138,7 +137,6 @@ declare class ContraWebflowRuntime {
     private populateAllFilterControls;
     private populateSelectControl;
     private populateDatalistControl;
-    private createResponsivePicture;
     private transformMediaUrl;
 }
 

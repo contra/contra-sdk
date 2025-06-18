@@ -322,7 +322,7 @@ This example demonstrates all major features, including two independent lists, d
         margin-bottom: 20px;
         border-bottom: 1px solid #eee;
         padding-bottom: 10px;
-    }
+}
 
     /* Hero Avatar Styles */
     .hero-avatars-list {
@@ -330,7 +330,7 @@ This example demonstrates all major features, including two independent lists, d
         justify-content: center;
         gap: 10px;
         margin-bottom: 40px;
-    }
+}
     .hero-avatar {
         width: 80px;
         height: 80px;
@@ -353,7 +353,7 @@ This example demonstrates all major features, including two independent lists, d
         display: flex;
         flex-direction: column;
         gap: 20px;
-    }
+}
     .expert-header { display: flex; align-items: center; gap: 16px; }
     .expert-avatar-main { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
     .expert-name { font-size: 1.25rem; font-weight: 600; }
@@ -369,17 +369,17 @@ This example demonstrates all major features, including two independent lists, d
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 16px;
         margin-top: 16px;
-    }
+}
     .project-card {
         border: 1px solid #e5e7eb;
   border-radius: 8px;
         overflow: hidden;
         transition: transform 0.2s, box-shadow 0.2s;
-    }
+}
     .project-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
+}
     .project-cover {
         width: 100%;
         height: 120px;
@@ -401,10 +401,10 @@ This example demonstrates all major features, including two independent lists, d
         color: #6b7280;
         text-decoration: none;
         transition: color 0.2s;
-    }
+}
     .social-link:hover {
         color: #111827;
-    }
+}
 
     /* Load More Button Styles */
     .load-more-section { text-align: center; padding: 20px; }

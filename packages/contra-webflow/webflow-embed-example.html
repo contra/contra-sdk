@@ -8,19 +8,14 @@
 {
     "apiKey": "contra_4548fabb.24cecae57234e341de12a33526f35655864e5af1f9ad04d156e65d18dea1bc4a",
     "debug": true,
-    "imageTransformations": "f_auto,q_auto,c_limit,w_200",
-    "videoTransformations": "fl_progressive,f_auto,q_auto,vc_auto,c_limit,h_720",
-    "responsiveImageBreakpoints": {
-        "1024": "f_auto,q_auto,c_limit,w_1024",
-        "800": "f_auto,q_auto,c_limit,w_800",
-        "480": "f_auto,q_auto,c_limit,w_480"
-    }
+    "imageTransformations": "f_auto,q_auto:eco,c_limit,w_800",
+    "videoTransformations": "fl_progressive,f_auto,q_auto:eco,vc_auto,c_limit,h_720"
 }
 </script>
 
 <!-- 2. Runtime Script (Required once per page) -->
 <!-- This is the FINAL, CORRECT script link. -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@c7dc0f6/packages/contra-webflow/dist/runtime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@cdbf57b/packages/contra-webflow/dist/runtime.min.js"></script>
 
 <!-- 3. Styles (Recommended) -->
 <style>
@@ -265,7 +260,7 @@
             </div>
             <div data-contra-repeat="projects" data-contra-max="3" class="projects-grid">
                 <a data-contra-field="projectUrl" target="_blank" class="project-card">
-                    <img data-contra-field="coverUrl" data-contra-responsive="true" class="project-cover" alt="Project Cover">
+                    <img data-contra-field="coverUrl" class="project-cover" alt="Project Cover">
                     <div data-contra-field="title" class="project-title"></div>
                 </a>
             </div>
