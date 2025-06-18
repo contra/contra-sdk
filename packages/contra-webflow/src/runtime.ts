@@ -618,13 +618,6 @@ export class ContraWebflowRuntime {
     video.playsInline = true; // Essential for inline playback on iOS
     video.preload = 'metadata';
     video.controls = this.config.videoControls;
-    
-    // Set a poster image proactively for better mobile compatibility and UX.
-    const posterUrl = this.extractVideoThumbnail(url);
-    if (posterUrl) {
-      video.poster = posterUrl;
-      this.log(`Set poster for video ${url}: ${posterUrl}`);
-    }
 
     // Muted is critical for autoplay on mobile.
     if (this.config.videoMuted) {
@@ -642,6 +635,21 @@ export class ContraWebflowRuntime {
     if (this.config.videoAutoplay) {
       video.autoplay = true;
       video.setAttribute('autoplay', '');
+    }
+    
+    // Generate and test poster URL before applying
+    const posterUrl = this.extractVideoThumbnail(url);
+    if (posterUrl) {
+      // Test poster before applying
+      const testPoster = new Image();
+      testPoster.onload = () => {
+        video.poster = posterUrl;
+        this.log(`✅ Applied poster: ${posterUrl.split('/').pop()}`);
+      };
+      testPoster.onerror = () => {
+        this.log(`⚠️ Generated poster failed: ${posterUrl.split('/').pop()}`);
+      };
+      testPoster.src = posterUrl;
     }
     
     // Error handling with fallback to poster or placeholder
@@ -758,26 +766,49 @@ export class ContraWebflowRuntime {
    * Extract video thumbnail from Cloudinary URL
    */
   private extractVideoThumbnail(videoUrl: string): string | null {
-    // Handle Cloudinary URLs
-    if (videoUrl.includes('cloudinary.com/') && videoUrl.includes('/video/')) {
-      const imageUrl = videoUrl
-        .replace('/video/', '/image/')
-        .replace(/\.(mp4|webm|mov|avi|mkv|ogg)$/i, '.jpg');
-      
-      return this.transformMediaUrl(imageUrl, 'image');
-    }
+    if (!this.isValidCloudinaryUrl(videoUrl)) return null;
     
-    // Handle media.contra.com URLs
-    if (videoUrl.includes('media.contra.com/')) {
-      // For media.contra.com, try to generate a thumbnail by appending thumbnail parameters
-      const imageUrl = videoUrl
-        .replace('/video/', '/image/')
-        .replace(/\.(mp4|webm|mov|avi|mkv|ogg)$/i, '.jpg');
+    try {
+      let posterUrl = videoUrl;
       
-      return this.transformMediaUrl(imageUrl, 'image');
+      // Convert video path to image path
+      if (posterUrl.includes('/video/')) {
+        posterUrl = posterUrl.replace('/video/', '/image/');
+      }
+      
+      // Handle file extensions safely
+      const extensionMatch = posterUrl.match(/\.(mp4|webm|mov|avi|mkv|ogg)(\?.*)?$/i);
+      if (extensionMatch) {
+        const query = extensionMatch[2] || '';
+        posterUrl = posterUrl.replace(extensionMatch[0], '.jpg' + query);
+      } else if (!posterUrl.includes('.jpg') && !posterUrl.includes('.png')) {
+        // If no video extension found, assume it needs .jpg
+        const queryIndex = posterUrl.indexOf('?');
+        if (queryIndex > -1) {
+          posterUrl = posterUrl.substring(0, queryIndex) + '.jpg' + posterUrl.substring(queryIndex);
+        } else {
+          posterUrl += '.jpg';
+        }
+      }
+      
+      // Apply image transformations for poster
+      const posterTransformed = this.transformMediaUrl(posterUrl, 'image');
+      
+      this.log(`Generated poster URL: ${videoUrl} -> ${posterTransformed}`);
+      return posterTransformed;
+      
+    } catch (error) {
+      this.log(`Failed to generate poster for: ${videoUrl}`, error);
+      return null;
     }
-    
-    return null;
+  }
+
+  /**
+   * Check if URL is a valid Cloudinary/Contra media URL
+   */
+  private isValidCloudinaryUrl(url: string): boolean {
+    if (!url || typeof url !== 'string') return false;
+    return (url.includes('cloudinary.com') || url.includes('media.contra.com')) && url.includes('/upload/');
   }
 
   /**

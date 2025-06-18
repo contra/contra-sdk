@@ -89,6 +89,10 @@ declare class ContraWebflowRuntime {
      */
     private extractVideoThumbnail;
     /**
+     * Check if URL is a valid Cloudinary/Contra media URL
+     */
+    private isValidCloudinaryUrl;
+    /**
      * Transfer attributes and classes from old element to new
      */
     private transferAttributes;
