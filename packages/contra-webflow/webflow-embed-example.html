@@ -13,7 +13,7 @@
 
 <!-- 2. Runtime Script (Required once per page) -->
 <!-- This is the FINAL, CORRECT script link. -->
-<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@b507521/packages/contra-webflow/dist/runtime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/javron/contra-sdk@03c5893/packages/contra-webflow/dist/runtime.min.js"></script>
 
 <!-- 3. Styles (Recommended) -->
 <style>
@@ -128,6 +128,16 @@
     }
     .load-more-btn:hover { background: #374151; }
     .load-more-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    /* A more robust, class-based system for managing UI states */
+    .contra-list .contra-loading-wrapper,
+    .contra-list .contra-empty-wrapper,
+    .contra-load-more-wrapper {
+        display: none;
+    }
+    .contra-list.is-loading .contra-loading-wrapper { display: block; }
+    .contra-list.is-empty .contra-empty-wrapper { display: block; }
+    .contra-list.has-more .contra-load-more-wrapper { display: block; }
 
     /* Filter Styles */
     .filter-bar {
@@ -271,22 +281,28 @@
         </div>
 
         <!-- Loading state for this list -->
-        <div data-contra-loading style="text-align: center; padding: 40px;">
-            <p>Loading...</p>
+        <div class="contra-loading-wrapper">
+            <div data-contra-loading style="text-align: center; padding: 40px;">
+                <p>Loading...</p>
+            </div>
         </div>
 
         <!-- Empty state for this list -->
-        <div data-contra-empty style="text-align: center; padding: 40px;">
-            <p>No experts found.</p>
+        <div class="contra-empty-wrapper">
+            <div data-contra-empty style="text-align: center; padding: 40px;">
+                <p>No experts found.</p>
+            </div>
         </div>
 
     </div>
 
     <!-- Load More Section: This button targets the "expert-cards" list -->
-    <div class="load-more-section">
-        <button data-contra-action="load-more" data-contra-list-target="expert-cards" class="load-more-btn">
-            Load More
-        </button>
+    <div class="contra-load-more-wrapper">
+        <div class="load-more-section">
+            <button data-contra-action="load-more" data-contra-list-target="expert-cards" class="load-more-btn">
+                Load More
+            </button>
+        </div>
     </div>
 
 </div> 
