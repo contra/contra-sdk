@@ -604,14 +604,26 @@ export class ContraWebflowRuntime {
     // Video attributes
     video.src = url;
     video.loop = this.config.videoLoop;
-    video.playsInline = true; // Essential for inline playback on iOS
     video.preload = 'metadata';
     video.controls = this.config.videoControls;
     
-    // Muted is critical for autoplay on mobile.
-    if (this.config.videoMuted) {
-        video.muted = true;
-        video.setAttribute('muted', ''); // Set attribute for maximum compatibility
+    // --- Autoplay & Mute Logic ---
+    // For autoplay to work on mobile (especially iOS), the video MUST
+    // have the `autoplay`, `muted`, and `playsinline` attributes.
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+
+    if (this.config.videoAutoplay) {
+        video.autoplay = true;
+        video.muted = true; // Muting is required for autoplay on mobile
+        video.setAttribute('autoplay', '');
+        video.setAttribute('muted', '');
+    } else {
+        // If not autoplaying, respect the muted config
+        if (this.config.videoMuted) {
+            video.muted = true;
+            video.setAttribute('muted', '');
+        }
     }
     
     // Maintain aspect ratio and object-fit from original
@@ -619,12 +631,6 @@ export class ContraWebflowRuntime {
     video.style.height = '100%';
     video.style.objectFit = 'cover';
     video.style.borderRadius = 'inherit';
-    
-    // Autoplay configuration
-    if (this.config.videoAutoplay) {
-      video.autoplay = true;
-      video.setAttribute('autoplay', '');
-    }
     
     // Error handling with fallback to poster or placeholder
     video.onerror = () => {
