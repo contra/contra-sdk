@@ -108,7 +108,7 @@ declare class ContraWebflowRuntime {
     /**
      * Update UI states based on current data for a specific list.
      */
-    private updateUI;
+    private updateUIStates;
     /**
      * Handle action buttons (just load-more for now).
      */

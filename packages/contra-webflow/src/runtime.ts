@@ -196,14 +196,13 @@ export class ContraWebflowRuntime {
 
     try {
       (listElement as HTMLElement).setAttribute('data-contra-initialized', 'true');
-      (listElement as HTMLElement).classList.add('contra-list');
       
       const template = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.template}]`);
       if (template) {
           (template as HTMLElement).style.display = 'none';
           this.log(`Template found and hidden for list: ${listId}`);
       }
-      
+
       const initialFilters = this.parseFiltersFromElement(listElement);
       const limit = parseInt(this.getAttr(listElement, ATTRS.limit) || '20', 10);
       
@@ -214,7 +213,7 @@ export class ContraWebflowRuntime {
       });
       
       this.state.updateState(listId, { loading: true, error: null });
-      this.updateUI(listElement, listId);
+      this.showLoading(listElement, true);
 
       const response = await this.client.listExperts(programId, initialFilters);
       
@@ -234,12 +233,14 @@ export class ContraWebflowRuntime {
 
       // Render experts and then immediately update all UI states
       this.renderExperts(listElement, newExperts, false);
-      this.updateUI(listElement, listId);
+      this.updateUIStates(listElement, listId);
 
     } catch (error) {
       this.log(`Failed to initialize list ${listId}`, error);
       this.state.updateState(listId, { loading: false, error: error as Error });
-      this.updateUI(listElement, listId);
+      this.showError(listElement, error as Error);
+    } finally {
+      this.showLoading(listElement, false);
     }
   }
 
@@ -312,12 +313,12 @@ export class ContraWebflowRuntime {
 
       // Render experts and then immediately update all UI states
       this.renderExperts(listElement, newExperts, append);
-      this.updateUI(listElement, listId);
+      this.updateUIStates(listElement, listId);
 
     } catch (error) {
       this.log(`Failed to load experts for list: ${listId}`, error);
       this.state.updateState(listId, { loading: false, error: error as Error });
-      this.updateUI(listElement, listId);
+      this.showError(listElement, error as Error);
     } finally {
       // Always ensure loading state is removed
       this.showLoading(listElement, false);
@@ -863,41 +864,26 @@ export class ContraWebflowRuntime {
   /**
    * Update UI states based on current data for a specific list.
    */
-  private updateUI(listElement: Element, listId: string): void {
+  private updateUIStates(listElement: Element, listId: string): void {
     const state = this.state.getState(listId);
-    const listEl = listElement as HTMLElement;
-
-    // Loading state
-    listEl.classList.toggle('is-loading', state.loading);
-
-    // Empty state
-    const isEmpty = !state.loading && state.experts.length === 0;
-    listEl.classList.toggle('is-empty', isEmpty);
-
-    // Load more button state
-    const loadMoreWrapper = this.querySelector(document.body, `.contra-load-more-wrapper`);
-    if (loadMoreWrapper) {
-        const hasMore = !state.loading && state.hasNextPage;
-        (loadMoreWrapper as HTMLElement).classList.toggle('has-more', hasMore);
-        
-        const btn = this.querySelector(loadMoreWrapper, 'button');
-        if(btn) {
-            (btn as HTMLButtonElement).disabled = state.loading;
-            btn.textContent = state.loading ? 'Loading...' : 'Load More';
-        }
+    
+    const emptyElement = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.empty}]`);
+    if (emptyElement) {
+        const showEmpty = !state.loading && state.experts.length === 0;
+        const display = showEmpty ? 'block' : 'none';
+        (emptyElement as HTMLElement).style.setProperty('display', display, 'important');
+        this.log(`List ${listId}: Empty state display set to '${display}'.`);
     }
-
-    // Error state
-    const errorElement = this.querySelector(listEl, `[${ATTR_PREFIX}${ATTRS.error}]`);
-    if (errorElement) {
-        if (state.error) {
-            errorElement.textContent = state.error.message;
-            (errorElement as HTMLElement).style.display = 'block';
-        } else {
-            (errorElement as HTMLElement).style.display = 'none';
-        }
+    
+    const loadMoreButton = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.action}="load-more"][${ATTR_PREFIX}${ATTRS.listTarget}="${listId}"]`);
+    if (loadMoreButton) {
+      const btn = loadMoreButton as HTMLButtonElement;
+      const hasMore = !state.loading && state.hasNextPage;
+      const display = hasMore ? 'inline-block' : 'none';
+      (loadMoreButton as HTMLElement).style.setProperty('display', display, 'important');
+      btn.disabled = state.loading;
+      btn.textContent = state.loading ? 'Loading...' : 'Load More';
     }
-    this.log(`UI Updated for ${listId}: loading=${state.loading}, empty=${isEmpty}, hasMore=${state.hasNextPage}`);
   }
 
   /**
@@ -1120,18 +1106,17 @@ export class ContraWebflowRuntime {
   private showLoading(container: Element, show: boolean): void {
     const loadingElement = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.loading}]`);
     if (loadingElement) {
-      (loadingElement as HTMLElement).style.display = show ? 'block' : 'none';
+      const display = show ? 'block' : 'none';
+      (loadingElement as HTMLElement).style.setProperty('display', display, 'important');
     }
-    (container as HTMLElement).classList.toggle(this.config.loadingClass, show);
   }
 
   private showError(container: Element, error: Error): void {
     const errorElement = this.querySelector(container, `[${ATTR_PREFIX}${ATTRS.error}]`);
     if (errorElement) {
       errorElement.textContent = error.message;
-      (errorElement as HTMLElement).style.display = '';
+      (errorElement as HTMLElement).style.setProperty('display', 'block', 'important');
     }
-    
     (container as HTMLElement).classList.add(this.config.errorClass);
     this.log('Error displayed', error);
   }
