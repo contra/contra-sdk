@@ -29,6 +29,7 @@ interface RuntimeConfig {
   // Cloudinary transformations
   imageTransformations?: string;
   videoTransformations?: string;
+  optimizeGifsAsVideo?: boolean;
 }
 
 const CLOUDINARY_TRANSFORM_PREFIXES = [
@@ -140,6 +141,7 @@ export class ContraWebflowRuntime {
       // Cloudinary transformation defaults
       imageTransformations: 'f_auto,q_auto:eco,c_limit,w_800',
       videoTransformations: 'fl_progressive,f_auto,q_auto:eco,vc_auto,c_limit,h_720',
+      optimizeGifsAsVideo: true,
       ...config
     };
 
@@ -585,6 +587,11 @@ export class ContraWebflowRuntime {
     }
     
     const urlLower = url.toLowerCase();
+
+    // If optimizing GIFs as videos, treat them as such.
+    if (this.config.optimizeGifsAsVideo && urlLower.endsWith('.gif')) {
+        return 'video';
+    }
     
     // Video formats
     const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.ogg'];
@@ -692,21 +699,6 @@ export class ContraWebflowRuntime {
     // Error handling
     img.onerror = () => {
       this.log(`Image failed to load: ${url}`);
-      
-      // If f_auto is used, Cloudinary may have converted a GIF to a video.
-      // In this case, we attempt to render a video element instead.
-      if (url.includes('cloudinary.com/') && url.includes('f_auto')) {
-        this.log(`Attempting to fall back to video for f_auto URL: ${url}`);
-        const videoElement = this.createVideoElement(url, originalElement);
-        if (img.parentElement) {
-          this.transferAttributes(img, videoElement); // Ensure styles are consistent
-          img.parentElement.replaceChild(videoElement, img);
-          this.log('Successfully replaced failed image with video fallback.');
-        }
-        return;
-      }
-      
-      // Default fallback for non-convertible images
       img.style.background = '#f3f4f6';
       img.style.opacity = '0.5';
       img.alt = 'Image unavailable';
@@ -1321,6 +1313,7 @@ export class ContraWebflowRuntime {
         return url;
     }
 
+    // Determine the correct transformation string from config
     const transformations = mediaType === 'image' 
         ? this.config.imageTransformations 
         : this.config.videoTransformations;
@@ -1328,31 +1321,36 @@ export class ContraWebflowRuntime {
     if (!transformations) {
         return url;
     }
+    
+    // If the original URL was a GIF but we are treating it as a video, change the extension.
+    let transformedUrl = url;
+    if (mediaType === 'video' && url.toLowerCase().endsWith('.gif')) {
+        transformedUrl = url.replace(/\.gif$/i, '.mp4');
+        this.log(`Converting GIF to MP4: ${transformedUrl}`);
+    }
 
     const uploadMarker = '/upload/';
-    const parts = url.split(uploadMarker);
+    const parts = transformedUrl.split(uploadMarker);
 
     if (parts.length !== 2) {
-        this.log(`Could not apply transformations, URL format unexpected: ${url}`);
-        return url;
+        this.log(`Could not apply transformations, URL format unexpected: ${transformedUrl}`);
+        return transformedUrl;
     }
     
     const [baseUrl, path] = parts;
 
     // A robust heuristic to detect if a URL already has transformations.
-    // It checks if the first part of the path after '/upload/' contains
-    // any known Cloudinary transformation parameter prefixes.
     const firstPathComponent = path.split('/')[0];
     const hasExistingTransformations = CLOUDINARY_TRANSFORM_PREFIXES.some(prefix => firstPathComponent.includes(prefix));
 
     if (hasExistingTransformations) {
-         this.log(`URL already appears to have transformations, skipping: ${url}`);
-         return url;
+         this.log(`URL already appears to have transformations, skipping: ${transformedUrl}`);
+         return transformedUrl;
     }
 
-    const transformedUrl = `${baseUrl}${uploadMarker}${transformations}/${path}`;
-    this.log(`Transformed ${mediaType} URL: ${transformedUrl}`);
-    return transformedUrl;
+    const finalUrl = `${baseUrl}${uploadMarker}${transformations}/${path}`;
+    this.log(`Transformed ${mediaType} URL: ${finalUrl}`);
+    return finalUrl;
   }
 }
 

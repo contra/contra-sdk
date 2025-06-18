@@ -15,6 +15,7 @@ interface RuntimeConfig {
     videoControls?: boolean;
     imageTransformations?: string;
     videoTransformations?: string;
+    optimizeGifsAsVideo?: boolean;
 }
 /**
  * Main Runtime Class
