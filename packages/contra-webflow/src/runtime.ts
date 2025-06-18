@@ -647,35 +647,66 @@ export class ContraWebflowRuntime {
     // Error handling with fallback to poster or placeholder
     video.onerror = () => {
       this.log(`Video failed to load: ${url}`);
-      // If a poster was already set, we don't need a fallback image, 
-      // as the browser will typically display the broken poster.
-      if (!video.poster) {
-        const fallbackImg = this.createImageElement(posterUrl || url, originalElement);
-        video.parentElement?.replaceChild(fallbackImg, video);
+      // Create a fallback image element
+      const fallbackImg = this.createImageElement(posterUrl || url, originalElement);
+      if (video.parentElement) {
+        video.parentElement.replaceChild(fallbackImg, video);
       }
     };
 
     // Hover-to-play functionality (if enabled and not autoplay)
     if (this.config.videoHoverPlay && !this.config.videoAutoplay) {
+      let isPlaying = false;
+      
       const playVideo = () => {
-        video.currentTime = 0;
-        video.play().catch(() => { /* Ignore play errors (browser policies) */ });
+        if (!isPlaying) {
+          video.currentTime = 0;
+          video.play().then(() => {
+            isPlaying = true;
+          }).catch((error) => {
+            this.log('Video play failed:', error);
+          });
+        }
       };
+      
       const pauseVideo = () => {
-        video.pause();
-        video.currentTime = 0;
+        if (isPlaying) {
+          video.pause();
+          video.currentTime = 0;
+          isPlaying = false;
+        }
       };
 
       // Desktop events
       video.addEventListener('mouseenter', playVideo);
       video.addEventListener('mouseleave', pauseVideo);
       
-      // Mobile (touch) events
+      // Mobile (touch) events - simplified approach
+      let touchTimeout: number;
+      
       video.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Prevents ghost clicks and other artifacts
+        // Clear any existing timeout
+        if (touchTimeout) {
+          clearTimeout(touchTimeout);
+        }
+        
+        // Start playing on touch
         playVideo();
-      }, { passive: false });
-      video.addEventListener('touchend', pauseVideo);
+        
+        // Set a timeout to pause after 3 seconds if no touchend
+        touchTimeout = window.setTimeout(() => {
+          pauseVideo();
+        }, 3000);
+      }, { passive: true });
+      
+      video.addEventListener('touchend', () => {
+        // Clear timeout and pause
+        if (touchTimeout) {
+          clearTimeout(touchTimeout);
+        }
+        // Small delay before pausing to avoid immediate pause on quick taps
+        setTimeout(pauseVideo, 100);
+      }, { passive: true });
     }
 
     return video;
@@ -727,14 +758,25 @@ export class ContraWebflowRuntime {
    * Extract video thumbnail from Cloudinary URL
    */
   private extractVideoThumbnail(videoUrl: string): string | null {
+    // Handle Cloudinary URLs
     if (videoUrl.includes('cloudinary.com/') && videoUrl.includes('/video/')) {
-      // Convert video URL to image thumbnail
       const imageUrl = videoUrl
         .replace('/video/', '/image/')
         .replace(/\.(mp4|webm|mov|avi|mkv|ogg)$/i, '.jpg');
       
       return this.transformMediaUrl(imageUrl, 'image');
     }
+    
+    // Handle media.contra.com URLs
+    if (videoUrl.includes('media.contra.com/')) {
+      // For media.contra.com, try to generate a thumbnail by appending thumbnail parameters
+      const imageUrl = videoUrl
+        .replace('/video/', '/image/')
+        .replace(/\.(mp4|webm|mov|avi|mkv|ogg)$/i, '.jpg');
+      
+      return this.transformMediaUrl(imageUrl, 'image');
+    }
+    
     return null;
   }
 
@@ -794,7 +836,20 @@ export class ContraWebflowRuntime {
     // Create items from template
     items.forEach(item => {
       const itemElement = template.cloneNode(true) as Element;
-      this.populateFields(itemElement, item);
+      
+      // Special handling for different item types
+      const containerType = this.getAttr(container, ATTRS.repeat);
+      if (containerType === 'skillTags' && typeof item === 'object' && item.name) {
+        // For skill tags, directly set the text content instead of using populateFields
+        const nameElement = this.querySelector(itemElement, `[${ATTR_PREFIX}${ATTRS.field}="name"]`);
+        if (nameElement) {
+          nameElement.textContent = item.name;
+        }
+      } else {
+        // For other types (projects, socialLinks), use normal field population
+        this.populateFields(itemElement, item);
+      }
+      
       container.appendChild(itemElement);
     });
     
