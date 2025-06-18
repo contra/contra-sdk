@@ -66,7 +66,8 @@ const ATTRS = {
 
   // Conditional display
   showWhen: 'show-when',
-  hideWhen: 'hide-when'
+  hideWhen: 'hide-when',
+  prerenderPlaceholders: 'prerender-placeholders'
 } as const;
 
 // State management is now keyed by the list's unique ID
@@ -210,7 +211,21 @@ export class ContraWebflowRuntime {
       (listElement as HTMLElement).setAttribute('data-contra-initialized', 'true');
       (listElement as HTMLElement).classList.add('contra-list');
       
+      const limit = parseInt(this.getAttr(listElement, ATTRS.limit) || '20', 10);
       const template = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.template}]`);
+
+      // Prerender placeholders if requested, before the original template is hidden
+      if (template && listElement.hasAttribute(`${ATTR_PREFIX}${ATTRS.prerenderPlaceholders}`)) {
+        this.log(`Prerendering ${limit} placeholders for list: ${listId}`);
+        for (let i = 0; i < limit; i++) {
+          const placeholder = template.cloneNode(true) as Element;
+          placeholder.removeAttribute(`${ATTR_PREFIX}${ATTRS.template}`);
+          placeholder.classList.add('contra-placeholder-item');
+          (placeholder as HTMLElement).style.display = ''; // Ensure placeholder is visible
+          listElement.appendChild(placeholder);
+        }
+      }
+      
       if (template) {
           (template as HTMLElement).style.display = 'none';
           this.log(`Template found and hidden for list: ${listId}`);
@@ -223,7 +238,6 @@ export class ContraWebflowRuntime {
       if (emptyEl) (emptyEl as HTMLElement).style.removeProperty('display');
 
       const initialFilters = this.parseFiltersFromElement(listElement);
-      const limit = parseInt(this.getAttr(listElement, ATTRS.limit) || '20', 10);
       
       this.state.updateState(listId, { 
       filters: initialFilters,
@@ -354,6 +368,30 @@ export class ContraWebflowRuntime {
       return;
     }
 
+    // Handle prerendered placeholders on initial load
+    const placeholders = this.querySelectorAll(listElement, '.contra-placeholder-item');
+    if (!append && placeholders.length > 0) {
+      this.log(`Populating ${experts.length} of ${placeholders.length} placeholders for list.`);
+      
+      experts.forEach((expert, i) => {
+        const placeholder = placeholders[i];
+        if (placeholder) {
+          this._configureCard(placeholder, expert);
+          placeholder.classList.remove('contra-placeholder-item');
+        }
+      });
+
+      // Remove any unused placeholders
+      if (experts.length < placeholders.length) {
+        this.log(`Removing ${placeholders.length - experts.length} unused placeholders.`);
+        for (let i = experts.length; i < placeholders.length; i++) {
+          placeholders[i].remove();
+        }
+      }
+      this.log(`Finished rendering placeholders for list`, listElement);
+      return; // Skip the standard rendering path
+    }
+
     if (!append) {
       // Clear only previously rendered expert cards
       const existingCards = this.querySelectorAll(listElement, '.contra-rendered-item');
@@ -375,7 +413,15 @@ export class ContraWebflowRuntime {
    */
   private populateExpertCard(template: Element, expert: ExpertProfile): Element {
     const card = template.cloneNode(true) as Element;
-    
+    this._configureCard(card, expert);
+    return card;
+  }
+
+  /**
+   * Configures an existing card element with expert data, including all sub-fields and repeaters.
+   * This is the core rendering logic for a single item.
+   */
+  private _configureCard(card: Element, expert: ExpertProfile): void {
     // Add a marker class to identify this as a rendered card
     card.classList.add('contra-rendered-item');
     
@@ -408,8 +454,6 @@ export class ContraWebflowRuntime {
     
     // Handle conditional display
     this.handleConditionalDisplay(card, expert);
-
-    return card;
   }
 
   /**

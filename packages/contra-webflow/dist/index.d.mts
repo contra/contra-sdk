@@ -53,6 +53,11 @@ declare class ContraWebflowRuntime {
      */
     private populateExpertCard;
     /**
+     * Configures an existing card element with expert data, including all sub-fields and repeaters.
+     * This is the core rendering logic for a single item.
+     */
+    private _configureCard;
+    /**
      * Populate data fields in the card
      */
     private populateFields;
