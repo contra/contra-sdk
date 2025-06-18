@@ -558,8 +558,7 @@ export class ContraWebflowRuntime {
     
     switch (mediaType) {
       case 'video':
-        const transformedVideoUrl = this.transformMediaUrl(url, 'video');
-        mediaElement = this.createVideoElement(transformedVideoUrl, element);
+        mediaElement = this.createVideoElement(url, element);
         break;
       case 'image':
       default:
@@ -613,19 +612,19 @@ export class ContraWebflowRuntime {
   private createVideoElement(url: string, originalElement: Element): HTMLVideoElement {
     const video = document.createElement('video');
     
-    // Video attributes
-    video.src = url;
+    // Set the poster image first from the raw URL for faster perceived load times.
+    const posterUrl = this.extractVideoThumbnail(url);
+    if (posterUrl) {
+      video.poster = this.transformMediaUrl(posterUrl, 'image');
+      this.log(`Set poster for video ${url}: ${video.poster}`);
+    }
+    
+    // Now, set the video source, which will also be transformed.
+    video.src = this.transformMediaUrl(url, 'video');
     video.loop = this.config.videoLoop;
     video.playsInline = true; // Essential for inline playback on iOS
     video.preload = 'metadata';
     video.controls = this.config.videoControls;
-    
-    // Set the poster image for faster perceived load times.
-    const posterUrl = this.extractVideoThumbnail(url);
-    if (posterUrl) {
-      video.poster = posterUrl;
-      this.log(`Set poster for video ${url}: ${posterUrl}`);
-    }
     
     // Muted is critical for autoplay on mobile.
     if (this.config.videoMuted) {
@@ -735,11 +734,14 @@ export class ContraWebflowRuntime {
   private extractVideoThumbnail(videoUrl: string): string | null {
     if (videoUrl.includes('cloudinary.com/') && videoUrl.includes('/video/')) {
       // Convert video URL to image thumbnail
-      const imageUrl = videoUrl
+      return videoUrl
         .replace('/video/', '/image/')
         .replace(/\.(mp4|webm|mov|avi|mkv|ogg)$/i, '.jpg');
-      
-      return this.transformMediaUrl(imageUrl, 'image');
+    }
+    // If we're optimizing a GIF to video, its poster is itself, but as a static image.
+    // We just need to change the extension to ensure it's treated as an image.
+    if (this.config.optimizeGifsAsVideo && videoUrl.toLowerCase().endsWith('.gif')) {
+        return videoUrl.replace(/\.gif$/i, '.jpg');
     }
     return null;
   }
