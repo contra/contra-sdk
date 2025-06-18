@@ -13,6 +13,8 @@ interface RuntimeConfig {
     videoMuted?: boolean;
     videoLoop?: boolean;
     videoControls?: boolean;
+    imageTransformations?: string;
+    videoTransformations?: string;
 }
 /**
  * Main Runtime Class
@@ -135,6 +137,7 @@ declare class ContraWebflowRuntime {
     private populateAllFilterControls;
     private populateSelectControl;
     private populateDatalistControl;
+    private transformMediaUrl;
 }
 
 export { ContraWebflowRuntime };

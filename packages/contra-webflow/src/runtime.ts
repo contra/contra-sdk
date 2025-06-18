@@ -26,6 +26,9 @@ interface RuntimeConfig {
   videoMuted?: boolean;
   videoLoop?: boolean;
   videoControls?: boolean;
+  // Cloudinary transformations
+  imageTransformations?: string;
+  videoTransformations?: string;
 }
 
 // Attribute constants
@@ -130,6 +133,9 @@ export class ContraWebflowRuntime {
       videoMuted: true,
       videoLoop: true,
       videoControls: false,
+      // Cloudinary transformation defaults
+      imageTransformations: 'f_auto,q_auto:eco,c_limit,w_800',
+      videoTransformations: 'fl_progressive,f_auto,q_auto:eco,vc_auto,c_limit,h_720',
       ...config
     };
 
@@ -429,7 +435,8 @@ export class ContraWebflowRuntime {
       element.value = String(value);
     } else if (element instanceof HTMLImageElement) {
       // Regular image handling for avatars and other images
-      element.src = String(value);
+      const transformedUrl = this.transformMediaUrl(String(value), 'image');
+      element.src = transformedUrl;
       element.alt = element.alt || 'Image';
     } else {
       // Text content with formatting
@@ -544,11 +551,13 @@ export class ContraWebflowRuntime {
     
     switch (mediaType) {
       case 'video':
-        mediaElement = this.createVideoElement(url, element);
+        const transformedVideoUrl = this.transformMediaUrl(url, 'video');
+        mediaElement = this.createVideoElement(transformedVideoUrl, element);
         break;
       case 'image':
       default:
-        mediaElement = this.createImageElement(url, element);
+        const transformedImageUrl = this.transformMediaUrl(url, 'image');
+        mediaElement = this.createImageElement(transformedImageUrl, element);
         break;
     }
 
@@ -690,10 +699,11 @@ export class ContraWebflowRuntime {
   private extractVideoThumbnail(videoUrl: string): string | null {
     if (videoUrl.includes('cloudinary.com/') && videoUrl.includes('/video/')) {
       // Convert video URL to image thumbnail
-      return videoUrl
+      const imageUrl = videoUrl
         .replace('/video/', '/image/')
-        .replace(/\.(mp4|webm|mov|avi|mkv)$/i, '.jpg')
-        .replace('fl_progressive', 'f_auto,q_auto,c_fill');
+        .replace(/\.(mp4|webm|mov|avi|mkv|ogg)$/i, '.jpg');
+      
+      return this.transformMediaUrl(imageUrl, 'image');
     }
     return null;
   }
@@ -1267,6 +1277,40 @@ export class ContraWebflowRuntime {
           optionElement.value = displayValue;
           datalist.appendChild(optionElement);
       });
+  }
+
+  private transformMediaUrl(url: string, mediaType: 'image' | 'video'): string {
+    if (!url || (!url.includes('cloudinary.com/') && !url.includes('media.contra.com/'))) {
+        return url;
+    }
+
+    const transformations = mediaType === 'image' 
+        ? this.config.imageTransformations 
+        : this.config.videoTransformations;
+
+    if (!transformations) {
+        return url;
+    }
+
+    const uploadMarker = '/upload/';
+    const parts = url.split(uploadMarker);
+
+    if (parts.length !== 2) {
+        this.log(`Could not apply transformations, URL format unexpected: ${url}`);
+        return url;
+    }
+    
+    const [baseUrl, path] = parts;
+
+    const pathComponents = path.split('/');
+    if (pathComponents.length > 1 && pathComponents[0].includes('=')) {
+         this.log(`URL already appears to have transformations, skipping: ${url}`);
+         return url;
+    }
+
+    const transformedUrl = `${baseUrl}${uploadMarker}${transformations}/${path}`;
+    this.log(`Transformed ${mediaType} URL: ${transformedUrl}`);
+    return transformedUrl;
   }
 }
 
