@@ -29,7 +29,6 @@ interface RuntimeConfig {
   // Cloudinary transformations
   imageTransformations?: string;
   videoTransformations?: string;
-  gifTransformations?: string;
 }
 
 const CLOUDINARY_TRANSFORM_PREFIXES = [
@@ -141,7 +140,6 @@ export class ContraWebflowRuntime {
       // Cloudinary transformation defaults
       imageTransformations: 'f_auto,q_auto:eco,c_limit,w_800',
       videoTransformations: 'fl_progressive,f_auto,q_auto:eco,vc_auto,c_limit,h_720',
-      gifTransformations: 'f_auto,q_auto:eco,c_limit,w_800',
       ...config
     };
 
@@ -561,10 +559,9 @@ export class ContraWebflowRuntime {
         const transformedVideoUrl = this.transformMediaUrl(url, 'video');
         mediaElement = this.createVideoElement(transformedVideoUrl, element);
         break;
-      case 'gif':
       case 'image':
       default:
-        const transformedImageUrl = this.transformMediaUrl(url, mediaType);
+        const transformedImageUrl = this.transformMediaUrl(url, 'image');
         mediaElement = this.createImageElement(transformedImageUrl, element);
         break;
     }
@@ -581,18 +578,13 @@ export class ContraWebflowRuntime {
   /**
    * Detect media type from URL
    */
-  private detectMediaType(url: string): 'image' | 'video' | 'gif' {
+  private detectMediaType(url: string): 'image' | 'video' {
     if (!url || typeof url !== 'string') {
       this.log('Invalid URL provided to detectMediaType:', url);
       return 'image';
     }
     
     const urlLower = url.toLowerCase();
-
-    // Check for GIF extension first
-    if (urlLower.endsWith('.gif')) {
-        return 'gif';
-    }
     
     // Video formats
     const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.ogg'];
@@ -1309,23 +1301,14 @@ export class ContraWebflowRuntime {
       });
   }
 
-  private transformMediaUrl(url: string, mediaType: 'image' | 'video' | 'gif'): string {
+  private transformMediaUrl(url: string, mediaType: 'image' | 'video'): string {
     if (!url || (!url.includes('cloudinary.com/') && !url.includes('media.contra.com/'))) {
         return url;
     }
 
-    let transformations: string | undefined;
-    switch (mediaType) {
-        case 'image':
-            transformations = this.config.imageTransformations;
-            break;
-        case 'video':
-            transformations = this.config.videoTransformations;
-            break;
-        case 'gif':
-            transformations = this.config.gifTransformations;
-            break;
-    }
+    const transformations = mediaType === 'image' 
+        ? this.config.imageTransformations 
+        : this.config.videoTransformations;
 
     if (!transformations) {
         return url;
