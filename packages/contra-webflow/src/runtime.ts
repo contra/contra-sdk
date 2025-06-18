@@ -29,6 +29,7 @@ interface RuntimeConfig {
   // Cloudinary transformations
   imageTransformations?: string;
   videoTransformations?: string;
+  gifTransformations?: string;
 }
 
 const CLOUDINARY_TRANSFORM_PREFIXES = [
@@ -140,6 +141,7 @@ export class ContraWebflowRuntime {
       // Cloudinary transformation defaults
       imageTransformations: 'f_auto,q_auto:eco,c_limit,w_800',
       videoTransformations: 'fl_progressive,f_auto,q_auto:eco,vc_auto,c_limit,h_720',
+      gifTransformations: 'f_auto,q_auto:eco,c_limit,w_800',
       ...config
     };
 
@@ -439,7 +441,8 @@ export class ContraWebflowRuntime {
       element.value = String(value);
     } else if (element instanceof HTMLImageElement) {
       // Regular image handling for avatars and other images
-      const transformedUrl = this.transformMediaUrl(String(value), 'image');
+      const mediaType = this.detectMediaType(String(value));
+      const transformedUrl = this.transformMediaUrl(String(value), mediaType);
       element.src = transformedUrl;
       element.alt = element.alt || 'Image';
     } else {
@@ -558,9 +561,10 @@ export class ContraWebflowRuntime {
         const transformedVideoUrl = this.transformMediaUrl(url, 'video');
         mediaElement = this.createVideoElement(transformedVideoUrl, element);
         break;
+      case 'gif':
       case 'image':
       default:
-        const transformedImageUrl = this.transformMediaUrl(url, 'image');
+        const transformedImageUrl = this.transformMediaUrl(url, mediaType);
         mediaElement = this.createImageElement(transformedImageUrl, element);
         break;
     }
@@ -577,13 +581,18 @@ export class ContraWebflowRuntime {
   /**
    * Detect media type from URL
    */
-  private detectMediaType(url: string): 'image' | 'video' {
+  private detectMediaType(url: string): 'image' | 'video' | 'gif' {
     if (!url || typeof url !== 'string') {
       this.log('Invalid URL provided to detectMediaType:', url);
       return 'image';
     }
     
     const urlLower = url.toLowerCase();
+
+    // Check for GIF extension first
+    if (urlLower.endsWith('.gif')) {
+        return 'gif';
+    }
     
     // Video formats
     const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.ogg'];
@@ -592,7 +601,11 @@ export class ContraWebflowRuntime {
     // Special handling for Cloudinary video URLs
     const isCloudinaryVideo = urlLower.includes('cloudinary.com/') && urlLower.includes('/video/');
     
-    return (isVideo || isCloudinaryVideo) ? 'video' : 'image';
+    if (isVideo || isCloudinaryVideo) {
+      return 'video';
+    }
+    
+    return 'image';
   }
 
   /**
@@ -604,26 +617,14 @@ export class ContraWebflowRuntime {
     // Video attributes
     video.src = url;
     video.loop = this.config.videoLoop;
+    video.playsInline = true; // Essential for inline playback on iOS
     video.preload = 'metadata';
     video.controls = this.config.videoControls;
     
-    // --- Autoplay & Mute Logic ---
-    // For autoplay to work on mobile (especially iOS), the video MUST
-    // have the `autoplay`, `muted`, and `playsinline` attributes.
-    video.playsInline = true;
-    video.setAttribute('playsinline', '');
-
-    if (this.config.videoAutoplay) {
-        video.autoplay = true;
-        video.muted = true; // Muting is required for autoplay on mobile
-        video.setAttribute('autoplay', '');
-        video.setAttribute('muted', '');
-    } else {
-        // If not autoplaying, respect the muted config
-        if (this.config.videoMuted) {
-            video.muted = true;
-            video.setAttribute('muted', '');
-        }
+    // Muted is critical for autoplay on mobile.
+    if (this.config.videoMuted) {
+        video.muted = true;
+        video.setAttribute('muted', ''); // Set attribute for maximum compatibility
     }
     
     // Maintain aspect ratio and object-fit from original
@@ -631,6 +632,12 @@ export class ContraWebflowRuntime {
     video.style.height = '100%';
     video.style.objectFit = 'cover';
     video.style.borderRadius = 'inherit';
+    
+    // Autoplay configuration
+    if (this.config.videoAutoplay) {
+      video.autoplay = true;
+      video.setAttribute('autoplay', '');
+    }
     
     // Error handling with fallback to poster or placeholder
     video.onerror = () => {
@@ -1302,14 +1309,23 @@ export class ContraWebflowRuntime {
       });
   }
 
-  private transformMediaUrl(url: string, mediaType: 'image' | 'video'): string {
+  private transformMediaUrl(url: string, mediaType: 'image' | 'video' | 'gif'): string {
     if (!url || (!url.includes('cloudinary.com/') && !url.includes('media.contra.com/'))) {
         return url;
     }
 
-    const transformations = mediaType === 'image' 
-        ? this.config.imageTransformations 
-        : this.config.videoTransformations;
+    let transformations: string | undefined;
+    switch (mediaType) {
+        case 'image':
+            transformations = this.config.imageTransformations;
+            break;
+        case 'video':
+            transformations = this.config.videoTransformations;
+            break;
+        case 'gif':
+            transformations = this.config.gifTransformations;
+            break;
+    }
 
     if (!transformations) {
         return url;

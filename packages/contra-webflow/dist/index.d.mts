@@ -15,6 +15,7 @@ interface RuntimeConfig {
     videoControls?: boolean;
     imageTransformations?: string;
     videoTransformations?: string;
+    gifTransformations?: string;
 }
 /**
  * Main Runtime Class
