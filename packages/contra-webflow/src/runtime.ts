@@ -692,6 +692,21 @@ export class ContraWebflowRuntime {
     // Error handling
     img.onerror = () => {
       this.log(`Image failed to load: ${url}`);
+      
+      // If f_auto is used, Cloudinary may have converted a GIF to a video.
+      // In this case, we attempt to render a video element instead.
+      if (url.includes('cloudinary.com/') && url.includes('f_auto')) {
+        this.log(`Attempting to fall back to video for f_auto URL: ${url}`);
+        const videoElement = this.createVideoElement(url, originalElement);
+        if (img.parentElement) {
+          this.transferAttributes(img, videoElement); // Ensure styles are consistent
+          img.parentElement.replaceChild(videoElement, img);
+          this.log('Successfully replaced failed image with video fallback.');
+        }
+        return;
+      }
+      
+      // Default fallback for non-convertible images
       img.style.background = '#f3f4f6';
       img.style.opacity = '0.5';
       img.alt = 'Image unavailable';
