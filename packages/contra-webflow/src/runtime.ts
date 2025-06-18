@@ -619,6 +619,13 @@ export class ContraWebflowRuntime {
     video.preload = 'metadata';
     video.controls = this.config.videoControls;
     
+    // Set a poster image proactively for better mobile compatibility and UX.
+    const posterUrl = this.extractVideoThumbnail(url);
+    if (posterUrl) {
+      video.poster = posterUrl;
+      this.log(`Set poster for video ${url}: ${posterUrl}`);
+    }
+
     // Muted is critical for autoplay on mobile.
     if (this.config.videoMuted) {
         video.muted = true;
@@ -640,16 +647,11 @@ export class ContraWebflowRuntime {
     // Error handling with fallback to poster or placeholder
     video.onerror = () => {
       this.log(`Video failed to load: ${url}`);
-      // Try to extract a thumbnail from Cloudinary video URL
-      const posterUrl = this.extractVideoThumbnail(url);
-      if (posterUrl) {
-        const fallbackImg = this.createImageElement(posterUrl, originalElement);
+      // If a poster was already set, we don't need a fallback image, 
+      // as the browser will typically display the broken poster.
+      if (!video.poster) {
+        const fallbackImg = this.createImageElement(posterUrl || url, originalElement);
         video.parentElement?.replaceChild(fallbackImg, video);
-      } else {
-        // Show placeholder
-        video.style.background = '#f3f4f6';
-        video.style.position = 'relative';
-        video.innerHTML = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#9ca3af;font-size:12px;">Video unavailable</div>';
       }
     };
 
