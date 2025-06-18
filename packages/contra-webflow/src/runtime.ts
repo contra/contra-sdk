@@ -29,6 +29,7 @@ interface RuntimeConfig {
   // Cloudinary transformations
   imageTransformations?: string;
   videoTransformations?: string;
+  gifTransformations?: string;
   optimizeGifsAsVideo?: boolean;
 }
 
@@ -141,6 +142,7 @@ export class ContraWebflowRuntime {
       // Cloudinary transformation defaults
       imageTransformations: 'f_auto,q_auto:eco,c_limit,w_800',
       videoTransformations: 'fl_progressive,f_auto,q_auto:eco,vc_auto,c_limit,h_720',
+      gifTransformations: 'f_auto,fl_lossy,q_auto',
       optimizeGifsAsVideo: true,
       ...config
     };
@@ -542,12 +544,18 @@ export class ContraWebflowRuntime {
    * Media value setting with automatic type detection
    */
   private setMediaValue(element: Element, url: string): void {
-    const mediaType = this.detectMediaType(url);
+    let mediaType = this.detectMediaType(url);
     const parent = element.parentElement;
     
     if (!parent) {
       this.log('Media element has no parent for replacement', element);
       return;
+    }
+
+    // If we optimize GIFs as videos, we change the type here
+    if (mediaType === 'gif' && this.config.optimizeGifsAsVideo) {
+        mediaType = 'video';
+        this.log(`Optimizing GIF as video: ${url}`);
     }
 
     // Remove existing media element
@@ -560,6 +568,11 @@ export class ContraWebflowRuntime {
       case 'video':
         const transformedVideoUrl = this.transformMediaUrl(url, 'video');
         mediaElement = this.createVideoElement(transformedVideoUrl, element);
+        break;
+      case 'gif':
+        // If we are here, optimizeGifsAsVideo is false. We still want to apply transformations.
+        const transformedGifUrl = this.transformMediaUrl(url, 'gif');
+        mediaElement = this.createImageElement(transformedGifUrl, element);
         break;
       case 'image':
       default:
@@ -580,17 +593,16 @@ export class ContraWebflowRuntime {
   /**
    * Detect media type from URL
    */
-  private detectMediaType(url: string): 'image' | 'video' {
+  private detectMediaType(url: string): 'image' | 'video' | 'gif' {
     if (!url || typeof url !== 'string') {
       this.log('Invalid URL provided to detectMediaType:', url);
       return 'image';
     }
     
     const urlLower = url.toLowerCase();
-
-    // If optimizing GIFs as videos, treat them as such immediately.
-    if (this.config.optimizeGifsAsVideo && urlLower.endsWith('.gif')) {
-        return 'video';
+    
+    if (urlLower.endsWith('.gif')) {
+        return 'gif';
     }
     
     // Video formats - check for extensions and Cloudinary video path
@@ -618,6 +630,13 @@ export class ContraWebflowRuntime {
     video.playsInline = true; // Essential for inline playback on iOS
     video.preload = 'metadata';
     video.controls = this.config.videoControls;
+    
+    // Set a poster image proactively for better mobile compatibility and UX.
+    const posterUrl = this.extractVideoThumbnail(url);
+    if (posterUrl) {
+      video.poster = posterUrl;
+      this.log(`Set poster for video ${url}: ${posterUrl}`);
+    }
 
     // Muted is critical for autoplay on mobile.
     if (this.config.videoMuted) {
@@ -637,21 +656,6 @@ export class ContraWebflowRuntime {
       video.setAttribute('autoplay', '');
     }
     
-    // Generate and test poster URL before applying
-    const posterUrl = this.extractVideoThumbnail(url);
-    if (posterUrl) {
-      // Test poster before applying
-      const testPoster = new Image();
-      testPoster.onload = () => {
-        video.poster = posterUrl;
-        this.log(`✅ Applied poster: ${posterUrl.split('/').pop()}`);
-      };
-      testPoster.onerror = () => {
-        this.log(`⚠️ Generated poster failed: ${posterUrl.split('/').pop()}`);
-      };
-      testPoster.src = posterUrl;
-    }
-    
     // Error handling with fallback to poster or placeholder
     video.onerror = () => {
       this.log(`Video failed to load: ${url}`);
@@ -668,7 +672,7 @@ export class ContraWebflowRuntime {
       
       const playVideo = () => {
         if (!isPlaying) {
-          video.currentTime = 0;
+        video.currentTime = 0;
           video.play().then(() => {
             isPlaying = true;
           }).catch((error) => {
@@ -679,8 +683,8 @@ export class ContraWebflowRuntime {
       
       const pauseVideo = () => {
         if (isPlaying) {
-          video.pause();
-          video.currentTime = 0;
+        video.pause();
+        video.currentTime = 0;
           isPlaying = false;
         }
       };
@@ -725,39 +729,40 @@ export class ContraWebflowRuntime {
    */
   private createImageElement(url: string, originalElement: Element): HTMLImageElement {
     const img = document.createElement('img');
+    const originalSrc = originalElement.getAttribute('src') || '';
     
-    img.src = url;
     img.alt = originalElement.getAttribute('alt') || 'Media content';
     img.loading = 'lazy';
     
-    // Maintain styling
+    // Maintain styling from original element for placeholder state
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.objectFit = 'cover';
     img.style.borderRadius = 'inherit';
-    
-    // Error handling
-    img.onerror = () => {
-      this.log(`Image failed to load: ${url}`);
-      img.style.background = '#f3f4f6';
-      img.style.opacity = '0.5';
-      img.alt = 'Image unavailable';
-      
-      // Add broken image icon
-      img.style.position = 'relative';
-      const placeholder = document.createElement('div');
-      placeholder.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: #9ca3af;
-        font-size: 12px;
-        text-align: center;
-      `;
-      placeholder.textContent = '🖼️ Image unavailable';
-      img.parentElement?.appendChild(placeholder);
+    img.style.background = '#f3f4f6'; // Placeholder background
+
+    // Preload the optimized image to ensure it's valid before showing it
+    const testImg = new Image();
+    testImg.onload = () => {
+        // Success: Apply the image src
+        img.src = url;
+        img.style.background = ''; // Remove placeholder background
+        this.log(`Successfully loaded and applied image: ${url}`);
     };
+    testImg.onerror = () => {
+        // Failure: Log error and either show nothing or revert to a safe original
+        this.log(`Optimized image failed to load: ${url}. Reverting to original if available.`);
+        img.style.opacity = '0.5';
+        img.alt = 'Image unavailable';
+        
+        // Attempt to load original if it was different
+        if (originalSrc && url !== originalSrc) {
+            img.src = originalSrc;
+        }
+    };
+    
+    // Start loading the image
+    testImg.src = url;
 
     return img;
   }
@@ -766,49 +771,44 @@ export class ContraWebflowRuntime {
    * Extract video thumbnail from Cloudinary URL
    */
   private extractVideoThumbnail(videoUrl: string): string | null {
-    if (!this.isValidCloudinaryUrl(videoUrl)) return null;
-    
+    if (!videoUrl || (!videoUrl.includes('cloudinary.com/') && !videoUrl.includes('media.contra.com/'))) {
+      return null;
+    }
+
     try {
+      // Start with the original URL
       let posterUrl = videoUrl;
       
-      // Convert video path to image path
+      // 1. Convert video path to image path
       if (posterUrl.includes('/video/')) {
         posterUrl = posterUrl.replace('/video/', '/image/');
       }
-      
-      // Handle file extensions safely
-      const extensionMatch = posterUrl.match(/\.(mp4|webm|mov|avi|mkv|ogg)(\?.*)?$/i);
+
+      // 2. Safely replace the video extension with .jpg, preserving query strings
+      const extensionMatch = posterUrl.match(/\.(mp4|webm|mov|avi|mkv|ogg|gif)(\?.*)?$/i);
       if (extensionMatch) {
-        const query = extensionMatch[2] || '';
+        const query = extensionMatch[2] || ''; // Capture query string like ?...
         posterUrl = posterUrl.replace(extensionMatch[0], '.jpg' + query);
-      } else if (!posterUrl.includes('.jpg') && !posterUrl.includes('.png')) {
-        // If no video extension found, assume it needs .jpg
+      } else {
+        // If no known video extension is found, just ensure it ends with .jpg
         const queryIndex = posterUrl.indexOf('?');
         if (queryIndex > -1) {
-          posterUrl = posterUrl.substring(0, queryIndex) + '.jpg' + posterUrl.substring(queryIndex);
-        } else {
-          posterUrl += '.jpg';
+            posterUrl = posterUrl.substring(0, queryIndex) + '.jpg' + posterUrl.substring(queryIndex);
+        } else if (!posterUrl.endsWith('.jpg')) {
+            posterUrl += '.jpg';
         }
       }
-      
-      // Apply image transformations for poster
-      const posterTransformed = this.transformMediaUrl(posterUrl, 'image');
-      
-      this.log(`Generated poster URL: ${videoUrl} -> ${posterTransformed}`);
-      return posterTransformed;
-      
-    } catch (error) {
-      this.log(`Failed to generate poster for: ${videoUrl}`, error);
-      return null;
-    }
-  }
 
-  /**
-   * Check if URL is a valid Cloudinary/Contra media URL
-   */
-  private isValidCloudinaryUrl(url: string): boolean {
-    if (!url || typeof url !== 'string') return false;
-    return (url.includes('cloudinary.com') || url.includes('media.contra.com')) && url.includes('/upload/');
+      // 3. Apply standard image transformations
+      const finalPosterUrl = this.transformMediaUrl(posterUrl, 'image');
+      this.log(`Generated poster for ${videoUrl}: ${finalPosterUrl}`);
+      
+      return finalPosterUrl;
+
+    } catch (error) {
+        this.log(`Failed to generate poster for: ${videoUrl}`, error);
+        return null; // Return null on failure
+    }
   }
 
   /**
@@ -878,7 +878,7 @@ export class ContraWebflowRuntime {
         }
       } else {
         // For other types (projects, socialLinks), use normal field population
-        this.populateFields(itemElement, item);
+      this.populateFields(itemElement, item);
       }
       
       container.appendChild(itemElement);
@@ -1395,23 +1395,27 @@ export class ContraWebflowRuntime {
       });
   }
 
-  private transformMediaUrl(url: string, mediaType: 'image' | 'video'): string {
+  private transformMediaUrl(url: string, mediaType: 'image' | 'video' | 'gif'): string {
     if (!url || (!url.includes('cloudinary.com/') && !url.includes('media.contra.com/'))) {
         return url;
     }
 
-    const transformations = mediaType === 'image' 
-        ? this.config.imageTransformations 
-        : this.config.videoTransformations;
+    let transformations: string | undefined = '';
+    switch(mediaType) {
+        case 'image': transformations = this.config.imageTransformations; break;
+        case 'video': transformations = this.config.videoTransformations; break;
+        case 'gif': transformations = this.config.gifTransformations; break;
+    }
 
     if (!transformations) {
         return url;
     }
 
     let processedUrl = url;
+    // If we're treating a GIF as a video, we must change its extension to .mp4.
     if (mediaType === 'video' && url.toLowerCase().endsWith('.gif')) {
         processedUrl = url.replace(/\.gif$/i, '.mp4');
-        this.log(`Converting GIF to MP4: ${processedUrl}`);
+        this.log(`Converting GIF to MP4 for video processing: ${processedUrl}`);
     }
 
     const uploadMarker = '/upload/';
@@ -1423,18 +1427,20 @@ export class ContraWebflowRuntime {
     }
     
     const [baseUrl, path] = parts;
-    let pathComponents = path.split('/');
+    const pathComponents = path.split('/');
     
     const firstPathComponent = pathComponents[0];
-    const hasExistingTransformations = CLOUDINARY_TRANSFORM_PREFIXES.some(prefix => firstPathComponent.includes(prefix));
+    const hasExistingTransformations = CLOUDINARY_TRANSFORM_PREFIXES.some(prefix => firstPathComponent.startsWith(prefix));
 
     if (hasExistingTransformations) {
-        this.log(`Removing existing transformations from URL: ${processedUrl}`);
-        pathComponents.shift();
+        // If transformations exist, replace them.
+        pathComponents[0] = transformations;
+    } else {
+        // Otherwise, insert the new transformations.
+        pathComponents.unshift(transformations);
     }
 
-    const cleanPath = pathComponents.join('/');
-    const finalUrl = `${baseUrl}${uploadMarker}${transformations}/${cleanPath}`;
+    const finalUrl = `${baseUrl}${uploadMarker}${pathComponents.join('/')}`;
     
     this.log(`Transformed ${mediaType} URL from "${url}" to "${finalUrl}"`);
     return finalUrl;

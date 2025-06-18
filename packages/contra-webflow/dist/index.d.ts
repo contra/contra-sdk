@@ -15,6 +15,7 @@ interface RuntimeConfig {
     videoControls?: boolean;
     imageTransformations?: string;
     videoTransformations?: string;
+    gifTransformations?: string;
     optimizeGifsAsVideo?: boolean;
 }
 /**
@@ -88,10 +89,6 @@ declare class ContraWebflowRuntime {
      * Extract video thumbnail from Cloudinary URL
      */
     private extractVideoThumbnail;
-    /**
-     * Check if URL is a valid Cloudinary/Contra media URL
-     */
-    private isValidCloudinaryUrl;
     /**
      * Transfer attributes and classes from old element to new
      */
