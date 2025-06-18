@@ -259,6 +259,12 @@ export class ContraWebflowRuntime {
       return;
     }
 
+    // When reloading the list (not appending), we must hide the empty state message first.
+    const emptyElement = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.empty}]`);
+    if (!append && emptyElement) {
+        (emptyElement as HTMLElement).style.display = 'none';
+    }
+
     const state = this.state.getState(listId);
     const filters = {
       ...state.filters,
