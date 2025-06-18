@@ -588,22 +588,21 @@ export class ContraWebflowRuntime {
     
     const urlLower = url.toLowerCase();
 
-    // If optimizing GIFs as videos, treat them as such.
+    // If optimizing GIFs as videos, treat them as such immediately.
     if (this.config.optimizeGifsAsVideo && urlLower.endsWith('.gif')) {
         return 'video';
     }
     
-    // Video formats
+    // Video formats - check for extensions and Cloudinary video path
     const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.ogg'];
-    const isVideo = videoExtensions.some(ext => urlLower.includes(ext));
-    
-    // Special handling for Cloudinary video URLs
+    const isVideoExtension = videoExtensions.some(ext => urlLower.endsWith(ext));
     const isCloudinaryVideo = urlLower.includes('cloudinary.com/') && urlLower.includes('/video/');
     
-    if (isVideo || isCloudinaryVideo) {
+    if (isVideoExtension || isCloudinaryVideo) {
       return 'video';
     }
     
+    // Default to image
     return 'image';
   }
 
@@ -1313,7 +1312,6 @@ export class ContraWebflowRuntime {
         return url;
     }
 
-    // Determine the correct transformation string from config
     const transformations = mediaType === 'image' 
         ? this.config.imageTransformations 
         : this.config.videoTransformations;
@@ -1321,39 +1319,36 @@ export class ContraWebflowRuntime {
     if (!transformations) {
         return url;
     }
-    
-    // If the original URL was a GIF but we are treating it as a video, change the extension.
-    let transformedUrl = url;
+
+    let processedUrl = url;
     if (mediaType === 'video' && url.toLowerCase().endsWith('.gif')) {
-        transformedUrl = url.replace(/\.gif$/i, '.mp4');
-        this.log(`Converting GIF to MP4: ${transformedUrl}`);
+        processedUrl = url.replace(/\.gif$/i, '.mp4');
+        this.log(`Converting GIF to MP4: ${processedUrl}`);
     }
 
     const uploadMarker = '/upload/';
-    const parts = transformedUrl.split(uploadMarker);
+    const parts = processedUrl.split(uploadMarker);
 
     if (parts.length !== 2) {
-        this.log(`Could not apply transformations, URL format unexpected: ${transformedUrl}`);
-        return transformedUrl;
+        this.log(`Could not apply transformations, URL format unexpected: ${processedUrl}`);
+        return processedUrl;
     }
     
     const [baseUrl, path] = parts;
     let pathComponents = path.split('/');
     
-    // Heuristic to check if the first component is a transformation string.
     const firstPathComponent = pathComponents[0];
     const hasExistingTransformations = CLOUDINARY_TRANSFORM_PREFIXES.some(prefix => firstPathComponent.includes(prefix));
 
-    // If transformations exist, remove them to ensure a clean slate.
     if (hasExistingTransformations) {
-        this.log(`Removing existing transformations from URL: ${url}`);
-        pathComponents.shift(); // Remove the old transformation component
+        this.log(`Removing existing transformations from URL: ${processedUrl}`);
+        pathComponents.shift();
     }
 
-    // Re-assemble the URL with the new transformations.
     const cleanPath = pathComponents.join('/');
     const finalUrl = `${baseUrl}${uploadMarker}${transformations}/${cleanPath}`;
-    this.log(`Transformed ${mediaType} URL: ${finalUrl}`);
+    
+    this.log(`Transformed ${mediaType} URL from "${url}" to "${finalUrl}"`);
     return finalUrl;
   }
 }
