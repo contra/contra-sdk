@@ -29,6 +29,7 @@ interface RuntimeConfig {
   // Cloudinary transformations
   imageTransformations?: string;
   videoTransformations?: string;
+  responsiveImageBreakpoints?: Record<number, string>;
 }
 
 // Attribute constants
@@ -134,8 +135,13 @@ export class ContraWebflowRuntime {
       videoLoop: true,
       videoControls: false,
       // Cloudinary transformation defaults
-      imageTransformations: 'f_auto,q_auto:eco,c_limit,w_800',
-      videoTransformations: 'fl_progressive,f_auto,q_auto:eco,vc_auto,c_limit,h_720',
+      imageTransformations: 'f_auto,q_auto,c_limit,w_400',
+      videoTransformations: 'fl_progressive,f_auto,q_auto,vc_auto,c_limit,h_720',
+      responsiveImageBreakpoints: {
+        '1024': 'f_auto,q_auto,c_limit,w_1024',
+        '800': 'f_auto,q_auto,c_limit,w_800',
+        '480': 'f_auto,q_auto,c_limit,w_480',
+      },
       ...config
     };
 
@@ -434,9 +440,12 @@ export class ContraWebflowRuntime {
     } else if (element instanceof HTMLInputElement) {
       element.value = String(value);
     } else if (element instanceof HTMLImageElement) {
-      // Regular image handling for avatars and other images
-      const transformedUrl = this.transformMediaUrl(String(value), 'image');
-      element.src = transformedUrl;
+      // For images, we check if they should be responsive or just a simple image (like an avatar)
+      if (element.hasAttribute(`${ATTR_PREFIX}responsive`)) {
+        this.createResponsivePicture(element, String(value));
+      } else {
+        element.src = this.transformMediaUrl(String(value), this.config.imageTransformations);
+      }
       element.alt = element.alt || 'Image';
     } else {
       // Text content with formatting
@@ -535,39 +544,26 @@ export class ContraWebflowRuntime {
    * Media value setting with automatic type detection
    */
   private setMediaValue(element: Element, url: string): void {
-    const mediaType = this.detectMediaType(url);
-    const parent = element.parentElement;
-    
-    if (!parent) {
+    if (!element.parentElement) {
       this.log('Media element has no parent for replacement', element);
       return;
     }
-
-    // Remove existing media element
-    element.remove();
-
-    // Create appropriate media element
-    let mediaElement: HTMLElement;
     
-    switch (mediaType) {
-      case 'video':
-        const transformedVideoUrl = this.transformMediaUrl(url, 'video');
-        mediaElement = this.createVideoElement(transformedVideoUrl, element);
-        break;
-      case 'image':
-      default:
-        const transformedImageUrl = this.transformMediaUrl(url, 'image');
-        mediaElement = this.createImageElement(transformedImageUrl, element);
-        break;
+    // Based on URL, create either a <video> or a responsive <picture> element
+    const mediaType = this.detectMediaType(url);
+    
+    let newMediaElement: HTMLElement;
+
+    if (mediaType === 'video') {
+      const transformedUrl = this.transformMediaUrl(url, this.config.videoTransformations);
+      newMediaElement = this.createVideoElement(transformedUrl, element);
+    } else {
+      // All non-video project covers are treated as responsive images
+      newMediaElement = this.createResponsivePicture(element, url);
     }
-
-    // Preserve classes and attributes from original element
-    this.transferAttributes(element, mediaElement);
     
-    // Insert new media element
-    parent.appendChild(mediaElement);
-    
-    this.log(`Created ${mediaType} element for URL: ${url}`);
+    // Replace the original placeholder element with our new media element
+    element.parentElement.replaceChild(newMediaElement, element);
   }
 
   /**
@@ -703,7 +699,8 @@ export class ContraWebflowRuntime {
         .replace('/video/', '/image/')
         .replace(/\.(mp4|webm|mov|avi|mkv|ogg)$/i, '.jpg');
       
-      return this.transformMediaUrl(imageUrl, 'image');
+      // Use the default image transformation for the poster
+      return this.transformMediaUrl(imageUrl, this.config.imageTransformations);
     }
     return null;
   }
@@ -1279,16 +1276,40 @@ export class ContraWebflowRuntime {
       });
   }
 
-  private transformMediaUrl(url: string, mediaType: 'image' | 'video'): string {
-    if (!url || (!url.includes('cloudinary.com/') && !url.includes('media.contra.com/'))) {
-        return url;
-    }
+  private createResponsivePicture(originalElement: Element, baseUrl: string): HTMLPictureElement {
+    const picture = document.createElement('picture');
+    const breakpoints = this.config.responsiveImageBreakpoints || {};
+    
+    // Sort breakpoints from largest to smallest
+    const sortedBreakpoints = Object.keys(breakpoints)
+        .map(Number)
+        .sort((a, b) => b - a);
 
-    const transformations = mediaType === 'image' 
-        ? this.config.imageTransformations 
-        : this.config.videoTransformations;
+    // Create <source> elements for each breakpoint
+    sortedBreakpoints.forEach(width => {
+        const source = document.createElement('source');
+        const transformations = breakpoints[width];
+        source.media = `(min-width: ${width}px)`;
+        source.srcset = this.transformMediaUrl(baseUrl, transformations);
+        picture.appendChild(source);
+    });
 
-    if (!transformations) {
+    // Create the fallback <img> element using the smallest transformation
+    const fallbackImg = document.createElement('img');
+    const smallestBreakpoint = sortedBreakpoints[sortedBreakpoints.length - 1] || 400;
+    const fallbackTransform = breakpoints[smallestBreakpoint] || this.config.imageTransformations;
+    fallbackImg.src = this.transformMediaUrl(baseUrl, fallbackTransform);
+
+    // Transfer attributes from original placeholder to the new <img>
+    this.transferAttributes(originalElement, fallbackImg);
+    fallbackImg.loading = 'lazy'; // Always lazy load responsive images
+
+    picture.appendChild(fallbackImg);
+    return picture;
+  }
+
+  private transformMediaUrl(url: string, transformations: string | null | undefined): string {
+    if (!url || !transformations || (!url.includes('cloudinary.com/') && !url.includes('media.contra.com/'))) {
         return url;
     }
 
@@ -1302,6 +1323,7 @@ export class ContraWebflowRuntime {
     
     const [baseUrl, path] = parts;
 
+    // Check if transformations already exist in the path
     const pathComponents = path.split('/');
     if (pathComponents.length > 1 && pathComponents[0].includes('=')) {
          this.log(`URL already appears to have transformations, skipping: ${url}`);
@@ -1309,7 +1331,7 @@ export class ContraWebflowRuntime {
     }
 
     const transformedUrl = `${baseUrl}${uploadMarker}${transformations}/${path}`;
-    this.log(`Transformed ${mediaType} URL: ${transformedUrl}`);
+    this.log(`Transformed URL: ${transformedUrl}`);
     return transformedUrl;
   }
 }
