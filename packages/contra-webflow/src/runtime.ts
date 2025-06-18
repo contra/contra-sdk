@@ -558,7 +558,8 @@ export class ContraWebflowRuntime {
     
     switch (mediaType) {
       case 'video':
-        mediaElement = this.createVideoElement(url, element);
+        const transformedVideoUrl = this.transformMediaUrl(url, 'video');
+        mediaElement = this.createVideoElement(transformedVideoUrl, element);
         break;
       case 'image':
       default:
@@ -612,15 +613,8 @@ export class ContraWebflowRuntime {
   private createVideoElement(url: string, originalElement: Element): HTMLVideoElement {
     const video = document.createElement('video');
     
-    // Set the poster image first from the raw URL for faster perceived load times.
-    const posterUrl = this.extractVideoThumbnail(url);
-    if (posterUrl) {
-      video.poster = this.transformMediaUrl(posterUrl, 'image');
-      this.log(`Set poster for video ${url}: ${video.poster}`);
-    }
-    
-    // Now, set the video source, which will also be transformed.
-    video.src = this.transformMediaUrl(url, 'video');
+    // Video attributes
+    video.src = url;
     video.loop = this.config.videoLoop;
     video.playsInline = true; // Essential for inline playback on iOS
     video.preload = 'metadata';
@@ -734,14 +728,11 @@ export class ContraWebflowRuntime {
   private extractVideoThumbnail(videoUrl: string): string | null {
     if (videoUrl.includes('cloudinary.com/') && videoUrl.includes('/video/')) {
       // Convert video URL to image thumbnail
-      return videoUrl
+      const imageUrl = videoUrl
         .replace('/video/', '/image/')
         .replace(/\.(mp4|webm|mov|avi|mkv|ogg)$/i, '.jpg');
-    }
-    // If we're optimizing a GIF to video, its poster is itself, but as a static image.
-    // We just need to change the extension to ensure it's treated as an image.
-    if (this.config.optimizeGifsAsVideo && videoUrl.toLowerCase().endsWith('.gif')) {
-        return videoUrl.replace(/\.gif$/i, '.jpg');
+      
+      return this.transformMediaUrl(imageUrl, 'image');
     }
     return null;
   }
@@ -1347,17 +1338,21 @@ export class ContraWebflowRuntime {
     }
     
     const [baseUrl, path] = parts;
-
-    // A robust heuristic to detect if a URL already has transformations.
-    const firstPathComponent = path.split('/')[0];
+    let pathComponents = path.split('/');
+    
+    // Heuristic to check if the first component is a transformation string.
+    const firstPathComponent = pathComponents[0];
     const hasExistingTransformations = CLOUDINARY_TRANSFORM_PREFIXES.some(prefix => firstPathComponent.includes(prefix));
 
+    // If transformations exist, remove them to ensure a clean slate.
     if (hasExistingTransformations) {
-         this.log(`URL already appears to have transformations, skipping: ${transformedUrl}`);
-         return transformedUrl;
+        this.log(`Removing existing transformations from URL: ${url}`);
+        pathComponents.shift(); // Remove the old transformation component
     }
 
-    const finalUrl = `${baseUrl}${uploadMarker}${transformations}/${path}`;
+    // Re-assemble the URL with the new transformations.
+    const cleanPath = pathComponents.join('/');
+    const finalUrl = `${baseUrl}${uploadMarker}${transformations}/${cleanPath}`;
     this.log(`Transformed ${mediaType} URL: ${finalUrl}`);
     return finalUrl;
   }
