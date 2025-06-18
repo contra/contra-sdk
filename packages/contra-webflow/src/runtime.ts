@@ -333,6 +333,13 @@ export class ContraWebflowRuntime {
     listElement.appendChild(fragment);
 
     this.log(`Rendered ${experts.length} expert cards into list`, listElement);
+
+    // After rendering, check the DOM to see if the list is empty and toggle the empty state message.
+    const finalRenderedItems = this.querySelectorAll(listElement, '.contra-rendered-item');
+    const emptyElement = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.empty}]`);
+    if (emptyElement) {
+        (emptyElement as HTMLElement).style.display = finalRenderedItems.length === 0 ? '' : 'none';
+    }
   }
 
   /**
@@ -851,11 +858,7 @@ export class ContraWebflowRuntime {
   private updateUIStates(listElement: Element, listId: string): void {
     const state = this.state.getState(listId);
     
-    // Show/hide empty state
-    const emptyElement = this.querySelector(listElement, `[${ATTR_PREFIX}${ATTRS.empty}]`);
-    if (emptyElement) {
-      (emptyElement as HTMLElement).style.display = state.experts.length === 0 && !state.loading ? '' : 'none';
-    }
+    // The empty state is now handled directly in renderExperts().
     
     // Update and control visibility of the load more button
     const loadMoreButton = this.querySelector(document.body, `[${ATTR_PREFIX}${ATTRS.action}="load-more"][${ATTR_PREFIX}${ATTRS.listTarget}="${listId}"]`);
