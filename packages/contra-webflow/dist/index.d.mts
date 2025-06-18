@@ -15,7 +15,6 @@ interface RuntimeConfig {
     videoControls?: boolean;
     imageTransformations?: string;
     videoTransformations?: string;
-    gifTransformations?: string;
     optimizeGifsAsVideo?: boolean;
 }
 /**
