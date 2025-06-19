@@ -1473,7 +1473,13 @@ export class ContraWebflowRuntime {
 
   private _stringifyFilters(filters: ExpertFilters): string {
     return Object.entries(filters)
-      .filter(([, value]) => value !== undefined && value !== null && value !== '' && Object.keys(value).length !== 0)
+      .filter(([, value]) => {
+        if (value === null || value === undefined) return false;
+        if (Array.isArray(value) && value.length === 0) return false; // Exclude empty arrays
+        if (typeof value === 'string' && value.trim() === '') return false; // Exclude empty strings
+        // Keep numbers (like 0) and booleans
+        return true;
+      })
       .map(([key, value]) => {
         const stringValue = Array.isArray(value) ? value.join(',') : String(value);
         return `${key}:${stringValue}`;
