@@ -30,6 +30,7 @@ interface RuntimeConfig {
   imageTransformations?: string;
   videoTransformations?: string;
   optimizeGifsAsVideo?: boolean;
+  contraAnalytics?: boolean;
 }
 
 const CLOUDINARY_TRANSFORM_PREFIXES = [
@@ -143,6 +144,7 @@ export class ContraWebflowRuntime {
       imageTransformations: 'f_auto,q_auto:eco,c_limit,w_800',
       videoTransformations: 'fl_progressive,f_auto,q_auto:eco,vc_auto,c_limit,h_720',
       optimizeGifsAsVideo: true,
+      contraAnalytics: true,
       ...config
     };
 
@@ -367,6 +369,7 @@ export class ContraWebflowRuntime {
       this.log('No template found in list', listElement);
       return;
     }
+    const listId = this.getAttr(listElement, ATTRS.listId)!;
 
     // Handle prerendered placeholders on initial load
     const placeholders = this.querySelectorAll(listElement, '.contra-placeholder-item');
@@ -376,7 +379,7 @@ export class ContraWebflowRuntime {
       experts.forEach((expert, i) => {
         const placeholder = placeholders[i];
         if (placeholder) {
-          this._configureCard(placeholder, expert);
+          this._configureCard(placeholder, expert, listId);
           placeholder.classList.remove('contra-placeholder-item');
         }
       });
@@ -400,7 +403,7 @@ export class ContraWebflowRuntime {
 
     const fragment = document.createDocumentFragment();
     experts.forEach(expert => {
-      const expertCard = this.populateExpertCard(template, expert);
+      const expertCard = this.populateExpertCard(template, expert, listId);
       fragment.appendChild(expertCard);
     });
     listElement.appendChild(fragment);
@@ -411,9 +414,9 @@ export class ContraWebflowRuntime {
   /**
    * Populate expert card from template
    */
-  private populateExpertCard(template: Element, expert: ExpertProfile): Element {
+  private populateExpertCard(template: Element, expert: ExpertProfile, listId: string): Element {
     const card = template.cloneNode(true) as Element;
-    this._configureCard(card, expert);
+    this._configureCard(card, expert, listId);
     return card;
   }
 
@@ -421,7 +424,7 @@ export class ContraWebflowRuntime {
    * Configures an existing card element with expert data, including all sub-fields and repeaters.
    * This is the core rendering logic for a single item.
    */
-  private _configureCard(card: Element, expert: ExpertProfile): void {
+  private _configureCard(card: Element, expert: ExpertProfile, listId: string): void {
     // Add a marker class to identify this as a rendered card
     card.classList.add('contra-rendered-item');
     
@@ -442,7 +445,7 @@ export class ContraWebflowRuntime {
     });
 
     // 2. Populate fields on the main card (now safely without repeater templates)
-    this.populateFields(card, expert);
+    this.populateFields(card, expert, listId);
     
     // 3. Re-attach the pristine templates
     detachedTemplates.forEach((fragment, container) => {
@@ -450,7 +453,7 @@ export class ContraWebflowRuntime {
     });
 
     // 4. Handle repeating elements, which will now use the clean templates
-    this.populateRepeatingElements(card, expert);
+    this.populateRepeatingElements(card, expert, listId);
     
     // Handle conditional display
     this.handleConditionalDisplay(card, expert);
@@ -459,7 +462,7 @@ export class ContraWebflowRuntime {
   /**
    * Populate data fields in the card
    */
-  private populateFields(card: Element, expert: ExpertProfile): void {
+  private populateFields(card: Element, expert: ExpertProfile, listId: string): void {
     const fieldElements = this.querySelectorAll(card, `[${ATTR_PREFIX}${ATTRS.field}]`);
     
     fieldElements.forEach(element => {
@@ -469,7 +472,7 @@ export class ContraWebflowRuntime {
       if (!fieldName || !(fieldName in expert)) return;
 
       const value = expert[fieldName];
-      this.setElementValue(element, value, format);
+      this.setElementValue(element, value, format, listId);
     });
 
     // Handle star ratings
@@ -484,7 +487,7 @@ export class ContraWebflowRuntime {
   /**
    * Set element value with proper formatting
    */
-  private setElementValue(element: Element, value: any, format?: string | null): void {
+  private setElementValue(element: Element, value: any, format?: string | null, listId?: string): void {
     if (value == null || value === '') return;
 
     // Media type detection and handling
@@ -494,7 +497,11 @@ export class ContraWebflowRuntime {
     }
 
     if (element instanceof HTMLAnchorElement) {
-      element.href = String(value);
+      let href = String(value);
+      if (listId) {
+          href = this._appendContraAnalytics(href, listId);
+      }
+      element.href = href;
       if (element.children.length === 0 && !element.textContent?.trim()) {
         element.textContent = String(value);
       }
@@ -873,7 +880,7 @@ export class ContraWebflowRuntime {
   /**
    * Handle repeating elements (projects, social links)
    */
-  private populateRepeatingElements(card: Element, expert: ExpertProfile): void {
+  private populateRepeatingElements(card: Element, expert: ExpertProfile, listId: string): void {
     const repeatElements = this.querySelectorAll(card, `[${ATTR_PREFIX}${ATTRS.repeat}]`);
     
     repeatElements.forEach(container => {
@@ -881,11 +888,11 @@ export class ContraWebflowRuntime {
       const maxItems = parseInt(this.getAttr(container, ATTRS.max) || '10');
       
       if (repeatType === 'projects' && expert.projects) {
-        this.populateRepeatingContainer(container, expert.projects.slice(0, maxItems));
+        this.populateRepeatingContainer(container, expert.projects.slice(0, maxItems), listId);
       } else if (repeatType === 'socialLinks' && expert.socialLinks) {
-        this.populateRepeatingContainer(container, expert.socialLinks.slice(0, maxItems));
+        this.populateRepeatingContainer(container, expert.socialLinks.slice(0, maxItems), listId);
       } else if (repeatType === 'skillTags' && expert.skillTags) {
-        this.populateRepeatingContainer(container, expert.skillTags.slice(0, maxItems).map((tag: string) => ({ name: tag })));
+        this.populateRepeatingContainer(container, expert.skillTags.slice(0, maxItems).map((tag: string) => ({ name: tag })), listId);
       }
     });
   }
@@ -893,7 +900,7 @@ export class ContraWebflowRuntime {
   /**
    * Populate a repeating container with items
    */
-  private populateRepeatingContainer(container: Element, items: any[]): void {
+  private populateRepeatingContainer(container: Element, items: any[], listId: string): void {
     const template = container.firstElementChild;
     if (!template) return;
 
@@ -904,7 +911,7 @@ export class ContraWebflowRuntime {
     items.forEach(item => {
       const itemElement = template.cloneNode(true) as Element;
       // The template pollution is fixed, so we can reliably use populateFields for all item types.
-      this.populateFields(itemElement, item);
+      this.populateFields(itemElement, item, listId);
       container.appendChild(itemElement);
     });
     
@@ -1462,6 +1469,63 @@ export class ContraWebflowRuntime {
     
     this.log(`Transformed ${mediaType} URL from "${url}" to "${finalUrl}"`);
     return finalUrl;
+  }
+
+  private _stringifyFilters(filters: ExpertFilters): string {
+    return Object.entries(filters)
+      .filter(([, value]) => value !== undefined && value !== null && value !== '' && Object.keys(value).length !== 0)
+      .map(([key, value]) => {
+        const stringValue = Array.isArray(value) ? value.join(',') : String(value);
+        return `${key}:${stringValue}`;
+      })
+      .join('|');
+  }
+
+  private _appendContraAnalytics(url: string, listId: string): string {
+    if (!this.config.contraAnalytics || !url) {
+      return url;
+    }
+
+    try {
+      // Find the list element in the main document to ensure it's the rendered one
+      const listElement = document.querySelector(`[${ATTR_PREFIX}${ATTRS.listId}="${listId}"]`);
+      if (!listElement) return url;
+
+      const programId = this.getAttr(listElement, ATTRS.program);
+      const state = this.state.getState(listId);
+      
+      // We want the *current* filters from the state, which is correct
+      const filters = state.filters;
+
+      const params = new URLSearchParams();
+      params.set('contra_source', 'webflow_sdk');
+      if (programId) params.set('contra_program_id', programId);
+      if (listId) params.set('contra_list_id', listId);
+      
+      const filterString = this._stringifyFilters(filters);
+      if (filterString) {
+        params.set('contra_filters', filterString);
+      }
+
+      // Check if the URL is valid before creating a URL object
+      if (!url.startsWith('http')) {
+        this.log('Cannot append analytics to a relative or invalid URL', { url });
+        return url;
+      }
+
+      const urlObject = new URL(url);
+      
+      params.forEach((value, key) => {
+        // Use set instead of append to avoid duplicate params if logic is ever re-run
+        urlObject.searchParams.set(key, value);
+      });
+
+      return urlObject.toString();
+
+    } catch (error) {
+      this.log('Failed to append Contra analytics to URL.', { url, error });
+      return url; // Return original URL on error
+    }
   }
 }
 

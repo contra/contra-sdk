@@ -16,6 +16,7 @@ interface RuntimeConfig {
     imageTransformations?: string;
     videoTransformations?: string;
     optimizeGifsAsVideo?: boolean;
+    contraAnalytics?: boolean;
 }
 /**
  * Main Runtime Class
@@ -144,6 +145,8 @@ declare class ContraWebflowRuntime {
     private populateSelectControl;
     private populateDatalistControl;
     private transformMediaUrl;
+    private _stringifyFilters;
+    private _appendContraAnalytics;
 }
 
 export { ContraWebflowRuntime };
