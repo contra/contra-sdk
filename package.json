@@ -1,22 +1,20 @@
 {
   "name": "contra-sdk",
   "version": "2.0.0",
-  "description": "Professional Contra SDK with attribute-driven Webflow runtime and React components for Framer",
+  "description": "Professional Contra SDK with an attribute-driven runtime for Webflow.",
   "private": true,
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build:types && npm run build:client && npm run build:webflow && npm run build:react",
+    "build": "npm run build:types && npm run build:client && npm run build:webflow",
     "build:types": "npm run build -w @contra/types",
     "build:client": "npm run build -w @contra/client",
     "build:webflow": "npm run build -w @contra/webflow",
-    "build:react": "npm run build -w @contra/react",
-    "dev": "npm run dev --workspaces",
-    "clean": "npm run clean --workspaces",
+    "dev": "npm run dev --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present",
     "test": "echo \"No tests yet\"",
-    "lint": "echo \"No linting configured yet\"",
-    "deploy": "git add . && git commit -m \"build: update dist files\" && git push origin main"
+    "lint": "echo \"No linting configured yet\""
   },
   "devDependencies": {
     "tsup": "^8.0.0",
@@ -24,21 +22,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/javron/contra-sdk.git"
+    "url": "https://github.com/contra/contra-sdk.git"
   },
   "keywords": [
     "contra",
     "sdk",
     "webflow",
-    "react",
-    "framer",
     "experts",
     "api"
   ],
   "author": "Contra SDK Team",
-  "license": "MIT",
-  "dependencies": {
-    "framer": "^2.4.1",
-    "framer-motion": "^10.18.0"
-  }
+  "license": "MIT"
 }
