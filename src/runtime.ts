@@ -1,4 +1,4 @@
-import { ContraClient, utils } from '@contra/client';
+import { ContraClient, utils } from './client';
 import type {
   ExpertProfile,
   ExpertFilters,
@@ -6,7 +6,7 @@ import type {
   ExpertLoadEvent,
   ErrorEvent,
   ExpertField
-} from '@contra/types';
+} from './types';
 
 /**
  * Webflow Runtime for Contra Experts

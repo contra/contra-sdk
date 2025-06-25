@@ -1,23 +1,18 @@
 {
-  "name": "contra-sdk",
+  "name": "@contra/webflow",
   "version": "2.0.0",
   "description": "Professional Contra SDK with an attribute-driven runtime for Webflow.",
-  "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npm run build:types && npm run build:client && npm run build:webflow",
-    "build:types": "npm run build -w @contra/types",
-    "build:client": "npm run build -w @contra/client",
-    "build:webflow": "npm run build -w @contra/webflow",
-    "dev": "npm run dev --workspaces --if-present",
-    "clean": "npm run clean --workspaces --if-present",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "test": "echo \"No tests yet\"",
     "lint": "echo \"No linting configured yet\""
   },
   "devDependencies": {
-    "tsup": "^8.0.0",
+    "tsup": "^8.1.0",
     "typescript": "^5.0.0"
   },
   "repository": {
