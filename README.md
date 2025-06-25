@@ -16,15 +16,19 @@ This SDK provides a runtime that activates on your Webflow site, scanning the DO
 
 ---
 
-## Quick Start
+## Quick Start Guide
 
-1.  **Add the Runtime Script:** Place the following script in your site's custom code settings, inside the `<head>` tag. For production, replace `@latest` with a specific version number (e.g., `@2.0.0`).
+1.  **Add the Script Tag:** Place the following script tag in your Webflow project's custom code settings, typically in the "Footer Code" section.
 
     ```html
-    <script defer src="https://cdn.jsdelivr.net/npm/@contra/webflow@latest/dist/runtime.min.js"></script>
+    <!-- Replace @v2.0.0 with the desired version -->
+    <script defer src="https://cdn.jsdelivr.net/gh/contra/contra-sdk@v2.0.0/dist/runtime.min.js"></script>
     ```
 
-2.  **Add Configuration:** Place your API key in a script tag before the closing `</body>` tag.
+    - **Using a specific version (Recommended):** Use a specific version tag (e.g., `@v2.0.0`) to ensure your project doesn't break from future updates.
+    - **Using the latest version:** You can use `@latest` to always get the most recent version, but be aware this could introduce breaking changes.
+
+2.  **Add the Configuration Object:** Below the first script, add your configuration. This is where you provide your API key.
 
     ```html
     <script id="contra-config" type="application/json">
@@ -239,6 +243,10 @@ A complete set of filter controls targeting a list with `data-contra-list-id="ex
 ```
 
 ---
+
+## Developer Reference
+
+This SDK is designed to be used without writing JavaScript. However, if you are a developer maintaining this SDK, please see the [**`CONTRIBUTING.md`**](./CONTRIBUTING.md) file for detailed instructions on the development and release process.
 
 ## For Developers
 
