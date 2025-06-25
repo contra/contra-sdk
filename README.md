@@ -1,138 +1,236 @@
-# Contra SDK for Webflow 🚀
+# Contra SDK for Webflow
 
-**A professional, attribute-driven SDK for integrating Contra expert directories into your Webflow sites with zero code.**
+A lightweight, attribute-driven SDK for integrating Contra expert data into Webflow projects. It is designed to be flexible, performant, and require no JavaScript for implementation.
 
-[![npm version](https://badge.fury.io/js/%40contra%2Fwebflow.svg)](https://badge.fury.io/js/%40contra%2Fwebflow)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
-[![CDN Ready](https://img.shields.io/badge/CDN-jsDelivr-orange.svg)](https://www.jsdelivr.com/)
+## Overview
 
----
+This SDK provides a runtime that activates on your Webflow site, scanning the DOM for declarative `data-contra-*` attributes. It fetches expert data from the Contra API and binds it to your HTML elements, handling everything from initial data load to dynamic filtering and pagination.
 
-## 🌟 Overview
+**Core Features:**
 
-This SDK is a complete, enterprise-grade solution for bringing data from Contra into your Webflow projects. It's designed for performance, flexibility, and ease of use, allowing designers and developers to build rich, data-driven expert directories without writing any JavaScript.
-
-- **🎯 Zero-Code Webflow Integration:** Use simple `data-contra-*` attributes to connect your designs to live data.
-- **⚡ Performance Optimized:** Includes smart caching, request deduplication, and debounced inputs to ensure a fast user experience.
-- **🔧 Professional Architecture:** A clean, modular monorepo using TypeScript for type safety and reliability.
-- **🎨 Attribute-Driven:** Control everything from data binding to conditional visibility directly from the Webflow Designer.
+*   **Zero-Code Integration:** Build a complete, data-driven expert directory using only HTML attributes.
+*   **List-Based Architecture:** Display multiple, independent lists of experts from different programs on the same page.
+*   **Dynamic Filtering:** Connect native Webflow form elements to your lists for live filtering and sorting. The runtime can even populate your filter dropdowns with available options from the API.
+*   **Performance Optimized:** Features smart caching for API requests and debounced inputs for a smooth user experience.
+*   **Advanced Data Binding:** Includes conditional rendering, element repetition for collections, and automatic media handling.
 
 ---
 
-## 🚀 Quick Start for Webflow
+## Quick Start Guide
 
-Get a dynamic expert directory running on your Webflow site in just three steps.
+1.  **Add the Script Tag:** Place the following script tag in your Webflow project's custom code settings, typically in the "Footer Code" section.
 
-### Step 1: Add the Runtime Script
+    ```html
+    <!-- Replace @v2.0.0 with the desired version -->
+    <script defer src="https://cdn.jsdelivr.net/gh/contra/contra-sdk@v2.0.0/dist/runtime.min.js"></script>
+    ```
 
-Add the following script tag to the custom code settings of your Webflow site, inside the `</head>` tag. Replace `@latest` with a specific version for production use.
+    - **Using a specific version (Recommended):** Use a specific version tag (e.g., `@v2.0.0`) to ensure your project doesn't break from future updates.
+    - **Using the latest version:** You can use `@latest` to always get the most recent version, but be aware this could introduce breaking changes.
+
+2.  **Add the Configuration Object:** Below the first script, add your configuration. This is where you provide your API key.
+
+    ```html
+    <script id="contra-config" type="application/json">
+    {
+      "apiKey": "YOUR_CONTRA_API_KEY"
+    }
+    </script>
+    ```
+
+3.  **Set Up HTML Structure:**
+    *   Add `data-contra-list-id` and `data-contra-program` to a container element.
+    *   Inside, create a `data-contra-template` element and set it to `display: none;`.
+    *   Use `data-contra-field` attributes to bind data.
+
+    ```html
+    <!-- Main list container -->
+    <div data-contra-list-id="expert-directory" data-contra-program="YOUR_PROGRAM_ID">
+      
+      <!-- Template for each expert card (hidden by default) -->
+      <div data-contra-template style="display: none;">
+        <img data-contra-field="avatarUrl" alt="">
+        <h3 data-contra-field="name"></h3>
+        <p data-contra-field="oneLiner"></p>
+      </div>
+      
+      <!-- Optional placeholders for loading/empty/error states -->
+      <div data-contra-loading style="display: none;">Loading...</div>
+      <div data-contra-empty style="display: none;">No experts found.</div>
+      <div data-contra-error style="display: none;">An error occurred.</div>
+    </div>
+    ```
+
+---
+
+## Configuration
+
+Configure the SDK by placing a JSON object in a `<script>` tag with the ID `contra-config`.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `apiKey` | `string` | **Required** | Your Contra API key. |
+| `debug` | `boolean`| `false` | Enables detailed logs in the browser console. |
+| `videoAutoplay`| `boolean`| `false` | Autoplays videos found in fields like `coverUrl`. |
+| `videoHoverPlay`| `boolean`| `true` | Plays videos on mouse hover. Muted playback only. |
+| `videoMuted`| `boolean`| `true` | Mutes video playback. Required for autoplay. |
+| `videoLoop`| `boolean`| `true` | Loops video content. |
+| `videoControls`| `boolean`| `false` | Shows the browser's native video player controls. |
+| `imageTransformations` | `string` | `f_auto,...`| Default Cloudinary transformations for images. |
+| `videoTransformations` | `string` | `fl_progressive,...` | Default Cloudinary transformations for videos. |
+
+---
+
+## HTML Attribute Reference
+
+### List Container Attributes
+These attributes control the data source and default filtering for a list.
+
+| Attribute | Description |
+|---|---|
+| `data-contra-list-id` | **Required.** A unique identifier for the list. Used by filters and actions to target this list. |
+| `data-contra-program` | **Required.** The Program ID from Contra to fetch experts from. |
+| `data-contra-limit` | The number of experts to fetch per page. Defaults to `20`. |
+| `data-contra-available`| Set to `true` to only show available experts by default. |
+| `data-contra-location`| Sets a default location filter. |
+| `data-contra-languages`| Sets a default language filter (comma-separated). |
+| `data-contra-min-rate`| Sets a default minimum hourly rate. |
+| `data-contra-max-rate`| Sets a default maximum hourly rate. |
+| `data-contra-sort`| Sets a default sort order (e.g., `rate_desc`, `newest`). |
+| `data-contra-prerender-placeholders` | If present, the runtime will render placeholder cards before loading data. |
+
+
+### Template & State Attributes
+These attributes define the structural components within a List Container.
+
+| Attribute | Description |
+|---|---|
+| `data-contra-template` | **Required.** Marks the element to be cloned for each expert in the list. Must be set to `display: none;`. |
+| `data-contra-loading` | This element is displayed while the initial data for the list is loading. |
+| `data-contra-empty` | This element is displayed if the API returns no experts that match the current filters. |
+| `data-contra-error` | This element is displayed if an API error occurs. The error message is injected as its text content. |
+
+
+### Data Binding & Formatting
+
+| Attribute | Description |
+|---|---|
+| `data-contra-field` | Binds an expert data field to an element. It sets `href` on `<a>` tags, `src` on `<img>` tags, and `textContent` on all others. |
+| `data-contra-format`| Formats the output of a bound field. See table below for options. |
+| `data-contra-stars` | Renders a 5-star rating display based on the `averageReviewScore` field. |
+
+**Format Options (`data-contra-format`)**
+
+| Value | Description | Example Input | Example Output |
+|---|---|---|---|
+| `rate` | Formats a number as an hourly rate. | `150` | `$150/hr` |
+| `earnings`| Formats a number into a compact string (e.g., thousands, millions). | `25000` | `$25k+` |
+| `rating` | Formats a number to one decimal place. | `4.912` | `4.9` |
+| `currency`| Prefixes a number with a dollar sign. | `100` | `$100` |
+| `number` | Formats a number with thousand separators. | `10000` | `10,000` |
+| `truncate`| Truncates a string to 100 characters. | `long text...` | `long text...`|
+| `availability`| Converts a boolean to "Available" or "Not Available". | `true` | `Available` |
+
+### Structural Attributes
+
+| Attribute | Description |
+|---|---|
+| `data-contra-repeat` | Repeats its **first direct child** element for each item in a collection field (e.g., `projects`, `skillTags`, `socialLinks`). |
+| `data-contra-max` | Used with `data-contra-repeat` to limit the number of items rendered. |
+| `data-contra-show-when` | Shows the element only if the condition is met. |
+| `data-contra-hide-when` | Hides the element if the condition is met. |
+
+**Conditional Logic (`show-when`/`hide-when`)**
+Conditions are strings in the format `"field:operator:value"` or `"field:value"`.
+
+*   **Supported Operators**: `>` , `<` , `>=` , `<=`
+*   **Exact Match**: Use the format `"field:value"` (e.g., `available:true`). The comparison is case-insensitive for strings.
+
+*Example:*
+`<div data-contra-show-when="available:true">Available</div>`
+`<div data-contra-show-when="averageReviewScore:>=4.5">Top Rated</div>`
+
+
+### Action & Filter Attributes
+These attributes create interactivity.
+
+| Attribute | Description |
+|---|---|
+| `data-contra-filter` | **Required for filters.** Turns an input (`<select>`, `<input>`) into a live filter. The value must be a valid API filter key (e.g., `sortBy`, `minRate`, `q` for search). |
+| `data-contra-action` | **Required for actions.** Turns a button into an action. Supported values: `load-more`, `clear-filters`. |
+| `data-contra-list-target`| **Required for filters & actions.** The `list-id` of the list this control should affect. |
+
+---
+## Advanced Examples
+
+### Expert Card Template
+This example shows many features working together in a single card.
 
 ```html
-<!-- Get the latest version from npm -->
-<script defer src="https://cdn.jsdelivr.net/npm/@contra/webflow@latest/dist/runtime.min.js"></script>
-```
+<div data-contra-template style="display: none;">
+  <!-- Header with Avatar and Name -->
+  <div>
+    <img data-contra-field="avatarUrl" alt="">
+    <div>
+      <h3 data-contra-field="name"></h3>
+      <p data-contra-field="location"></p>
+    </div>
+    <!-- Conditional "Available" badge -->
+    <span data-contra-show-when="available:true">Available Now</span>
+  </div>
 
-### Step 2: Configure the SDK
+  <!-- Bio -->
+  <p data-contra-field="oneLiner"></p>
 
-Next, add your API key and other optional configurations in a script tag just before the closing `</body>` tag.
+  <!-- Stats Section -->
+  <div>
+    <div>
+      <!-- Star rating component -->
+      <div data-contra-stars></div>
+      <!-- Formatted rating number -->
+      <span data-contra-field="averageReviewScore" data-contra-format="rating"></span>
+    </div>
+    <div>
+      <!-- Formatted rate -->
+      <span data-contra-field="hourlyRateUSD" data-contra-format="rate"></span>
+    </div>
+  </div>
 
-```html
-<script id="contra-config" type="application/json">
-{
-  "apiKey": "YOUR_CONTRA_API_KEY_HERE",
-  "debug": false,
-  "videoHoverPlay": true
-}
-</script>
-```
-
-### Step 3: Set Up Your HTML Structure
-
-Design your expert list and card in the Webflow Designer, then add the `data-contra-*` attributes to connect them to the SDK.
-
-1.  **Main List Container:** This element wraps your entire list and defines which program to pull experts from.
-2.  **Template Element:** This is your expert card design. It will be used as a template and should be hidden by default (`display: none`).
-3.  **Data Fields:** Use `data-contra-field` on any element inside your template to bind it to expert data.
-4.  **States:** Define elements to show for loading, empty, and error states.
-
-```html
-<!-- 1. The main list container -->
-<div data-contra-list-id="expert-directory" data-contra-program="YOUR_PROGRAM_ID">
-  
-  <!-- 2. The template for each expert card (set to display:none) -->
-  <div data-contra-template>
-    <img data-contra-field="avatarUrl" alt="Expert Avatar">
-    <h3 data-contra-field="name"></h3>
-    <p data-contra-field="oneLiner"></p>
-    <!-- Show a star rating -->
-    <div data-contra-stars></div>
-    <!-- Format a number as a currency -->
-    <div data-contra-field="hourlyRateUSD" data-contra-format="rate"></div>
+  <!-- Repeating Skill Tags -->
+  <div data-contra-repeat="skillTags" data-contra-max="5">
+    <!-- The runtime maps each tag string to an object: { name: "tag" } -->
+    <!-- So we bind to the 'name' field. -->
+    <span data-contra-field="name"></span>
   </div>
   
-  <!-- 4. Placeholders for different states -->
-  <div data-contra-loading style="display: none;">Loading experts...</div>
-  <div data-contra-error style="display: none;">Something went wrong.</div>
-  <div data-contra-empty style="display: none;">No experts found for this search.</div>
-</div>
-```
-
-**That's it!** When you publish your site, the SDK will automatically fetch the experts and populate your list.
-
----
-
-## 🎨 Advanced Features & Attributes
-
-### Repeating Elements (`data-contra-repeat`)
-
-Use `data-contra-repeat` to render a list of items, like project samples or skill tags.
-
-```html
-<!-- Show up to 3 project samples -->
-<div data-contra-repeat="projects" data-contra-max="3">
-  <div>
+  <!-- Repeating Projects with automatic Video/Image handling -->
+  <div data-contra-repeat="projects" data-contra-max="2">
     <a data-contra-field="projectUrl" target="_blank">
-      <img data-contra-field="coverUrl" alt="Project Cover">
+      <!-- The runtime creates an <img> or <video> tag here based on the coverUrl -->
+      <div data-contra-field="coverUrl"></div>
       <h4 data-contra-field="title"></h4>
     </a>
   </div>
-</div>
 
-<!-- Show the first 5 skill tags -->
-<div data-contra-repeat="skillTags" data-contra-max="5">
-  <div>
-    <!-- The value of a simple array item is just the item itself -->
-    <span data-contra-field="."></span>
-  </div>
+  <!-- Profile link with analytics -->
+  <a data-contra-field="profileUrl" target="_blank">View Profile</a>
 </div>
 ```
 
-### Conditional Display (`data-contra-show-when`)
-
-Show or hide elements based on data. This is great for things like an "Available" badge.
-
-```html
-<!-- Shows only if the expert is available -->
-<div data-contra-show-when="available:true">Available for Hire</div>
-
-<!-- Shows if the review score is 4.5 or higher -->
-<div data-contra-show-when="averageReviewScore:>=4.5">Top Rated</div>
-```
-
-### Filtering
-
-Add `data-contra-filter` attributes to standard form inputs to create powerful, live filtering for your lists. The SDK automatically detects the input type and listens for changes.
+### Filters
+A complete set of filter controls targeting a list with `data-contra-list-id="expert-directory"`.
 
 ```html
-<!-- Dropdown for sorting -->
+<!-- Text search input (debounced) -->
+<input type="text" data-contra-filter="q" data-contra-list-target="expert-directory" placeholder="Search by keyword...">
+
+<!-- Dropdown for sorting. Options are populated automatically by the runtime. -->
 <select data-contra-filter="sortBy" data-contra-list-target="expert-directory">
-  <option value="relevance">Most Relevant</option>
-  <option value="newest">Newest</option>
-  <option value="rate_desc">Rate: High to Low</option>
+  <option value="">Sort By...</option>
 </select>
 
-<!-- A search input -->
-<input type="text" data-contra-filter="q" data-contra-list-target="expert-directory" placeholder="Search by keyword...">
+<!-- Range slider for minimum rate -->
+<input type="range" data-contra-filter="minRate" data-contra-list-target="expert-directory" min="0" max="300">
 
 <!-- A checkbox for availability -->
 <label>
@@ -140,76 +238,46 @@ Add `data-contra-filter` attributes to standard form inputs to create powerful, 
   Available now
 </label>
 
-<!-- A range slider for hourly rate -->
-<input type="range" data-contra-filter="minRate" data-contra-list-target="expert-directory" min="0" max="300">
+<!-- A button to clear all active filters for this list -->
+<button data-contra-action="clear-filters" data-contra-list-target="expert-directory">Clear Filters</button>
 ```
 
 ---
 
-## 📦 For Developers: Project Structure & Deployment
+## Developer Reference
 
-This is a TypeScript monorepo managed with npm workspaces.
+This SDK is designed to be used without writing JavaScript. However, if you are a developer maintaining this SDK, please see the [**`CONTRIBUTING.md`**](./CONTRIBUTING.md) file for detailed instructions on the development and release process.
 
-### Package Architecture
+## For Developers
 
-```
-/packages
-├── /contra-types     # Shared TypeScript definitions generated from an OpenAPI spec.
-├── /contra-client    # Core API client with caching, retries, and error handling.
-└── /contra-webflow   # The Webflow runtime that consumes the other two packages.
-```
+This repository is a TypeScript monorepo managed with npm workspaces.
 
-### Building the Project
+### Architecture
+*   `packages/contra-types`: Shared TypeScript definitions for API resources.
+*   `packages/contra-client`: Core API client with caching and retry logic.
+*   `packages/contra-webflow`: The Webflow runtime that consumes the other packages.
 
+### Local Development
 1.  **Install dependencies:** `npm install`
 2.  **Build all packages:** `npm run build`
+    *   This compiles all packages and generates the final `runtime.min.js` in `packages/contra-webflow/dist`.
 
-The primary build artifact is `packages/contra-webflow/dist/runtime.min.js`.
+### Publishing
+The project is configured for publishing to the public npm registry.
+1.  Log in to npm: `npm login`
+2.  Update the `version` in the `package.json` of the package(s) you intend to publish.
+3.  Publish packages in order of dependency:
+    ```bash
+    # From within packages/contra-types
+    npm publish --access public
 
-### Publishing to NPM
+    # From within packages/contra-client
+    npm publish --access public
 
-This project is set up for public publishing on npm.
-
-1.  **Login to npm:** `npm login`
-2.  **Bump package versions:** Manually update the `version` in the `package.json` files for the packages you want to publish.
-3.  **Publish:** Run the publish command from within each package directory you want to publish, in the correct order.
-
-```bash
-# 1. Publish types
-cd packages/contra-types
-npm publish --access public
-
-# 2. Publish client
-cd ../contra-client
-npm publish --access public
-
-# 3. Publish webflow runtime
-cd ../contra-webflow
-npm publish --access public
-```
-
-After publishing, the new version will be available on the jsDelivr CDN: `https://cdn.jsdelivr.net/npm/@contra/webflow@VERSION/dist/runtime.min.js`.
-
+    # From within packages/contra-webflow
+    npm publish --access public
+    ```
 ---
 
-## 🎯 **API Specification Compliance**
-
-✅ **100% OpenAPI 3.0.3 Compliant** - Our SDK matches the exact Contra API specification:
-
-### **Endpoints:**
-- `GET /public-api/programs/{programNid}` - Program details
-- `GET /public-api/programs/{programNid}/experts` - Expert listings with filters  
-- `GET /public-api/programs/{programNid}/filters` - Available filter options
-
-### **Query Parameters (Exact from API):**
-- `available` - `"true"` or `"false"` (string enum)
-- `languages` - Comma-separated: `"English,Spanish"` or array
-- `location` - With Google Place ID: `"San Francisco CA, USA (ChIJIQBpAG2ahYAR_6128GcTUEo)"`
-- `minRate` / `maxRate` - Numbers: `50`, `200`
-- `sortBy` - `"relevance" | "oldest" | "newest"`
-- `limit` / `offset` - Pagination: `20`, `0`
-
-### **Data Types:**
-All TypeScript interfaces generated directly from the OpenAPI schema ensure perfect compatibility.
-
---- 
+## License
+MIT 

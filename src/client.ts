@@ -8,7 +8,7 @@ import type {
   ErrorResponse,
   Filter,
   FilterListResponse
-} from '@contra/types';
+} from './types';
 
 /**
  * Professional Contra API Client
